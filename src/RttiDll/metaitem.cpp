@@ -348,6 +348,22 @@ private:
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------
+// MetaConstructorPrivate
+//--------------------------------------------------------------------------------------------------------------------------------
+
+class DLL_LOCAL MetaConstructorPrivate: public MetaItemPrivate
+{
+public:
+    MetaConstructorPrivate(std::unique_ptr<IConstructorInvoker> constructor, const MetaContainer &owner)
+        : MetaItemPrivate{constructor->signature(), owner}, m_constructor{std::move(constructor)}
+    {}
+
+private:
+    std::unique_ptr<IConstructorInvoker> m_constructor;
+    friend class MetaConstructor;
+};
+
+//--------------------------------------------------------------------------------------------------------------------------------
 // MetaEnumPrivate
 //--------------------------------------------------------------------------------------------------------------------------------
 
@@ -488,13 +504,13 @@ bool MetaContainer::addItem(MetaItem *value)
     return d->addItem(value);
 }
 
-void MetaContainer::setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> func)
+void MetaContainer::setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback)
 {
     auto d = d_func();
     assert(!d->m_deferredDefine);
     if (d->m_deferredDefine)
         return;
-    d->m_deferredDefine = std::move(func);
+    d->m_deferredDefine = std::move(callback);
 }
 
 void MetaContainer::checkDeferredDefine() const
@@ -551,6 +567,32 @@ const MetaClass* MetaContainer::getClass(const char *name) const
 std::size_t MetaContainer::classCount() const noexcept
 {
     return count(mcatClass);
+}
+
+const MetaConstructor* MetaContainer::getConstructor(const char *name) const
+{
+    return static_cast<const MetaConstructor*>(item(mcatConstructor, name));
+}
+
+std::size_t MetaContainer::constructorCount() const noexcept
+{
+    return count(mcatConstructor);
+}
+
+const MetaConstructor *MetaContainer::defaultConstructor() const
+{
+    return static_cast<const MetaConstructor*>(item(mcatConstructor, "default constructor"));
+}
+
+const MetaConstructor *MetaContainer::copyConstructor() const
+{
+    return static_cast<const MetaConstructor*>(item(mcatConstructor, "copy constructor"));
+}
+
+const MetaConstructor *MetaContainer::moveConstructor() const
+{
+
+    return static_cast<const MetaConstructor*>(item(mcatConstructor, "move constructor"));
 }
 
 void MetaContainer::for_each_class(std::function<void (const MetaClass *)> &func) const
@@ -746,6 +788,63 @@ MetaCategory MetaClass::category() const noexcept
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
+// MetaConstructor
+//--------------------------------------------------------------------------------------------------------------------------------
+
+MetaConstructor::MetaConstructor(std::unique_ptr<IConstructorInvoker> constructor,
+                                 MetaContainer &owner)
+    : MetaItem{*new MetaConstructorPrivate{std::move(constructor), owner}}
+{}
+
+MetaConstructor* MetaConstructor::create(std::unique_ptr<IConstructorInvoker> constructor,
+                                         MetaContainer &owner)
+{
+    if (!constructor)
+        return nullptr;
+    auto category = owner.category();
+    if (category != mcatClass)
+        throw invalid_meta_define{"Constructor can be defined only for class types"};
+
+    auto name = constructor->signature();
+    auto result = const_cast<MetaConstructor*>(owner.getConstructor(name));
+    if (!result)
+    {
+        result = new MetaConstructor(std::move(constructor), owner);
+        static_cast<MetaContainerAccess&>(owner).addItem(result);
+    }
+    return result;
+}
+
+const IConstructorInvoker* MetaConstructor::constructor() const noexcept
+{
+    const auto d = d_func();
+    return d->m_constructor.get();
+}
+
+MetaCategory MetaConstructor::category() const noexcept
+{
+    return mcatConstructor;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------
+// MetaProperty
+//--------------------------------------------------------------------------------------------------------------------------------
+
+MetaCategory MetaProperty::category() const noexcept
+{
+    return mcatProperty;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------
+// MetaMethod
+//--------------------------------------------------------------------------------------------------------------------------------
+
+MetaCategory MetaMethod::category() const noexcept
+{
+    return mcatMethod;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------
 // MetaEnum
 //--------------------------------------------------------------------------------------------------------------------------------
 
@@ -806,33 +905,6 @@ void MetaEnum::for_each_element(const std::function<void (const std::string &, c
     const auto d = d_func();
     for (const auto &item: d->m_elements)
         func(item.name, item.value);
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------
-// MetaProperty
-//--------------------------------------------------------------------------------------------------------------------------------
-
-MetaCategory MetaProperty::category() const noexcept
-{
-    return mcatProperty;
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------
-// MetaConstructor
-//--------------------------------------------------------------------------------------------------------------------------------
-
-MetaCategory MetaConstructor::category() const noexcept
-{
-    return mcatConstructor;
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------
-// MetaMethod
-//--------------------------------------------------------------------------------------------------------------------------------
-
-MetaCategory MetaMethod::category() const noexcept
-{
-    return mcatMethod;
 }
 
 } // namespace rtti

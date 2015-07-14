@@ -9,6 +9,7 @@
 #include <sstream>
 #include <stack>
 #include <cassert>
+#include <type_traits>
 
 #include "global.h"
 
@@ -71,22 +72,35 @@ struct ConstructorInvoker: IConstructorInvoker
         return invoke_imp(args, argument_indexes_t{});
     }
 
-    std::string signature() const override
+    const char* signature() const override
     {
         return signature_imp(argument_indexes_t{});
     }
 
 private:
+    static constexpr const char* signature_imp(index_sequence<>)
+    {
+        return "default constructor";
+    }
+
     template<std::size_t ...I>
-    static std::string signature_imp(index_sequence<I...>)
+    static const char* signature_imp(index_sequence<I...>)
     {
         constexpr auto size = sizeof...(I);
-        if (size == 0)
-            return "default constructor";
-
-        if (size == 1 and std::is_lvalue_reference<argument_get_t<0>>::value )
+        if (size == 1)
         {
+            using Arg = argument_get_t<0>;
+            if (std::is_same<Arg, C>::value)
+                return "copy constructor";
 
+            using Decayed = typename std::decay<Arg>::type;
+            if (std::is_same<Decayed, C>::value)
+            {
+                if (std::is_lvalue_reference<Arg>::value)
+                    return "copy constructor";
+                if (std::is_rvalue_reference<Arg>::value)
+                    return "move constructor";
+            }
         }
 
         std::ostringstream os;
@@ -95,13 +109,13 @@ private:
             os << type_name<argument_get_t<I>>() << (I < size - 1 ? ", " : "")
         );
         os << ")";
-        return os.str();
+        return os.str().c_str();
     }
 
     template<std::size_t ...I>
     static variant invoke_imp(const argument_array_t &args, index_sequence<I...>)
     {
-        return new C{args[I]->value<argument_get_t<I>>()...};
+        return C(args[I]->value<argument_get_t<I>>()...);
     }
 };
 
@@ -157,7 +171,14 @@ public:
         m_currentContainer = MetaClass::create(name, *m_currentContainer, metaTypeId<C>());
         m_currentItem = m_currentContainer;
 
-        return meta_define<C, self_t>{m_currentItem, m_currentContainer, m_containerStack};
+        meta_define<C, self_t> result {m_currentItem, m_currentContainer, m_containerStack};
+        if (std::is_default_constructible<C>::value)
+            result._constructor<>();
+        if (std::is_copy_constructible<C>::value)
+            result._constructor<const C&>();
+        if (std::is_move_constructible<C>::value)
+            result._constructor<C&&>();
+        return std::move(result);
     }
 
     template<typename C>
@@ -178,9 +199,8 @@ public:
                       "Deferred definition supported only for namespaces and class types");
 
         assert(m_currentContainer);
-        auto container = static_cast<MetaContainer*>(m_currentContainer);
-        container->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
-                                     new internal::DefinitionCallbackHolder<T>{func}});
+        m_currentContainer->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
+                                                  new internal::DefinitionCallbackHolder<T>{func}});
         return std::move(*this);
     }
 
@@ -234,8 +254,14 @@ public:
     self_t _constructor()
     {
         static_assert(std::is_class<T>::value, "Constructor can be defined only for class types");
-        assert(m_currentContainer && m_currentContainer->category() == mcatClass);
-
+        assert(m_currentContainer);
+        auto category = m_currentContainer->category();
+        assert(category == mcatClass);
+        if (category == mcatClass)
+        {
+            MetaConstructor::create(std::unique_ptr<IConstructorInvoker>{new internal::ConstructorInvoker<T, Args...>{}},
+                                    *m_currentContainer);
+        }
         return std::move(*this);
     }
 

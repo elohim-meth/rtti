@@ -3,10 +3,15 @@
 #include <iostream>
 #include <vector>
 
+#include <debug.h>
+
 class TestBase1 {
 public:
-    TestBase1() {}
-    TestBase1(int){}
+    TestBase1() { PRINT_PRETTY_FUNC }
+//    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
+//    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
+    TestBase1(int, const std::string&){ PRINT_PRETTY_FUNC }
+    virtual ~TestBase1(){ PRINT_PRETTY_FUNC }
     enum TestEnum {
         te1 = 10,
         te2 = 20
@@ -64,8 +69,11 @@ void test_register()
                 ._element("Red", TestBase1::Color::Red)
                 ._element("Green", TestBase1::Color::Green)
                 ._element("Blue", TestBase1::Color::Blue)
+            ._constructor()
+            ._constructor<const TestBase1&>()
         ._end()
         ._class<TestBase2>("TestBase2")
+            ._constructor()
         ._end()
         ._class<TestDerived>("TestDerived")
             ._base<TestBase1, TestBase2>()
@@ -128,9 +136,26 @@ int main(int argc, char* argv[])
                                      rtti::variant_cast<TestBase1::Color>(value)) << std::endl;
                 });
             }
-        }
 
-        std::cout << rtti::internal::ConstructorInvoker<TestBase1>{}.signature() << std::endl;
+            std::cout << "\ndefault\n";
+            auto dc = c->defaultConstructor();
+            if (dc)
+            {
+                auto v = dc->invoke();
+                std::cout << "copy \n";
+                auto cc = c->copyConstructor();
+                if (cc)
+                {
+                    auto vc = cc->invoke(v);
+                    std::cout << "move \n";
+                    auto mc = c->moveConstructor();
+                    if (mc)
+                    {
+                        auto vm = mc->invoke(std::move(vc));
+                    }
+                }
+            }
+        }
 
     } catch(const std::exception& e) {
         std::cout << e.what() << std::endl;

@@ -37,6 +37,8 @@ class MetaNamespace;
 class MetaNamespacePrivate;
 class MetaClass;
 class MetaClassPrivate;
+class MetaConstructor;
+class MetaConstructorPrivate;
 class MetaEnum;
 class MetaEnumPrivate;
 
@@ -87,9 +89,17 @@ public:
 
     const MetaNamespace* getNamespace(const char *name) const;
     std::size_t namespaceCount() const noexcept;
+
     const MetaClass* getClass(const char *name) const;
     std::size_t classCount() const noexcept;
     void for_each_class(std::function<void(const MetaClass*)> &func) const;
+
+    const MetaConstructor* getConstructor(const char *name) const;
+    std::size_t constructorCount() const noexcept;
+    const MetaConstructor* defaultConstructor() const;
+    const MetaConstructor* copyConstructor() const;
+    const MetaConstructor* moveConstructor() const;
+
     const MetaEnum* getEnum(const char *name) const;
     std::size_t enumCount() const noexcept;
 
@@ -98,7 +108,7 @@ protected:
     explicit MetaContainer(MetaContainerPrivate &value);
 
     bool addItem(MetaItem *value);
-    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> func);
+    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);
     void checkDeferredDefine() const override;
 
 private:
@@ -138,7 +148,7 @@ struct DLL_PUBLIC IConstructorInvoker
                            argument arg7 = argument{},
                            argument arg8 = argument{},
                            argument arg9 = argument{}) const = 0;
-    virtual std::string signature() const = 0;
+    virtual const char* signature() const = 0;
 };
 
 class DLL_PUBLIC MetaClass final: public MetaContainer
@@ -163,6 +173,31 @@ private:
     template<typename, typename> friend class meta_define;
 };
 
+class DLL_PUBLIC MetaConstructor final: public MetaItem
+{
+public:
+    MetaCategory category() const noexcept override;
+    template<typename ...Args>
+    variant invoke(Args&&... args) const
+    {
+        static_assert(sizeof...(Args) <= IConstructorInvoker::MaxNumberOfArguments,
+                      "Maximum supported metaconstructor arguments: 10");
+        return constructor()->invoke(std::forward<Args>(args)...);
+    }
+
+protected:
+    explicit MetaConstructor(std::unique_ptr<IConstructorInvoker> constructor,
+                             MetaContainer &owner);
+    static MetaConstructor* create(std::unique_ptr<IConstructorInvoker> constructor,
+                                   MetaContainer &owner);
+
+private:
+    const IConstructorInvoker* constructor() const noexcept;
+
+    DECLARE_PRIVATE(MetaConstructor)
+    template<typename, typename> friend class meta_define;
+};
+
 class DLL_PUBLIC MetaEnum final: public MetaItem
 {
 public:
@@ -184,12 +219,6 @@ private:
 };
 
 class DLL_PUBLIC MetaProperty final: public MetaItem
-{
-public:
-    MetaCategory category() const noexcept override;
-};
-
-class DLL_PUBLIC MetaConstructor final: public MetaItem
 {
 public:
     MetaCategory category() const noexcept override;

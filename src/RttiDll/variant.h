@@ -83,7 +83,7 @@ struct function_table_selector<T, true>
         noexcept(std::is_nothrow_copy_constructible<T>::value)
     {
         auto ptr = reinterpret_cast<const T*>(&src.buffer);
-        new (&dst.buffer) T{*ptr};
+        new (&dst.buffer) T(*ptr);
     }
 
     static void destroy(variant_type_storage &value) noexcept
@@ -111,7 +111,7 @@ struct function_table_selector<T, false>
         noexcept(std::is_nothrow_copy_constructible<T>::value)
     {
         auto ptr = static_cast<const T*>(src.ptr);
-        dst.ptr = new T{*ptr};
+        dst.ptr = new T(*ptr);
     }
 
     static void destroy(variant_type_storage &value) noexcept
@@ -283,14 +283,14 @@ private:
     variant(T &&value, std::true_type)
         : manager{internal::function_table_for<internal::decay_t<T>>()}
     {
-        new (&storage.buffer) internal::decay_t<T>{std::forward<T>(value)};
+        new (&storage.buffer) internal::decay_t<T>(std::forward<T>(value));
     }
 
     template<typename T>
     variant(T &&value, std::false_type)
         : manager{internal::function_table_for<internal::decay_t<T>>()}
     {
-        storage.ptr = new internal::decay_t<T>{std::forward<T>(value)};
+        storage.ptr = new internal::decay_t<T>(std::forward<T>(value));
     }
 
     void* raw_data_ptr() const noexcept
