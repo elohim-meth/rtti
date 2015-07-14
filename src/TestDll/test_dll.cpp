@@ -8,8 +8,10 @@
 class TestBase1 {
 public:
     TestBase1() { PRINT_PRETTY_FUNC }
-    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
-    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
+//    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
+//    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
+    TestBase1(const TestBase1&) = delete;
+    TestBase1(TestBase1&&) = delete;
     TestBase1(int, const std::string&){ PRINT_PRETTY_FUNC }
     virtual ~TestBase1(){ PRINT_PRETTY_FUNC }
     enum TestEnum {
@@ -69,11 +71,8 @@ void test_register()
                 ._element("Red", TestBase1::Color::Red)
                 ._element("Green", TestBase1::Color::Green)
                 ._element("Blue", TestBase1::Color::Blue)
-            ._constructor()
-            ._constructor<const TestBase1&>()
         ._end()
         ._class<TestBase2>("TestBase2")
-            ._constructor()
         ._end()
         ._class<TestDerived>("TestDerived")
             ._base<TestBase1, TestBase2>()

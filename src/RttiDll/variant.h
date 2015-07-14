@@ -199,9 +199,7 @@ public:
     variant(T &&value)
         : variant{std::forward<T>(value), internal::is_inplace<T>{}}
     {
-        static constexpr bool valid = std::is_copy_constructible<T>::value ||
-                (std::is_rvalue_reference<T>::value &&
-                 std::is_move_constructible<T>::value);
+        static constexpr bool valid = std::is_copy_constructible<T>::value;
         static_assert(valid, "The contained object must be CopyConstructible");
     }
 
