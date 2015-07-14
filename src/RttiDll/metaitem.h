@@ -1,0 +1,186 @@
+﻿#ifndef METAITEM_H
+#define METAITEM_H
+
+#include "metatype.h"
+
+#include <typelist.h>
+
+#include <memory>
+
+#include "global.h"
+
+#define DECLARE_PRIVATE(Class) \
+    inline Class##Private* d_func() { return reinterpret_cast<Class##Private *>(d_ptr.get()); } \
+    inline const Class##Private* d_func() const { return reinterpret_cast<const Class##Private *>(d_ptr.get()); } \
+    friend class Class##Private;
+
+namespace rtti {
+
+enum MetaCategory: int {
+    mcatNamespace,
+    mcatClass,
+    mcatProperty,
+    mcatMethod,
+    mcatEnum,
+    mcatConstructor,
+    mcatCount
+};
+
+// forward
+class variant;
+class MetaItem;
+class MetaItemPrivate;
+class MetaContainer;
+class MetaContainerPrivate;
+class MetaNamespace;
+class MetaNamespacePrivate;
+class MetaClass;
+class MetaClassPrivate;
+class MetaEnum;
+class MetaEnumPrivate;
+
+class DLL_PUBLIC MetaItem
+{
+public:
+    virtual MetaCategory category() const noexcept = 0;
+    const std::string& name() const;
+    const MetaContainer* owner() const noexcept;
+    const std::string& qualifiedName() const;
+    std::size_t attributeCount() const noexcept;
+    const variant& attribute(std::size_t index) const noexcept;
+    const std::string& attributeName(std::size_t index) const noexcept;
+    const variant& attribute(const char *name) const;
+    void for_each_attribute(const std::function<void(const std::string&, const variant&)> &func) const;
+protected:
+    explicit MetaItem(const char *name, const MetaContainer &owner);
+    explicit MetaItem(MetaItemPrivate &value);
+    MetaItem(const MetaItem &) = delete;
+    MetaItem& operator=(const MetaItem &) = delete;
+    MetaItem(MetaItem &&) = delete;
+    MetaItem& operator=(MetaItem &&) = delete;
+    virtual ~MetaItem();
+
+    virtual void checkDeferredDefine() const;
+
+    void setAttribute(const char *name, const variant &value);
+    void setAttribute(const char *name, variant &&value);
+    std::unique_ptr<MetaItemPrivate> d_ptr;
+
+private:
+    DECLARE_PRIVATE(MetaItem)
+    friend class MetaItemList;
+    template<typename, typename> friend class meta_define;
+};
+
+struct IDefinitionCallbackHolder
+{
+    virtual void invoke(MetaContainer&) const = 0;
+};
+
+class DLL_PUBLIC MetaContainer: public MetaItem
+{
+public:
+    std::size_t count(MetaCategory category) const noexcept;
+    const MetaItem* item(MetaCategory category, std::size_t index) const noexcept;
+    const MetaItem* item(MetaCategory category, const char *name) const;
+
+    const MetaNamespace* getNamespace(const char *name) const;
+    std::size_t namespaceCount() const noexcept;
+    const MetaClass* getClass(const char *name) const;
+    std::size_t classCount() const noexcept;
+    void for_each_class(std::function<void(const MetaClass*)> &func) const;
+    const MetaEnum* getEnum(const char *name) const;
+    std::size_t enumCount() const noexcept;
+
+protected:
+    explicit MetaContainer(const char *name, const MetaContainer &owner);
+    explicit MetaContainer(MetaContainerPrivate &value);
+
+    bool addItem(MetaItem *value);
+    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> func);
+    void checkDeferredDefine() const override;
+
+private:
+    DECLARE_PRIVATE(MetaContainer)
+    template<typename, typename> friend class meta_define;
+};
+
+class DLL_PUBLIC MetaNamespace final: public MetaContainer
+{
+public:
+    static const MetaNamespace* global() noexcept;
+    bool isGlobal() const noexcept;
+    MetaCategory category() const noexcept override;
+protected:
+    using MetaContainer::MetaContainer;
+    static MetaNamespace* create(const char *name, MetaContainer &owner);
+private:
+    MetaNamespace(); //global namespace
+
+    DECLARE_PRIVATE(MetaNamespace)
+    template<typename, typename> friend class meta_define;
+};
+
+class DLL_PUBLIC MetaClass final: public MetaContainer
+{
+public:
+    MetaCategory category() const noexcept override;
+    static const MetaClass* findByTypeId(MetaType_ID typeId) noexcept;
+    MetaType_ID metaTypeId() const noexcept;
+    std::size_t baseClassCount() const noexcept;
+    const MetaClass* baseClass(std::size_t index) const noexcept;
+    std::size_t derivedClassCount() const noexcept;
+    const MetaClass* derivedClass(std::size_t index) const noexcept;
+    bool inheritedFrom(const MetaClass *base) const noexcept;
+protected:
+    explicit MetaClass(const char *name, const MetaContainer &owner, MetaType_ID typeId);
+    static MetaClass* create(const char *name, MetaContainer &owner, MetaType_ID typeId);
+
+    void addBaseClass(MetaType_ID typeId);
+    void addDerivedClass(MetaType_ID typeId);
+private:
+    DECLARE_PRIVATE(MetaClass)
+    template<typename, typename> friend class meta_define;
+};
+
+class DLL_PUBLIC MetaEnum final: public MetaItem
+{
+public:
+    MetaCategory category() const noexcept override;
+
+    std::size_t elementCount() const noexcept;
+    const variant& element(std::size_t index) const noexcept;
+    const std::string& elementName(std::size_t index) const noexcept;
+    const variant& element(const char *name) const;
+    void for_each_element(const std::function<void(const std::string&, const variant&)> &func) const;
+protected:
+    explicit MetaEnum(const char *name, const MetaContainer &owner, MetaType_ID typeId);
+    static MetaEnum* create(const char *name, MetaContainer &owner, MetaType_ID typeId);
+
+    void addElement(const char *name, variant &&value);
+private:
+    DECLARE_PRIVATE(MetaEnum)
+    template<typename, typename> friend class meta_define;
+};
+
+class DLL_PUBLIC MetaProperty final: public MetaItem
+{
+public:
+    MetaCategory category() const noexcept override;
+};
+
+class DLL_PUBLIC MetaConstructor final: public MetaItem
+{
+public:
+    MetaCategory category() const noexcept override;
+};
+
+class DLL_PUBLIC MetaMethod final: public MetaItem
+{
+public:
+    MetaCategory category() const noexcept override;
+};
+
+} //namespace rtti
+
+#endif // METAITEM_H
