@@ -39,11 +39,43 @@ private:
     definition_callback_t<T> m_func;
 };
 
-
-constexpr bool is_container(MetaCategory category)
+template<typename C, typename ...Args>
+struct ConstructorInvoker: IConstructorInvoker
 {
-    return (category == mcatClass || category == mcatNamespace);
-}
+    static_assert(sizeof...(Args) > MaxNumberOfArguments, "Maximum supported arguments: 10");
+    static_assert((sizeof...(Args) > 0) || std::is_default_constructible<C>::value,
+                  "Type is not default constructible");
+    static_assert((sizeof...(Args) == 0) || std::is_constructible<C, Args...>::value,
+                  "Type can not be constructed with given arguments");
+
+    template<std::size_t I>
+    using argument_get_t = typename typelist_get<type_list<Args...>, I>::type;
+    using argument_indexes_t = typename index_sequence_for<Args...>::type;
+    using argument_array_t = std::array<const argument*, MaxNumberOfArguments>;
+
+    variant create(argument arg0 = argument{},
+                   argument arg1 = argument{},
+                   argument arg2 = argument{},
+                   argument arg3 = argument{},
+                   argument arg4 = argument{},
+                   argument arg5 = argument{},
+                   argument arg6 = argument{},
+                   argument arg7 = argument{},
+                   argument arg8 = argument{},
+                   argument arg9 = argument{}) const override
+    {
+        argument_array_t args = {
+            &arg0, &arg1, &arg2, &arg3, &arg4,
+            &arg5, &arg6, &arg7, &arg8, &arg9};
+        return invoke(args, argument_indexes_t{});
+    }
+
+    template<std::size_t ...I>
+    static variant invoke(const argument_array_t &args, index_sequence<I...>)
+    {
+        return new C{args[I]->value<argument_get_t<I>>()...};
+    }
+};
 
 } // namespace internal
 
@@ -91,7 +123,7 @@ public:
         static_assert(!std::is_same<T, C>::value, "Recursive class definition");
         static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
                       "Class can be defined in namespace or anther class");
-        assert(m_currentContainer && internal::is_container(m_currentContainer->category()) && m_containerStack);
+        assert(m_currentContainer && m_containerStack);
 
         m_containerStack->push(m_currentContainer);
         m_currentContainer = MetaClass::create(name, *m_currentContainer, metaTypeId<C>());
@@ -116,8 +148,8 @@ public:
     {
         static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
                       "Deferred definition supported only for namespaces and class types");
-        assert(m_currentContainer && internal::is_container(m_currentContainer->category()));
 
+        assert(m_currentContainer);
         auto container = static_cast<MetaContainer*>(m_currentContainer);
         container->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
                                      new internal::DefinitionCallbackHolder<T>{func}});
@@ -127,13 +159,12 @@ public:
     template<typename ...B>
     self_t _base()
     {
-        assert(m_currentContainer);
-        auto category = m_currentContainer->category();
-        assert(category == mcatClass);
-        if (category == mcatClass)
-            addBaseTypeList<type_list<B...>>(
-                        static_cast<MetaClass*>(m_currentContainer),
-                        typename index_sequence_for<B...>::type{});
+        static_assert(std::is_class<T>::value, "Base classes can be defined only for class types");
+        assert(m_currentContainer && m_currentContainer->category() == mcatClass);
+
+        addBaseTypeList<type_list<B...>>(
+                    static_cast<MetaClass*>(m_currentContainer),
+                    typename index_sequence_for<B...>::type{});
         return std::move(*this);
     }
 
@@ -141,10 +172,7 @@ public:
     self_t _enum(const char *name)
     {
         assert(m_currentContainer);
-        auto category = m_currentContainer->category();
-        assert(category == mcatNamespace || category == mcatClass);
-        if (category == mcatNamespace || category == mcatClass)
-            m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>());
+        m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>());
         return std::move(*this);
     }
 
@@ -201,9 +229,19 @@ protected:
     container_stack_t *m_containerStack = nullptr;
 
 private:
+    template<typename C>
+    struct check_is_class
+    {
+        static_assert(std::is_class<C>::value, "Type <C> is not a class");
+        using type = C;
+    };
+
     template<typename L, std::size_t ...I>
     static void addBaseTypeList(MetaClass *item, index_sequence<I...>)
     {
+        // check that every type is class
+        typename typelist_map<L, check_is_class>::type t __attribute__((unused));
+
         EXPAND(
             item->addBaseClass(metaTypeId<typename typelist_get<L, I>::type>())
         );

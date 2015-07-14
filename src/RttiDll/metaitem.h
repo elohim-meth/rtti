@@ -2,6 +2,7 @@
 #define METAITEM_H
 
 #include "metatype.h"
+#include "argument.h"
 
 #include <typelist.h>
 
@@ -72,7 +73,7 @@ private:
     template<typename, typename> friend class meta_define;
 };
 
-struct IDefinitionCallbackHolder
+struct DLL_PUBLIC IDefinitionCallbackHolder
 {
     virtual void invoke(MetaContainer&) const = 0;
 };
@@ -119,6 +120,24 @@ private:
 
     DECLARE_PRIVATE(MetaNamespace)
     template<typename, typename> friend class meta_define;
+};
+
+struct DLL_PUBLIC IConstructorInvoker
+{
+    enum {
+        MaxNumberOfArguments = 10
+    };
+
+    virtual variant create(argument arg0 = argument{},
+                           argument arg1 = argument{},
+                           argument arg2 = argument{},
+                           argument arg3 = argument{},
+                           argument arg4 = argument{},
+                           argument arg5 = argument{},
+                           argument arg6 = argument{},
+                           argument arg7 = argument{},
+                           argument arg8 = argument{},
+                           argument arg9 = argument{}) const = 0;
 };
 
 class DLL_PUBLIC MetaClass final: public MetaContainer
