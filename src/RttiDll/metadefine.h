@@ -6,6 +6,7 @@
 
 #include <typelist.h>
 
+#include <sstream>
 #include <stack>
 #include <cassert>
 
@@ -42,7 +43,7 @@ private:
 template<typename C, typename ...Args>
 struct ConstructorInvoker: IConstructorInvoker
 {
-    static_assert(sizeof...(Args) > MaxNumberOfArguments, "Maximum supported arguments: 10");
+    static_assert(sizeof...(Args) <= MaxNumberOfArguments, "Maximum supported arguments: 10");
     static_assert((sizeof...(Args) > 0) || std::is_default_constructible<C>::value,
                   "Type is not default constructible");
     static_assert((sizeof...(Args) == 0) || std::is_constructible<C, Args...>::value,
@@ -53,7 +54,7 @@ struct ConstructorInvoker: IConstructorInvoker
     using argument_indexes_t = typename index_sequence_for<Args...>::type;
     using argument_array_t = std::array<const argument*, MaxNumberOfArguments>;
 
-    variant create(argument arg0 = argument{},
+    variant invoke(argument arg0 = argument{},
                    argument arg1 = argument{},
                    argument arg2 = argument{},
                    argument arg3 = argument{},
@@ -67,11 +68,38 @@ struct ConstructorInvoker: IConstructorInvoker
         argument_array_t args = {
             &arg0, &arg1, &arg2, &arg3, &arg4,
             &arg5, &arg6, &arg7, &arg8, &arg9};
-        return invoke(args, argument_indexes_t{});
+        return invoke_imp(args, argument_indexes_t{});
+    }
+
+    std::string signature() const override
+    {
+        return signature_imp(argument_indexes_t{});
+    }
+
+private:
+    template<std::size_t ...I>
+    static std::string signature_imp(index_sequence<I...>)
+    {
+        constexpr auto size = sizeof...(I);
+        if (size == 0)
+            return "default constructor";
+
+        if (size == 1 and std::is_lvalue_reference<argument_get_t<0>>::value )
+        {
+
+        }
+
+        std::ostringstream os;
+        os << "constructor(";
+        EXPAND (
+            os << type_name<argument_get_t<I>>() << (I < size - 1 ? ", " : "")
+        );
+        os << ")";
+        return os.str();
     }
 
     template<std::size_t ...I>
-    static variant invoke(const argument_array_t &args, index_sequence<I...>)
+    static variant invoke_imp(const argument_array_t &args, index_sequence<I...>)
     {
         return new C{args[I]->value<argument_get_t<I>>()...};
     }
@@ -200,6 +228,15 @@ public:
     self_t _element(const std::string &name, V &&value)
     {
         return _element(name.c_str(), std::forward<V>(value));
+    }
+
+    template<typename ...Args>
+    self_t _constructor()
+    {
+        static_assert(std::is_class<T>::value, "Constructor can be defined only for class types");
+        assert(m_currentContainer && m_currentContainer->category() == mcatClass);
+
+        return std::move(*this);
     }
 
     MB _end()

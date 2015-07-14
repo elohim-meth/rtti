@@ -5,6 +5,8 @@
 
 class TestBase1 {
 public:
+    TestBase1() {}
+    TestBase1(int){}
     enum TestEnum {
         te1 = 10,
         te2 = 20
@@ -127,6 +129,8 @@ int main(int argc, char* argv[])
                 });
             }
         }
+
+        std::cout << rtti::internal::ConstructorInvoker<TestBase1>{}.signature() << std::endl;
 
     } catch(const std::exception& e) {
         std::cout << e.what() << std::endl;

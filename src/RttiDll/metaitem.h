@@ -128,7 +128,7 @@ struct DLL_PUBLIC IConstructorInvoker
         MaxNumberOfArguments = 10
     };
 
-    virtual variant create(argument arg0 = argument{},
+    virtual variant invoke(argument arg0 = argument{},
                            argument arg1 = argument{},
                            argument arg2 = argument{},
                            argument arg3 = argument{},
@@ -138,6 +138,7 @@ struct DLL_PUBLIC IConstructorInvoker
                            argument arg7 = argument{},
                            argument arg8 = argument{},
                            argument arg9 = argument{}) const = 0;
+    virtual std::string signature() const = 0;
 };
 
 class DLL_PUBLIC MetaClass final: public MetaContainer
