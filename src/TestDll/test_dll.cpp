@@ -8,8 +8,8 @@
 class TestBase1 {
 public:
     TestBase1() { PRINT_PRETTY_FUNC }
-//    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
-//    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
+    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
+    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
     TestBase1(int, const std::string&){ PRINT_PRETTY_FUNC }
     virtual ~TestBase1(){ PRINT_PRETTY_FUNC }
     enum TestEnum {
