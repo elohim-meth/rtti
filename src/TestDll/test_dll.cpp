@@ -8,10 +8,11 @@
 class TestBase1 {
 public:
     TestBase1() { PRINT_PRETTY_FUNC }
-//    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
-//    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
-    TestBase1(const TestBase1&) = delete;
-    TestBase1(TestBase1&&) = delete;
+    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
+    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
+//    TestBase1() = delete;
+//    TestBase1(const TestBase1&) = delete;
+//    TestBase1(TestBase1&&) = delete;
     TestBase1(int, const std::string&){ PRINT_PRETTY_FUNC }
     virtual ~TestBase1(){ PRINT_PRETTY_FUNC }
     enum TestEnum {
@@ -135,6 +136,7 @@ int main(int argc, char* argv[])
                                      rtti::variant_cast<TestBase1::Color>(value)) << std::endl;
                 });
             }
+
 
             std::cout << "\ndefault\n";
             auto dc = c->defaultConstructor();

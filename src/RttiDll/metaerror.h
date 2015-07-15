@@ -38,6 +38,13 @@ public:
     using runtime_error::runtime_error;
 };
 
+class DLL_PUBLIC invoke_error: public runtime_error
+{
+public:
+    using runtime_error::runtime_error;
+};
+
+
 }
 
 #endif // METAERROR_H

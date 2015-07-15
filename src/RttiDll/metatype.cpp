@@ -11,10 +11,10 @@ namespace rtti {
 namespace {
 
 #define FUNDAMENTAL_TYPE_INFO(NAME, TYPEID) \
-{#NAME, sizeof(NAME), MetaType_ID{TYPEID}, type_flags<NAME>::value},
+{#NAME, sizeof(NAME), MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, type_flags<NAME>::value},
 
 static const std::vector<TypeInfo> fundamentalTypes = {
-    {"void", 0, MetaType_ID{0}, type_flags<void>::value},
+    {"void", 0, MetaType_ID{0}, MetaType_ID{0}, type_flags<void>::value},
     FUNDAMENTAL_TYPE_INFO(bool, 1)
     FUNDAMENTAL_TYPE_INFO(char, 2)
     FUNDAMENTAL_TYPE_INFO(signed char, 3)
@@ -73,7 +73,7 @@ public:
     const TypeInfo* getTypeInfo(MetaType_ID typeId) const;
     const TypeInfo* getTypeInfo(const char *name) const;
     MetaType_ID addTypeInfo(const char *name, unsigned int size,
-                            MetaType::TypeFlags flags);
+                            MetaType_ID decay, MetaType::TypeFlags flags);
 private:
     mutable std::mutex m_lock;
     std::vector<TypeInfo> m_list;
@@ -118,11 +118,16 @@ const TypeInfo* CustomTypes::getTypeInfo(const char *name) const
     return nullptr;
 }
 
-inline MetaType_ID CustomTypes::addTypeInfo(const char *name, unsigned int size, MetaType::TypeFlags flags)
+inline MetaType_ID CustomTypes::addTypeInfo(const char *name, unsigned int size, MetaType_ID decay, MetaType::TypeFlags flags)
 {
     std::lock_guard<std::mutex> lock{m_lock};
     MetaType_ID::type result = fundamentalTypes.size() + m_list.size();
-    m_list.emplace_back(name, size, MetaType_ID{result}, flags);
+
+    // this means that decay_t<type> = type
+    if (decay.value() == MetaType::InvalidTypeId)
+        decay = MetaType_ID{result};
+
+    m_list.emplace_back(name, size, MetaType_ID{result}, decay, flags);
     return MetaType_ID{result};
 }
 
@@ -147,7 +152,7 @@ rtti::MetaType::MetaType(const char *name)
 
 MetaType_ID MetaType::typeId() const noexcept
 {
-    auto result = MetaType_ID{InvalidTypeId};
+    auto result = MetaType_ID{};
     if (m_typeInfo)
         result = m_typeInfo->type;
     return result;
@@ -174,9 +179,11 @@ MetaType::TypeFlags MetaType::typeFlags() const noexcept
     return result;
 }
 
-MetaType_ID MetaType::registerMetaType(const char *name, unsigned int size, MetaType::TypeFlags flags)
+MetaType_ID MetaType::registerMetaType(const char *name, unsigned int size,
+                                       MetaType_ID decay,
+                                       MetaType::TypeFlags flags)
 {
-    return customTypes().addTypeInfo(name, size, flags);
+    return customTypes().addTypeInfo(name, size, decay, flags);
 }
 
 } //namespace rtti

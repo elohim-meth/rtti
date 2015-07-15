@@ -166,6 +166,7 @@ private:
     friend class MetaClass;
 
     static MetaType_ID registerMetaType(const char *name, unsigned int size,
+                                        MetaType_ID decay,
                                         MetaType::TypeFlags flags);
 
     const TypeInfo *m_typeInfo = nullptr;
@@ -208,16 +209,30 @@ namespace internal {
 template <typename T>
 struct meta_type
 {
+    using decayed_t = typename std::decay<T>::type;
+
     static MetaType_ID get()
     {
         if (const auto id = meta_id.load())
             return MetaType_ID{id};
 
+        auto decay = decay_selector(std::is_same<T, decayed_t>{});
+
         auto &name = type_name<T>();
         const auto flags = type_flags<T>::value;
-        const auto id = MetaType::registerMetaType(name.c_str(), sizeof(T), flags);
+        const auto id = MetaType::registerMetaType(name.c_str(), sizeof(T), decay, flags);
         meta_id.store(id.value());
         return id;
+    }
+
+    static MetaType_ID decay_selector(std::false_type)
+    {
+        return metaTypeId<decayed_t>();
+    }
+
+    static MetaType_ID decay_selector(std::true_type)
+    {
+        return MetaType_ID{};
     }
 
     // declaration
@@ -235,6 +250,47 @@ inline MetaType_ID metaTypeId()
 {
     return internal::meta_type<T>::get();
 }
+
+//--------------------------------------------------------------------------------------------------------------------------------
+// Convertors
+//--------------------------------------------------------------------------------------------------------------------------------
+
+struct DLL_LOCAL ConvertFunctionBase
+{
+    using converter_t = bool (*) (const ConvertFunctionBase&, const void*, void*);
+
+    explicit ConvertFunctionBase(converter_t converter)
+        : m_converter(converter)
+    {}
+
+    bool operator()(const void *from, void *to)
+    {
+        return m_converter(*this, from, to);
+    }
+private:
+    converter_t m_converter;
+};
+
+template<typename From, typename To, typename F>
+struct ConvertFunctor: ConvertFunctionBase
+{
+    explicit ConvertFunctor(F func)
+        : ConvertFunctionBase{convert}, m_func{std::move(func)}
+    {}
+
+    static bool convert(const ConvertFunctionBase &self, const void *from, void *to)
+    {
+        return true;
+    }
+
+private:
+    F m_func;
+};
+
+
+//--------------------------------------------------------------------------------------------------------------------------------
+// FUNDAMENTALS
+//--------------------------------------------------------------------------------------------------------------------------------
 
 #define FUNDAMENTAL_METATYPEID(NAME, TYPEID) \
 template<> inline MetaType_ID metaTypeId<NAME>() \

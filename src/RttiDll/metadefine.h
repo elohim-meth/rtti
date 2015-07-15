@@ -69,6 +69,18 @@ struct ConstructorInvoker: IConstructorInvoker
         argument_array_t args = {
             &arg0, &arg1, &arg2, &arg3, &arg4,
             &arg5, &arg6, &arg7, &arg8, &arg9};
+
+        auto count = sizeof...(Args);
+        for (const auto &item: args)
+        {
+            if (item->empty())
+                break;
+            --count;
+        }
+
+        if (count != 0)
+            throw invoke_error{"Invalid number of arguments"};
+
         return invoke_imp(args, argument_indexes_t{});
     }
 
@@ -172,12 +184,9 @@ public:
         m_currentItem = m_currentContainer;
 
         meta_define<C, self_t> result {m_currentItem, m_currentContainer, m_containerStack};
-        if (std::is_default_constructible<C>::value)
-            result._constructor<>();
-        if (std::is_copy_constructible<C>::value)
-            result._constructor<const C&>();
-        if (std::is_move_constructible<C>::value)
-            result._constructor<C&&>();
+        result.default_constructor_selector(std::is_default_constructible<C>{});
+        result.copy_constructor_selector(std::is_copy_constructible<C>{});
+        result.move_constructor_selector(std::is_move_constructible<C>{});
         return std::move(result);
     }
 
@@ -259,7 +268,8 @@ public:
         assert(category == mcatClass);
         if (category == mcatClass)
         {
-            MetaConstructor::create(std::unique_ptr<IConstructorInvoker>{new internal::ConstructorInvoker<T, Args...>{}},
+            MetaConstructor::create(std::unique_ptr<IConstructorInvoker>{
+                                        new internal::ConstructorInvoker<T, Args...>{}},
                                     *m_currentContainer);
         }
         return std::move(*this);
@@ -308,6 +318,27 @@ private:
         EXPAND(
             item->addBaseClass(metaTypeId<typename typelist_get<L, I>::type>())
         );
+    }
+
+    void default_constructor_selector(std::false_type)
+    {}
+    void default_constructor_selector(std::true_type)
+    {
+        _constructor();
+    }
+
+    void copy_constructor_selector(std::false_type)
+    {}
+    void copy_constructor_selector(std::true_type)
+    {
+        _constructor<const T&>();
+    }
+
+    void move_constructor_selector(std::false_type)
+    {}
+    void move_constructor_selector(std::true_type)
+    {
+        _constructor<T&&>();
     }
 
     template<typename> friend class internal::DefinitionCallbackHolder;
