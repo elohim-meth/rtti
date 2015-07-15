@@ -32,13 +32,18 @@ int main(int argc, char* argv[])
         s->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto c = rtti::MetaClass::findByTypeId(rtti::metaTypeId<std::vector<int>>());
-        if (c)
-            std::cout << c->qualifiedName() << std::endl;
+        auto vec = rtti::MetaClass::findByTypeId(rtti::metaTypeId<std::vector<int>>());
+        if (vec)
+        {
+            std::cout << vec->qualifiedName() << std::endl;
+            auto construct = vec->getConstructor("constructor(std::initializer_list<int>)");
+            if (construct)
+                auto v = construct->invoke(std::initializer_list<int>{1, 2, 3, 4, 5});
+        }
 
         auto t = g->getNamespace("test");
-        c = t->getClass("TestBase1");
-        if (c)
+        vec = t->getClass("TestBase1");
+        if (vec)
         {
 //            auto e = c->getEnum("TestEnum");
 //            if (e)
@@ -63,17 +68,17 @@ int main(int argc, char* argv[])
 //                });
 //            }
 
-            auto dc = c->defaultConstructor();
+            auto dc = vec->defaultConstructor();
             if (dc)
             {
                 std::cout << "\ndefault\n";
                 auto v = dc->invoke();
-                auto cc = c->copyConstructor();
+                auto cc = vec->copyConstructor();
                 if (cc)
                 {
                     std::cout << "copy \n";
                     auto vc = cc->invoke(v);
-                    auto mc = c->moveConstructor();
+                    auto mc = vec->moveConstructor();
                     if (mc)
                     {
                         std::cout << "move \n";
