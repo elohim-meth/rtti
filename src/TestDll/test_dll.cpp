@@ -29,12 +29,11 @@ public:
 class TestBase2 {};
 class TestDerived: public TestBase1, public TestBase2 {};
 
+
 template<typename T>
 void define_std_vector(rtti::meta_define<std::vector<T>> define)
 {
-    define
-        ._attribute("1", "Standard vector<T>")
-    ;
+    (void) define;
 }
 
 template<typename T>
@@ -72,6 +71,7 @@ void test_register()
                 ._element("Red", TestBase1::Color::Red)
                 ._element("Green", TestBase1::Color::Green)
                 ._element("Blue", TestBase1::Color::Blue)
+            ._constructor<int, const std::string&>()
         ._end()
         ._class<TestBase2>("TestBase2")
         ._end()
@@ -93,6 +93,7 @@ int main(int argc, char* argv[])
         auto lambda = [](const std::string &name, const rtti::variant &value)
         {
             std::cout << name << std::endl;
+            (void) value;
         };
 
         auto g = rtti::MetaNamespace::global();
@@ -137,21 +138,20 @@ int main(int argc, char* argv[])
                 });
             }
 
-
-            std::cout << "\ndefault\n";
             auto dc = c->defaultConstructor();
             if (dc)
             {
+                std::cout << "\ndefault\n";
                 auto v = dc->invoke();
-                std::cout << "copy \n";
                 auto cc = c->copyConstructor();
                 if (cc)
                 {
+                    std::cout << "copy \n";
                     auto vc = cc->invoke(v);
-                    std::cout << "move \n";
                     auto mc = c->moveConstructor();
                     if (mc)
                     {
+                        std::cout << "move \n";
                         auto vm = mc->invoke(std::move(vc));
                     }
                 }
