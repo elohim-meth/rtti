@@ -5,52 +5,14 @@
 
 #include <debug.h>
 
-//void test_register()
-//{
-//    rtti::global_define()
-//        ._attribute("Attribute 1", 100)
-//        ._attribute("Attribute 1", 200)
-//        ._namespace("std")._lazy([](rtti::meta_define<void> define)
-//            {
-//                define
-//                    ._attribute("Attribute 2", 300)
-//                    ._class<std::string>("string")
-//                    ._end()
-//                ;
-//            })
-//        ._end()
-//        ._attribute("Attribute 3", std::string{"Hello, World!"})
-//        ._class<TestBase1>("TestBase1")
-//            ._enum<TestBase1::TestEnum>("TestEnum")
-//                ._element("te1", TestBase1::te1)
-//                ._element("te2", TestBase1::te2)
-//            ._enum<TestBase1::Color>("Color")
-//                ._element("Red", TestBase1::Color::Red)
-//                ._element("Green", TestBase1::Color::Green)
-//                ._element("Blue", TestBase1::Color::Blue)
-//            ._constructor<int, const std::string&>()
-//        ._end()
-//        ._class<TestBase2>("TestBase2")
-//        ._end()
-//        ._class<TestDerived>("TestDerived")
-//            ._base<TestBase1, TestBase2>()
-//        ._end()
-//    ;
-//}
-
-
-
-
 int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
         test_variant_1();
 
-//        test_register();
-        register_std_vector<int>();
-//        register_std_vector<std::string>();
-//        register_std_vector<const char*>();
+        register_rtti();
+
 
         auto lambda = [](const std::string &name, const rtti::variant &value)
         {
@@ -74,7 +36,8 @@ int main(int argc, char* argv[])
         if (c)
             std::cout << c->qualifiedName() << std::endl;
 
-        c = g->getClass("TestBase1");
+        auto t = g->getNamespace("test");
+        c = t->getClass("TestBase1");
         if (c)
         {
 //            auto e = c->getEnum("TestEnum");

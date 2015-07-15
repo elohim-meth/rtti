@@ -1,5 +1,7 @@
 ﻿#include "test_variant.h"
 
+#include <debug.h>
+
 namespace {
 
 class TestQPointer;
@@ -8,7 +10,7 @@ class PrivatePimpl {
 public:
     PrivatePimpl(const char *value)
         : m_value{value}
-    {}
+    { PRINT_PRETTY_FUNC }
 
 private:
     std::string m_value;
@@ -18,16 +20,19 @@ private:
 
 class TestQPointer {
 public:
-    TestQPointer() noexcept = default;
+    TestQPointer()
+    { PRINT_PRETTY_FUNC }
 
     TestQPointer(const char *value)
         : m_pImpl(new PrivatePimpl{value})
     {
+        PRINT_PRETTY_FUNC
         m_pImpl->m_qImpl = this;
     }
 
     TestQPointer(const TestQPointer &other)
     {
+        PRINT_PRETTY_FUNC
         if (other.m_pImpl)
         {
             m_pImpl = new PrivatePimpl(*other.m_pImpl);
@@ -37,11 +42,13 @@ public:
 
     TestQPointer(TestQPointer &&other) noexcept
     {
+        PRINT_PRETTY_FUNC
         swap(other);
     }
 
     TestQPointer& operator=(const TestQPointer &other)
     {
+        PRINT_PRETTY_FUNC
         if (m_pImpl != other.m_pImpl)
             TestQPointer{other}.swap(*this);
         return *this;
@@ -49,6 +56,7 @@ public:
 
     TestQPointer& operator=(TestQPointer &&other) noexcept
     {
+        PRINT_PRETTY_FUNC
         if (m_pImpl != other.m_pImpl)
             TestQPointer{std::move(other)}.swap(*this);
         return *this;
@@ -56,6 +64,7 @@ public:
 
     void swap(TestQPointer &other) noexcept
     {
+        PRINT_PRETTY_FUNC
         std::swap(m_pImpl, other.m_pImpl);
         if (m_pImpl)
             m_pImpl->m_qImpl = this;
@@ -64,8 +73,9 @@ public:
     }
 
 
-    ~TestQPointer()
+    virtual ~TestQPointer()
     {
+        PRINT_PRETTY_FUNC
         if (m_pImpl)
             delete m_pImpl;
     }
@@ -99,10 +109,16 @@ void test_variant_1()
     auto q2 = std::move(q1);
     q2.check();
 
+
+    std::printf("\n");
+
     rtti::variant v1 = TestQPointer{"Hello, World"};
-    rtti::variant v2 = std::move(v1);
+    rtti::variant v2 = TestQPointer{"qwerty"};
+    v1 = std::move(v1);
     if (v1)
         v1.value<TestQPointer>().check();
     if (v2)
         v2.value<TestQPointer>().check();
+
+    std::printf("\n");
 }

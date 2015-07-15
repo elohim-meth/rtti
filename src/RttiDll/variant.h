@@ -20,8 +20,10 @@ namespace internal {
 template<typename T>
 using decay_t = typename std::decay<T>::type;
 
+constexpr std::size_t STORAGE_SIZE = sizeof(void*) * 2;
+
 template<typename T,
-         bool Small = sizeof(typename std::decay<T>::type) <= sizeof(void*),
+         bool Small = sizeof(typename std::decay<T>::type) <= STORAGE_SIZE,
          bool Safe = std::is_move_constructible<T>::value>
 using is_inplace = std::integral_constant<bool, Small && Safe>;
 
@@ -34,9 +36,11 @@ using is_polymorphic = typename std::conditional<
     >::value,
     std::true_type, std::false_type>::type;
 
-union DLL_PUBLIC variant_type_storage {
+
+union DLL_PUBLIC variant_type_storage
+{
+    alignas(STORAGE_SIZE) std::uint8_t buffer[STORAGE_SIZE];
     void *ptr;
-    std::aligned_storage<sizeof(void*), sizeof(void*)>::type buffer;
 };
 
 struct DLL_PUBLIC variant_function_table
@@ -93,7 +97,7 @@ struct function_table_selector<T, true>
     static void move(variant_type_storage &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_move_constructible<T>::value)
     {
-        auto ptr = reinterpret_cast<const T*>(&src.buffer);
+        auto ptr = reinterpret_cast<T*>(&src.buffer);
         new (&dst.buffer) T(std::move(*ptr));
     }
 
@@ -235,7 +239,7 @@ public:
     {
         manager->f_destroy(storage);
         manager = internal::function_table_for<void>();
-        storage = {nullptr};
+        storage = { .buffer = {0} };;
     }
 
     void clear() noexcept
@@ -255,9 +259,12 @@ public:
 
     void swap(variant &other) noexcept
     {
-        manager->f_move(storage, other.storage);
+        storage_t temporary = { .buffer = {0} };
+        manager->f_move(storage, temporary);
+        other.manager->f_move(other.storage, storage);
+        manager->f_move(temporary, other.storage);
+
         std::swap(manager, other.manager);
-        //std::swap(storage, other.storage);
     }
 
     MetaType_ID type() const noexcept
@@ -319,7 +326,7 @@ private:
     using storage_t = internal::variant_type_storage;
 
     table_t* manager = internal::function_table_for<void>();
-    storage_t storage = {nullptr};
+    storage_t storage = { .buffer = {0} };
 };
 
 namespace internal {
