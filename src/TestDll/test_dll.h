@@ -1,6 +1,8 @@
 ﻿#include <rtti.h>
 #include <debug.h>
 
+namespace test {
+
 class Absolute {};
 
 class Empty
@@ -52,7 +54,7 @@ public:
         v.i = 0;
         return *this;
     }
-    ~Small() noexcept
+    virtual ~Small() noexcept
     {
         PRINT_PRETTY_FUNC
     }
@@ -99,3 +101,7 @@ public:
 //    std::size_t i1;
 //    std::size_t i2;
 //};
+
+void register_test_namespace();
+
+} // namespace test

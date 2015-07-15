@@ -1,5 +1,6 @@
 ﻿set(SOURCES
     ./test_dll.cpp
+    ./test_register.cpp
 )
 
 set(HEADERS
