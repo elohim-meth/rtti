@@ -22,7 +22,7 @@ using decay_t = typename std::decay<T>::type;
 
 template<typename T,
          bool Small = sizeof(typename std::decay<T>::type) <= sizeof(void*),
-         bool Safe = std::is_nothrow_move_constructible<T>::value>
+         bool Safe = std::is_move_constructible<T>::value>
 using is_inplace = std::integral_constant<bool, Small && Safe>;
 
 template<typename T>
@@ -44,20 +44,24 @@ struct DLL_PUBLIC variant_function_table
     using type_t = MetaType_ID(*)();
     using access_t = void* (*) (const variant_type_storage&);
     using clone_t = void (*) (const variant_type_storage&, variant_type_storage&);
+    using move_t = void (*) (variant_type_storage&, variant_type_storage&);
     using destroy_t = void (*) (variant_type_storage&);
 
     const type_t f_type = nullptr;
     const access_t f_access = nullptr;
     const clone_t f_clone = nullptr;
+    const move_t f_move = nullptr;
     const destroy_t f_destroy = nullptr;
 
     variant_function_table(type_t type,
                        access_t access,
                        clone_t clone,
+                       move_t move,
                        destroy_t destroy) noexcept
         : f_type{type},
           f_access{access},
           f_clone{clone},
+          f_move{move},
           f_destroy{destroy}
     {}
 };
@@ -84,6 +88,13 @@ struct function_table_selector<T, true>
     {
         auto ptr = reinterpret_cast<const T*>(&src.buffer);
         new (&dst.buffer) T(*ptr);
+    }
+
+    static void move(variant_type_storage &src, variant_type_storage &dst)
+        noexcept(std::is_nothrow_move_constructible<T>::value)
+    {
+        auto ptr = reinterpret_cast<const T*>(&src.buffer);
+        new (&dst.buffer) T(std::move(*ptr));
     }
 
     static void destroy(variant_type_storage &value) noexcept
@@ -114,6 +125,11 @@ struct function_table_selector<T, false>
         dst.ptr = new T(*ptr);
     }
 
+    static void move(variant_type_storage &src, variant_type_storage &dst) noexcept
+    {
+        std::swap(src.ptr, dst.ptr);
+    }
+
     static void destroy(variant_type_storage &value) noexcept
     {
         auto ptr = static_cast<const T*>(value.ptr);
@@ -128,6 +144,7 @@ inline const variant_function_table* function_table_for()
         &function_table_selector<T>::type,
         &function_table_selector<T>::access,
         &function_table_selector<T>::clone,
+        &function_table_selector<T>::move,
         &function_table_selector<T>::destroy
     };
     return &result;
@@ -140,6 +157,7 @@ inline const variant_function_table* function_table_for<void>()
         [] () noexcept -> MetaType_ID { return metaTypeId<void>(); },
         [] (const variant_type_storage&) noexcept -> void* { return nullptr; },
         [] (const variant_type_storage&, variant_type_storage&) noexcept {},
+        [] (variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&) noexcept {}
     };
     return &result;
@@ -237,8 +255,9 @@ public:
 
     void swap(variant &other) noexcept
     {
+        manager->f_move(storage, other.storage);
         std::swap(manager, other.manager);
-        std::swap(storage, other.storage);
+        //std::swap(storage, other.storage);
     }
 
     MetaType_ID type() const noexcept
