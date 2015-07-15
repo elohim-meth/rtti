@@ -1,4 +1,5 @@
-﻿#include <rtti.h>
+﻿#include "test_register.h"
+
 #include <debug.h>
 
 namespace test {
@@ -101,7 +102,5 @@ public:
 //    std::size_t i1;
 //    std::size_t i2;
 //};
-
-void register_test_namespace();
 
 } // namespace test

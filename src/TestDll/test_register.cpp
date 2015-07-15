@@ -1,5 +1,7 @@
 ﻿#include "test_dll.h"
 
+#include <string>
+
 namespace {
 
 void define_test_namespace(rtti::meta_define<void> define)
@@ -19,13 +21,32 @@ void define_test_namespace(rtti::meta_define<void> define)
     ;
 }
 
+void define_std_string(rtti::meta_define<std::string> define)
+{
+    define
+        ._constructor<const char*>()
+    ;
 }
 
-void register_test_namespace()
+void define_std_namespace(rtti::meta_define<void> define)
+{
+    define
+        ._class<std::string>("string")
+            ._lazy(define_std_string)
+        ._end()
+    ;
+}
+
+}
+
+void register_rtti()
 {
     rtti::global_define()
         ._namespace("test")
             ._lazy(define_test_namespace)
+        ._end()
+        ._namespace("std")
+            ._lazy(define_std_namespace)
         ._end();
     ;
 }

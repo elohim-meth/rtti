@@ -5,6 +5,7 @@
 
 set(HEADERS
     ./test_dll.h
+    ./test_register.cpp
 )
 
 add_executable(TestDll ${SOURCES} ${HEADERS})

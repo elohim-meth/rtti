@@ -30,24 +30,6 @@ class TestBase2 {};
 class TestDerived: public TestBase1, public TestBase2 {};
 
 
-template<typename T>
-void define_std_vector(rtti::meta_define<std::vector<T>> define)
-{
-    (void) define;
-}
-
-template<typename T>
-void register_std_vector()
-{
-    rtti::global_define()
-        ._namespace("std")
-            ._class<std::vector<T>>("vector<" + type_name<T>() + ">")
-                ._lazy(&define_std_vector<T>)
-            ._end()
-        ._end()
-    ;
-}
-
 void test_register()
 {
     rtti::global_define()
