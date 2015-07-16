@@ -5,88 +5,89 @@
 #include <bits/functional_hash.h>
 #include <type_traits>
 
-class CString
+template<typename CharT>
+class cstring_base
 {
 public:
     template<std::size_t N>
-    constexpr explicit CString(const char (&data)[N])
+    constexpr explicit cstring_base(const CharT (&data)[N])
         : m_data{data}, m_length{N}
     {}
 
     template<typename T,
-             typename = typename std::enable_if<std::is_same<T, const char*>::value>::type>
-    explicit CString(T data)
-        : m_data{static_cast<const char*>(data)},
-          m_length{m_data ? std::char_traits<char>::length(m_data) : 0}
+             typename = typename std::enable_if<std::is_same<T, const CharT*>::value>::type>
+    explicit cstring_base(T data)
+        : m_data{static_cast<const CharT*>(data)},
+          m_length{m_data ? std::char_traits<CharT>::length(m_data) : 0}
     {}
 
-    CString() noexcept = default;
-    CString(const CString&) noexcept = default;
-    CString(CString&&) noexcept = default;
-    CString& operator=(const CString&) noexcept = default;
-    CString& operator=(CString&&) noexcept = default;
+    cstring_base() noexcept = default;
+    cstring_base(const cstring_base&) noexcept = default;
+    cstring_base(cstring_base&&) noexcept = default;
+    cstring_base& operator=(const cstring_base&) noexcept = default;
+    cstring_base& operator=(cstring_base&&) noexcept = default;
 
-    bool operator==(const CString &other) const
+    bool operator==(const cstring_base &other) const
     {
         return (compare(other) == 0);
     }
 
-    bool operator==(const char *other) const
+    bool operator==(const CharT *other) const
     {
-        return (compare(CString{other}) == 0);
+        return (compare(cstring_base{other}) == 0);
     }
 
-    bool operator!=(const CString &other) const
+    bool operator!=(const cstring_base &other) const
     {
         return !(*this == other);
     }
 
-    bool operator!=(const char *other) const
+    bool operator!=(const CharT *other) const
     {
-        return !(*this == CString{other});
+        return !(*this == cstring_base{other});
     }
 
-    bool operator<(const CString &other) const
+    bool operator<(const cstring_base &other) const
     {
         return (compare(other) < 0);
     }
 
-    bool operator<(const char *other) const
+    bool operator<(const CharT *other) const
     {
-        return (compare(CString{other}) < 0);
+        return (compare(cstring_base{other}) < 0);
     }
 
-    bool operator<=(const CString &other) const
+    bool operator<=(const cstring_base &other) const
     {
         return (compare(other) <= 0);
     }
 
-    bool operator<=(const char *other) const
+    bool operator<=(const CharT *other) const
     {
-        return (compare(CString{other}) <= 0);
+        return (compare(cstring_base{other}) <= 0);
 }
 
-    bool operator>(const CString &other) const
+    bool operator>(const cstring_base &other) const
     {
         return (compare(other) > 0);
     }
 
-    bool operator>(const char *other) const
+    bool operator>(const CharT *other) const
     {
-            return (compare(CString{other}) > 0);
+            return (compare(cstring_base{other}) > 0);
     }
 
-    bool operator>=(const CString &other) const
+    bool operator>=(const cstring_base &other) const
     {
         return (compare(other) >= 0);
     }
 
-    bool operator>=(const char *other) const
+    bool operator>=(const CharT *other) const
     {
-            return (compare(CString{other}) >= 0);
+            return (compare(cstring_base{other}) >= 0);
     }
 
-    const char* data() const noexcept
+    const CharT* data() const noexcept
     {
         return m_data;
     }
@@ -101,7 +102,7 @@ public:
         return (m_data != nullptr);
     }
 private:
-    int compare(const CString &other) const
+    int compare(const cstring_base &other) const
     {
         if (m_length < other.m_length)
             return -1;
@@ -109,19 +110,20 @@ private:
             return 1;
         if (m_length == 0)
             return 0;
-        return std::char_traits<char>::compare(m_data, other.m_data, m_length);
+        return std::char_traits<CharT>::compare(m_data, other.m_data, m_length);
     }
 
-    const char *m_data = nullptr;
+    const CharT *m_data = nullptr;
     std::size_t m_length = 0;
 };
 
 namespace std
 {
-template<>
-struct hash<CString>: public std::__hash_base<std::size_t, CString>
+template<typename CharT>
+struct hash<cstring_base<CharT>>: public std::__hash_base<std::size_t, cstring_base<CharT>>
 {
-    result_type operator()(const argument_type &value) const
+    using this_t = hash<cstring_base<CharT>>;
+    typename this_t::result_type operator()(const typename this_t::argument_type &value) const
     {
         if (!value)
             return 0;
@@ -131,6 +133,11 @@ struct hash<CString>: public std::__hash_base<std::size_t, CString>
 };
 
 } // std
+
+using CString = cstring_base<char>;
+using WCStrin = cstring_base<wchar_t>;
+using CString_16 = cstring_base<char16_t>;
+using CString_32 = cstring_base<char32_t>;
 
 #endif // CSTRING_H
 

@@ -343,13 +343,13 @@ template<> inline constexpr MetaType_ID metaTypeId<void>()
     F(const char*, 39) \
     F(const wchar_t*, 40) \
 
-#define DEFINE_STATIC_METATYPEID(NAME, TYPEID) \
+#define DEFINE_STATIC_METATYPE_ID(NAME, TYPEID) \
 template<> inline constexpr MetaType_ID metaTypeId<NAME>() \
 { return MetaType_ID{TYPEID}; }
 
-FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_METATYPEID)
+FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_METATYPE_ID)
 
-#undef DEFINE_STATIC_METATYPEID
+#undef DEFINE_STATIC_METATYPE_ID
 
 } //namespace rtti
 

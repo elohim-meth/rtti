@@ -11,15 +11,15 @@ namespace rtti {
 
 namespace {
 
-#define DEFINE_TYPE_INFO(NAME, TYPEID) \
+#define DEFINE_STATIC_TYPE_INFO(NAME, TYPEID) \
 TypeInfo{CString{#NAME}, sizeof(NAME), MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, type_flags<NAME>::value},
 
 static constexpr std::array<TypeInfo, 41> fundamentalTypes = {
     TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, type_flags<void>::value},
-    FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_TYPE_INFO)
+    FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
     };
 
-#undef DEFINE_TYPE_INFO
+#undef DEFINE_STATIC_TYPE_INFO
 
 class CustomTypes {
 public:
@@ -41,15 +41,16 @@ private:
 };
 
 
-#define DEFINE_TYPE_MAP(NAME, INDEX) \
+#define DEFINE_STATIC_TYPE_MAP(NAME, INDEX) \
 {CString{#NAME}, INDEX},
 
 CustomTypes::CustomTypes()
     : m_names {
           {CString{"void"}, 0},
-          FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_TYPE_MAP)
+          FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_MAP)
       }
 {}
+#undef DEFINE_STATIC_TYPE_MAP
 
 const TypeInfo* CustomTypes::getTypeInfo(MetaType_ID typeId) const
 {
