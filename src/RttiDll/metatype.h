@@ -160,6 +160,11 @@ public:
     const char* typeName() const noexcept;
     MetaType::TypeFlags typeFlags() const noexcept;
 
+    template<typename From, typename To, typename F>
+    static void registerConverter(F func);
+    template<typename From, typename To>
+    static void registerConverter();
+
 private:
     template<typename T>
     friend struct internal::meta_type;
@@ -255,6 +260,12 @@ inline MetaType_ID metaTypeId()
 // Convertors
 //--------------------------------------------------------------------------------------------------------------------------------
 
+template<typename From, typename To>
+To default_convert(From value)
+{
+    return value;
+}
+
 struct DLL_LOCAL ConvertFunctionBase
 {
     using converter_t = bool (*) (const ConvertFunctionBase&, const void*, void*);
@@ -293,6 +304,19 @@ private:
     F m_func;
 };
 
+template<typename From, typename To, typename F>
+void MetaType::registerConverter(F func)
+{
+    static ConvertFunctor<From, To, F> converter{std::move(func)};
+}
+
+template<typename From, typename To>
+void MetaType::registerConverter()
+{
+    registerConverter<From, To>(default_convert<From, To>);
+}
+
+
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // FUNDAMENTALS
@@ -310,10 +334,10 @@ template<> inline constexpr MetaType_ID metaTypeId<void>()
     F(unsigned short, 6) \
     F(int, 7) \
     F(unsigned int, 8) \
-    F(long, 9) \
-    F(unsigned long, 10) \
-    F(long long, 11) \
-    F(unsigned long long, 12) \
+    F(long int, 9) \
+    F(long unsigned int, 10) \
+    F(long long int, 11) \
+    F(long long unsigned int, 12) \
     F(float, 13) \
     F(double, 14) \
     F(long double, 15) \
@@ -329,10 +353,10 @@ template<> inline constexpr MetaType_ID metaTypeId<void>()
     F(unsigned short*, 25) \
     F(int*, 26) \
     F(unsigned int*, 27) \
-    F(long*, 28) \
-    F(unsigned long*, 29) \
-    F(long long*, 30) \
-    F(unsigned long long*, 31) \
+    F(long int*, 28) \
+    F(long unsigned int*, 29) \
+    F(long long int*, 30) \
+    F(long long unsigned int*, 31) \
     F(float*, 32) \
     F(double*, 33) \
     F(long double*, 34) \
