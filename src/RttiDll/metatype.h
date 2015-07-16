@@ -263,9 +263,9 @@ struct DLL_LOCAL ConvertFunctionBase
         : m_converter(converter)
     {}
 
-    bool operator()(const void *from, void *to)
+    bool operator()(const void *in, void *out)
     {
-        return m_converter(*this, from, to);
+        return m_converter(*this, in, out);
     }
 private:
     converter_t m_converter;
@@ -274,12 +274,18 @@ private:
 template<typename From, typename To, typename F>
 struct ConvertFunctor: ConvertFunctionBase
 {
+    using this_t = ConvertFunctor<From, To, F>;
+
     explicit ConvertFunctor(F func)
         : ConvertFunctionBase{convert}, m_func{std::move(func)}
     {}
 
-    static bool convert(const ConvertFunctionBase &self, const void *from, void *to)
+    static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
     {
+        auto _this = static_cast<this_t>(self);
+        auto from = static_cast<const From*>(in);
+        auto to = static_cast<To*>(out);
+        *to = _this->m_func(*from);
         return true;
     }
 

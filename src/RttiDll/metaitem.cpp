@@ -71,7 +71,7 @@ private:
 template<typename T>
 inline void NamedVariantList::set(const char *name, T &&value)
 {
-    if (strnlen(name, 1) == 0)
+    if (!name || strnlen(name, 1) == 0)
         return;
 
     auto search = m_names.find(name);
@@ -97,7 +97,7 @@ inline const variant& NamedVariantList::get(std::size_t index) const noexcept
 
 inline const variant& NamedVariantList::get(const char *name) const
 {
-    if (strnlen(name, 1) > 0)
+    if (name && strnlen(name, 1) > 0)
     {
         auto search = m_names.find(name);
         if (search != std::end(m_names)) {
@@ -237,7 +237,7 @@ inline MetaItem* MetaItemList::get(std::size_t index) const noexcept
 inline MetaItem* MetaItemList::get(const char *name) const
 {
     MetaItem *result = nullptr;
-    if (strnlen(name, 1) > 0)
+    if (name && std::strlen(name) > 0)
     {
         auto it = m_names.find(name);
         if (it != std::end(m_names)) {
