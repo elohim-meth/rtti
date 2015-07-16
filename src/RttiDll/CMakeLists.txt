@@ -7,6 +7,7 @@
 
 set(HEADERS
     ./global.h
+    ./c_string.h
     ./argument.h
     ./metatype.h
     ./metatype_p.h

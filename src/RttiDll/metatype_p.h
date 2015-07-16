@@ -2,6 +2,7 @@
 #define METATYPE_P_H
 
 #include "metatype.h"
+#include "c_string.h"
 #include "global.h"
 
 namespace rtti {
@@ -9,19 +10,17 @@ namespace rtti {
 class MetaClass;
 
 struct DLL_LOCAL TypeInfo {
-    const char *name;
-    std::size_t nameLength;
+    CString name;
     const unsigned int size;
     const MetaType_ID type;
     const MetaType_ID decay;
     const MetaType::TypeFlags flags;
     MetaClass *metaClass = nullptr;
 
-    TypeInfo(const char *name, unsigned int size,
+    TypeInfo(CString name, unsigned int size,
              MetaType_ID type, MetaType_ID decay,
              MetaType::TypeFlags flags)
-        : name{name},
-          nameLength{std::strlen(name)},
+        : name{std::move(name)},
           size{size},
           type{type},
           decay{decay},

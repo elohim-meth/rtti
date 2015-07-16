@@ -298,55 +298,58 @@ private:
 // FUNDAMENTALS
 //--------------------------------------------------------------------------------------------------------------------------------
 
-#define FUNDAMENTAL_METATYPEID(NAME, TYPEID) \
-template<> inline MetaType_ID metaTypeId<NAME>() \
+template<> inline constexpr MetaType_ID metaTypeId<void>()
+{ return MetaType_ID{0}; }
+
+#define FOR_EACH_FUNDAMENTAL_TYPE(F)\
+    F(bool, 1) \
+    F(char, 2) \
+    F(signed char, 3) \
+    F(unsigned char, 4) \
+    F(short, 5) \
+    F(unsigned short, 6) \
+    F(int, 7) \
+    F(unsigned int, 8) \
+    F(long, 9) \
+    F(unsigned long, 10) \
+    F(long long, 11) \
+    F(unsigned long long, 12) \
+    F(float, 13) \
+    F(double, 14) \
+    F(long double, 15) \
+    F(char16_t, 16) \
+    F(char32_t, 17) \
+    F(wchar_t, 18) \
+    F(void*, 19) \
+    F(bool*, 20) \
+    F(char*, 21) \
+    F(signed char*, 22) \
+    F(unsigned char*, 23) \
+    F(short*, 24) \
+    F(unsigned short*, 25) \
+    F(int*, 26) \
+    F(unsigned int*, 27) \
+    F(long*, 28) \
+    F(unsigned long*, 29) \
+    F(long long*, 30) \
+    F(unsigned long long*, 31) \
+    F(float*, 32) \
+    F(double*, 33) \
+    F(long double*, 34) \
+    F(char16_t*, 35) \
+    F(char32_t*, 36) \
+    F(wchar_t*, 37) \
+    F(const void*, 38) \
+    F(const char*, 39) \
+    F(const wchar_t*, 40) \
+
+#define DEFINE_STATIC_METATYPEID(NAME, TYPEID) \
+template<> inline constexpr MetaType_ID metaTypeId<NAME>() \
 { return MetaType_ID{TYPEID}; }
 
-FUNDAMENTAL_METATYPEID(void, 0)
-FUNDAMENTAL_METATYPEID(bool, 1)
-FUNDAMENTAL_METATYPEID(char, 2)
-FUNDAMENTAL_METATYPEID(signed char, 3)
-FUNDAMENTAL_METATYPEID(unsigned char, 4)
-FUNDAMENTAL_METATYPEID(short, 5)
-FUNDAMENTAL_METATYPEID(unsigned short, 6)
-FUNDAMENTAL_METATYPEID(int, 7)
-FUNDAMENTAL_METATYPEID(unsigned int, 8)
-FUNDAMENTAL_METATYPEID(long, 9)
-FUNDAMENTAL_METATYPEID(unsigned long, 10)
-FUNDAMENTAL_METATYPEID(long long, 11)
-FUNDAMENTAL_METATYPEID(unsigned long long, 12)
-FUNDAMENTAL_METATYPEID(float, 13)
-FUNDAMENTAL_METATYPEID(double, 14)
-FUNDAMENTAL_METATYPEID(long double, 15)
-FUNDAMENTAL_METATYPEID(char16_t, 16)
-FUNDAMENTAL_METATYPEID(char32_t, 17)
-FUNDAMENTAL_METATYPEID(wchar_t, 18)
-//
-FUNDAMENTAL_METATYPEID(void*, 19)
-FUNDAMENTAL_METATYPEID(bool*, 20)
-FUNDAMENTAL_METATYPEID(char*, 21)
-FUNDAMENTAL_METATYPEID(signed char*, 22)
-FUNDAMENTAL_METATYPEID(unsigned char*, 23)
-FUNDAMENTAL_METATYPEID(short*, 24)
-FUNDAMENTAL_METATYPEID(unsigned short*, 25)
-FUNDAMENTAL_METATYPEID(int*, 26)
-FUNDAMENTAL_METATYPEID(unsigned int*, 27)
-FUNDAMENTAL_METATYPEID(long*, 28)
-FUNDAMENTAL_METATYPEID(unsigned long*, 29)
-FUNDAMENTAL_METATYPEID(long long*, 30)
-FUNDAMENTAL_METATYPEID(unsigned long long*, 31)
-FUNDAMENTAL_METATYPEID(float*, 32)
-FUNDAMENTAL_METATYPEID(double*, 33)
-FUNDAMENTAL_METATYPEID(long double*, 34)
-FUNDAMENTAL_METATYPEID(char16_t*, 35)
-FUNDAMENTAL_METATYPEID(char32_t*, 36)
-FUNDAMENTAL_METATYPEID(wchar_t*, 37)
+FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_METATYPEID)
 
-FUNDAMENTAL_METATYPEID(const void*, 38)
-FUNDAMENTAL_METATYPEID(const char*, 39)
-FUNDAMENTAL_METATYPEID(const wchar_t*, 40)
-
-#undef FUNDAMENTAL_METATYPEID
+#undef DEFINE_STATIC_METATYPEID
 
 } //namespace rtti
 

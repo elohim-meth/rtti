@@ -32,7 +32,8 @@ int main(int argc, char* argv[])
         s->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto vec = rtti::MetaClass::findByTypeId(rtti::metaTypeId<std::vector<int>>());
+        auto mt = rtti::MetaType{type_name<std::vector<int>>().c_str()};
+        auto vec = rtti::MetaClass::findByTypeId(mt.typeId());
         if (vec)
         {
             std::cout << vec->qualifiedName() << std::endl;

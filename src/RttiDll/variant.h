@@ -239,7 +239,7 @@ public:
     {
         manager->f_destroy(storage);
         manager = internal::function_table_for<void>();
-        storage = { .buffer = {0} };;
+        storage = {.buffer = {0}};
     }
 
     void clear() noexcept
@@ -259,7 +259,7 @@ public:
 
     void swap(variant &other) noexcept
     {
-        storage_t temporary = { .buffer = {0} };
+        storage_t temporary = {.buffer = {0}};
         manager->f_move(storage, temporary);
         other.manager->f_move(other.storage, storage);
         manager->f_move(temporary, other.storage);
@@ -326,7 +326,7 @@ private:
     using storage_t = internal::variant_type_storage;
 
     table_t* manager = internal::function_table_for<void>();
-    storage_t storage = { .buffer = {0} };
+    storage_t storage = {.buffer = {0}};
 };
 
 namespace internal {

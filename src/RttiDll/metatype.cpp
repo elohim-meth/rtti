@@ -4,66 +4,25 @@
 #include <ostream>
 #include <mutex>
 #include <vector>
-#include <cstring>
+#include <unordered_map>
 
 namespace rtti {
 
 namespace {
 
-#define FUNDAMENTAL_TYPE_INFO(NAME, TYPEID) \
-{#NAME, sizeof(NAME), MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, type_flags<NAME>::value},
+#define DEFINE_TYPE_INFO(NAME, TYPEID) \
+{CString{#NAME}, sizeof(NAME), MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, type_flags<NAME>::value},
 
 static const std::vector<TypeInfo> fundamentalTypes = {
-    {"void", 0, MetaType_ID{0}, MetaType_ID{0}, type_flags<void>::value},
-    FUNDAMENTAL_TYPE_INFO(bool, 1)
-    FUNDAMENTAL_TYPE_INFO(char, 2)
-    FUNDAMENTAL_TYPE_INFO(signed char, 3)
-    FUNDAMENTAL_TYPE_INFO(unsigned char, 4)
-    FUNDAMENTAL_TYPE_INFO(short, 5)
-    FUNDAMENTAL_TYPE_INFO(unsigned short, 6)
-    FUNDAMENTAL_TYPE_INFO(int, 7)
-    FUNDAMENTAL_TYPE_INFO(unsigned int, 8)
-    FUNDAMENTAL_TYPE_INFO(long, 9)
-    FUNDAMENTAL_TYPE_INFO(unsigned long, 10)
-    FUNDAMENTAL_TYPE_INFO(long long, 11)
-    FUNDAMENTAL_TYPE_INFO(unsigned long long, 12)
-    FUNDAMENTAL_TYPE_INFO(float, 13)
-    FUNDAMENTAL_TYPE_INFO(double, 14)
-    FUNDAMENTAL_TYPE_INFO(long double, 15)
-    FUNDAMENTAL_TYPE_INFO(char16_t, 16)
-    FUNDAMENTAL_TYPE_INFO(char32_t, 17)
-    FUNDAMENTAL_TYPE_INFO(wchar_t, 18)
-    //
-    FUNDAMENTAL_TYPE_INFO(void*, 19)
-    FUNDAMENTAL_TYPE_INFO(bool*, 20)
-    FUNDAMENTAL_TYPE_INFO(char*, 21)
-    FUNDAMENTAL_TYPE_INFO(signed char*, 22)
-    FUNDAMENTAL_TYPE_INFO(unsigned char*, 23)
-    FUNDAMENTAL_TYPE_INFO(short*, 24)
-    FUNDAMENTAL_TYPE_INFO(unsigned short*, 25)
-    FUNDAMENTAL_TYPE_INFO(int*, 26)
-    FUNDAMENTAL_TYPE_INFO(unsigned int*, 27)
-    FUNDAMENTAL_TYPE_INFO(long*, 28)
-    FUNDAMENTAL_TYPE_INFO(unsigned long*, 29)
-    FUNDAMENTAL_TYPE_INFO(long long*, 30)
-    FUNDAMENTAL_TYPE_INFO(unsigned long long*, 31)
-    FUNDAMENTAL_TYPE_INFO(float*, 32)
-    FUNDAMENTAL_TYPE_INFO(double*, 33)
-    FUNDAMENTAL_TYPE_INFO(long double*, 34)
-    FUNDAMENTAL_TYPE_INFO(char16_t*, 35)
-    FUNDAMENTAL_TYPE_INFO(char32_t*, 36)
-    FUNDAMENTAL_TYPE_INFO(wchar_t*, 37)
-    //
-    FUNDAMENTAL_TYPE_INFO(const void*, 38)
-    FUNDAMENTAL_TYPE_INFO(const char*, 39)
-    FUNDAMENTAL_TYPE_INFO(const wchar_t*, 40)
+    {CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, type_flags<void>::value},
+    FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_TYPE_INFO)
     };
 
-#undef FUNDAMENTAL_TYPE_INFO
+#undef DEFINE_TYPE_INFO
 
 class CustomTypes {
 public:
-    CustomTypes() = default;
+    CustomTypes();
     CustomTypes(const CustomTypes &) = delete;
     CustomTypes& operator=(const CustomTypes &) = delete;
     CustomTypes(CustomTypes &&) = delete;
@@ -76,8 +35,20 @@ public:
                             MetaType_ID decay, MetaType::TypeFlags flags);
 private:
     mutable std::mutex m_lock;
-    std::vector<TypeInfo> m_list;
+    std::vector<TypeInfo> m_items;
+    std::unordered_map<CString, std::size_t> m_names;
 };
+
+
+#define DEFINE_TYPE_MAP(NAME, INDEX) \
+{CString{#NAME}, INDEX},
+
+CustomTypes::CustomTypes()
+    : m_names {
+          {CString{"void"}, 0},
+          FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_TYPE_MAP)
+      }
+{}
 
 const TypeInfo* CustomTypes::getTypeInfo(MetaType_ID typeId) const
 {
@@ -90,44 +61,46 @@ const TypeInfo* CustomTypes::getTypeInfo(MetaType_ID typeId) const
     type -= fundamentalTypes.size();
 
     std::lock_guard<std::mutex> lock{m_lock};
-    if (type < m_list.size())
-        return &m_list[type];
+    if (type < m_items.size())
+        return &m_items[type];
 
     return nullptr;
 }
 
 const TypeInfo* CustomTypes::getTypeInfo(const char *name) const
 {
-    if (!name || (strnlen(name, 1) == 0))
+    if (!name)
         return nullptr;
 
-    auto length = std::strlen(name);
-    for (const auto &item: fundamentalTypes)
-    {
-        if ((item.nameLength == length) && (std::strncmp(name, item.name, length) == 0))
-            return &item;
-    }
-
+    auto temp = CString{name};
     std::lock_guard<std::mutex> lock{m_lock};
-    for (const auto &item: m_list)
+    auto search = m_names.find(temp);
+    if (search != std::end(m_names))
     {
-        if ((item.nameLength == length) && (std::strncmp(name, item.name, length) == 0))
-            return &item;
-    }
+        auto index = search->second;
+        if (index < fundamentalTypes.size())
+            return &fundamentalTypes[index];
 
+        index -= fundamentalTypes.size();
+        if (index < m_items.size())
+            return &m_items[index];
+    }
     return nullptr;
 }
 
-inline MetaType_ID CustomTypes::addTypeInfo(const char *name, unsigned int size, MetaType_ID decay, MetaType::TypeFlags flags)
+inline MetaType_ID CustomTypes::addTypeInfo(const char *name, unsigned int size,
+                                            MetaType_ID decay, MetaType::TypeFlags flags)
 {
     std::lock_guard<std::mutex> lock{m_lock};
-    MetaType_ID::type result = fundamentalTypes.size() + m_list.size();
+    MetaType_ID::type result = fundamentalTypes.size() + m_items.size();
 
     // this means that decay_t<type> = type
     if (decay.value() == MetaType::InvalidTypeId)
         decay = MetaType_ID{result};
 
-    m_list.emplace_back(name, size, MetaType_ID{result}, decay, flags);
+    auto temp = CString{name};
+    m_items.emplace_back(temp, size, MetaType_ID{result}, decay, flags);
+    m_names.emplace(std::move(temp), result);
     return MetaType_ID{result};
 }
 
@@ -167,7 +140,7 @@ const char* MetaType::typeName() const noexcept
 {
     const char *result = nullptr;
     if (m_typeInfo)
-        result = m_typeInfo->name;
+        result = m_typeInfo->name.data();
     return result;
 }
 

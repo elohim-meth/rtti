@@ -132,30 +132,12 @@ private:
     template<typename, typename> friend class meta_define;
 };
 
-struct DLL_PUBLIC IConstructorInvoker
-{
-    enum {
-        MaxNumberOfArguments = 10
-    };
-
-    virtual variant invoke(argument arg0 = argument{},
-                           argument arg1 = argument{},
-                           argument arg2 = argument{},
-                           argument arg3 = argument{},
-                           argument arg4 = argument{},
-                           argument arg5 = argument{},
-                           argument arg6 = argument{},
-                           argument arg7 = argument{},
-                           argument arg8 = argument{},
-                           argument arg9 = argument{}) const = 0;
-    virtual const char* signature() const = 0;
-};
-
 class DLL_PUBLIC MetaClass final: public MetaContainer
 {
 public:
     MetaCategory category() const noexcept override;
     static const MetaClass* findByTypeId(MetaType_ID typeId) noexcept;
+    static const MetaClass* findByTypeName(const char *name);
     MetaType_ID metaTypeId() const noexcept;
     std::size_t baseClassCount() const noexcept;
     const MetaClass* baseClass(std::size_t index) const noexcept;
@@ -173,6 +155,25 @@ private:
     template<typename, typename> friend class meta_define;
 };
 
+struct DLL_PUBLIC IConstructorInvoker
+{
+    enum {
+        MaxNumberOfArguments = 10
+    };
+
+    virtual variant invoke(argument arg0 = argument{},
+                           argument arg1 = argument{},
+                           argument arg2 = argument{},
+                           argument arg3 = argument{},
+                           argument arg4 = argument{},
+                           argument arg5 = argument{},
+                           argument arg6 = argument{},
+                           argument arg7 = argument{},
+                           argument arg8 = argument{},
+                           argument arg9 = argument{}) const = 0;
+    virtual std::string signature() const = 0;
+};
+
 class DLL_PUBLIC MetaConstructor final: public MetaItem
 {
 public:
@@ -186,7 +187,7 @@ public:
     }
 
 protected:
-    explicit MetaConstructor(const char *name, MetaContainer &owner,
+    explicit MetaConstructor(std::string &&name, MetaContainer &owner,
                              std::unique_ptr<IConstructorInvoker> constructor);
     static MetaConstructor* create(const char *name, MetaContainer &owner,
                                    std::unique_ptr<IConstructorInvoker> constructor);

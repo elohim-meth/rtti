@@ -10,7 +10,6 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <cstring>
 #include <cassert>
 
 namespace rtti {
@@ -18,11 +17,6 @@ namespace rtti {
 namespace {
 
 const std::string empty_string = {};
-
-struct CStringCompare {
-    bool operator()(const char *lhs, const char *rhs) const
-    { return std::strcmp(lhs, rhs) < 0; }
-};
 
 }
 
@@ -33,8 +27,8 @@ struct CStringCompare {
 struct DLL_LOCAL NamedVariant
 {
     template<typename T>
-    NamedVariant(const char *name, T&& value)
-        : name{name},
+    NamedVariant(const CString &name, T&& value)
+        : name{name.data(), name.length()},
           value{std::forward<T>(value)}
     {}
 
@@ -65,24 +59,26 @@ public:
 
 private:
     std::vector<NamedVariant> m_items;
-    std::map<const char*, std::size_t, CStringCompare> m_names;
+    std::map<CString, std::size_t> m_names;
 };
 
 template<typename T>
 inline void NamedVariantList::set(const char *name, T &&value)
 {
-    if (!name || strnlen(name, 1) == 0)
+    if (!name)
         return;
 
-    auto search = m_names.find(name);
+    auto temp = CString{name};
+    auto search = m_names.find(temp);
 
-    if (search == std::end(m_names)) {
+    if (search == std::end(m_names))
+    {
         auto index = m_items.size();
-        m_items.emplace_back(name, std::forward<T>(value));
-        const auto &item = m_items.back();
-        m_names.emplace(item.name.c_str(), index);
+        m_items.emplace_back(temp, std::forward<T>(value));
+        m_names.emplace(std::move(temp), index);
     }
-    else {
+    else
+    {
         auto index = search->second;
         m_items.at(index).value = std::forward<T>(value);
     }
@@ -97,10 +93,12 @@ inline const variant& NamedVariantList::get(std::size_t index) const noexcept
 
 inline const variant& NamedVariantList::get(const char *name) const
 {
-    if (name && strnlen(name, 1) > 0)
+    if (name)
     {
-        auto search = m_names.find(name);
-        if (search != std::end(m_names)) {
+        auto temp = CString{name};
+        auto search = m_names.find(temp);
+        if (search != std::end(m_names))
+        {
             auto index = search->second;
             return get(index);
         }
@@ -136,6 +134,10 @@ public:
     MetaItemPrivate(const char *name, const MetaContainer &owner)
         : m_name(name), m_owner(&owner)
     {}
+    MetaItemPrivate(std::string &&name, const MetaContainer &owner)
+        : m_name(std::move(name)), m_owner(&owner)
+    {}
+
     virtual ~MetaItemPrivate() noexcept = default;
 
 protected:
@@ -201,7 +203,7 @@ public:
     }
 private:
     std::vector<item_t> m_items;
-    std::map<const char *, std::size_t, CStringCompare> m_names;
+    std::map<CString, std::size_t> m_names;
 };
 
 bool MetaItemList::add(MetaItem *value)
@@ -210,17 +212,17 @@ bool MetaItemList::add(MetaItem *value)
         return false;
 
     auto itemFound = (std::find_if(
-                          std::begin(m_items),
-                          std::end(m_items),
+                          std::begin(m_items), std::end(m_items),
                           [value] (const item_t &item) {
                               return value == item.get();
                           }) != std::end(m_items));
-    auto nameFound = ((m_names.find(value->name().c_str())) != std::end(m_names));
+    auto name = CString{value->name().c_str()};
+    auto nameFound = (m_names.find(name) != std::end(m_names));
 
     if (!itemFound && !nameFound) {
         auto index = m_items.size();
         m_items.emplace_back(value);
-        m_names.emplace(value->name().c_str(), index);
+        m_names.emplace(std::move(name), index);
         return true;
     }
     return false;
@@ -228,24 +230,23 @@ bool MetaItemList::add(MetaItem *value)
 
 inline MetaItem* MetaItemList::get(std::size_t index) const noexcept
 {
-    MetaItem *result = nullptr;
     if (index < m_items.size())
-        result = m_items[index].get();
-    return result;
+        return m_items[index].get();
+    return nullptr;
 }
 
 inline MetaItem* MetaItemList::get(const char *name) const
 {
-    MetaItem *result = nullptr;
-    if (name && std::strlen(name) > 0)
-    {
-        auto it = m_names.find(name);
-        if (it != std::end(m_names)) {
-            auto index = it->second;
-            result = get(index);
-        }
+    if (!name)
+        return nullptr;
+
+    auto it = m_names.find(CString{name});
+    if (it != std::end(m_names)) {
+        auto index = it->second;
+        return get(index);
     }
-    return result;
+
+    return nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -361,9 +362,10 @@ private:
 class DLL_LOCAL MetaConstructorPrivate: public MetaItemPrivate
 {
 public:
-    MetaConstructorPrivate(const char *name, const MetaContainer &owner,
+    MetaConstructorPrivate(std::string &&name, const MetaContainer &owner,
                            std::unique_ptr<IConstructorInvoker> constructor)
-        : MetaItemPrivate{name, owner}, m_constructor{std::move(constructor)}
+        : MetaItemPrivate{std::move(name), owner},
+          m_constructor{std::move(constructor)}
     {}
 
 private:
@@ -692,11 +694,22 @@ MetaClass* MetaClass::create(const char *name, MetaContainer &owner, MetaType_ID
 
 const MetaClass* MetaClass::findByTypeId(MetaType_ID typeId) noexcept
 {
-    MetaClass *result = nullptr;
     auto type = MetaType{typeId};
     if (type.valid())
-        result = type.m_typeInfo->metaClass;
-    return result;
+        return type.m_typeInfo->metaClass;
+    return nullptr;
+}
+
+const MetaClass *MetaClass::findByTypeName(const char *name)
+{
+    if (!name)
+        return nullptr;
+
+    auto type = MetaType{name};
+    if (type.valid())
+        return type.m_typeInfo->metaClass;
+
+    return nullptr;
 }
 
 MetaType_ID MetaClass::metaTypeId() const noexcept
@@ -799,9 +812,9 @@ MetaCategory MetaClass::category() const noexcept
 // MetaConstructor
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaConstructor::MetaConstructor(const char *name, MetaContainer &owner,
+MetaConstructor::MetaConstructor(std::string &&name, MetaContainer &owner,
                                  std::unique_ptr<IConstructorInvoker> constructor)
-    : MetaItem{*new MetaConstructorPrivate{name, owner, std::move(constructor)}}
+    : MetaItem{*new MetaConstructorPrivate{std::move(name), owner, std::move(constructor)}}
 {}
 
 MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
@@ -809,17 +822,16 @@ MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
 {
     if (!constructor)
         return nullptr;
+
     auto category = owner.category();
     if (category != mcatClass)
         throw invalid_meta_define{"Constructor can be defined only for class types"};
 
-    if (!name || strnlen(name, 1) == 0)
-        name = constructor->signature();
-
-    auto result = const_cast<MetaConstructor*>(owner.getConstructor(name));
+    auto temp = name ? std::string{name} : constructor->signature();
+    auto result = const_cast<MetaConstructor*>(owner.getConstructor(temp.c_str()));
     if (!result)
     {
-        result = new MetaConstructor(name, owner, std::move(constructor));
+        result = new MetaConstructor(std::move(temp), owner, std::move(constructor));
         static_cast<MetaContainerAccess&>(owner).addItem(result);
     }
     return result;

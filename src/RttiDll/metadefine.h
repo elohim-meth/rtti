@@ -25,7 +25,7 @@ using definition_callback_t = void(*)(meta_define<T, void>);
 namespace internal {
 
 template<typename T>
-struct  DefinitionCallbackHolder: IDefinitionCallbackHolder
+struct DefinitionCallbackHolder: IDefinitionCallbackHolder
 {
     DefinitionCallbackHolder(definition_callback_t<T> func)
         : m_func{func}
@@ -84,7 +84,7 @@ struct ConstructorInvoker: IConstructorInvoker
         return invoke_imp(args, argument_indexes_t{});
     }
 
-    const char* signature() const override
+    std::string signature() const override
     {
         return signature_imp(argument_indexes_t{});
     }
@@ -96,7 +96,7 @@ private:
     }
 
     template<std::size_t ...I>
-    static const char* signature_imp(index_sequence<I...>)
+    static std::string signature_imp(index_sequence<I...>)
     {
         constexpr auto size = sizeof...(I);
         if (size == 1)
@@ -121,8 +121,7 @@ private:
             os << type_name<argument_get_t<I>>() << (I < size - 1 ? ", " : "")
         );
         os << ")";
-        //return os.str().c_str();
-        return "!!!";
+        return os.str();
     }
 
     template<std::size_t ...I>
