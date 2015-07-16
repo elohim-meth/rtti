@@ -361,8 +361,9 @@ private:
 class DLL_LOCAL MetaConstructorPrivate: public MetaItemPrivate
 {
 public:
-    MetaConstructorPrivate(std::unique_ptr<IConstructorInvoker> constructor, const MetaContainer &owner)
-        : MetaItemPrivate{constructor->signature(), owner}, m_constructor{std::move(constructor)}
+    MetaConstructorPrivate(const char *name, const MetaContainer &owner,
+                           std::unique_ptr<IConstructorInvoker> constructor)
+        : MetaItemPrivate{name, owner}, m_constructor{std::move(constructor)}
     {}
 
 private:
@@ -798,13 +799,13 @@ MetaCategory MetaClass::category() const noexcept
 // MetaConstructor
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaConstructor::MetaConstructor(std::unique_ptr<IConstructorInvoker> constructor,
-                                 MetaContainer &owner)
-    : MetaItem{*new MetaConstructorPrivate{std::move(constructor), owner}}
+MetaConstructor::MetaConstructor(const char *name, MetaContainer &owner,
+                                 std::unique_ptr<IConstructorInvoker> constructor)
+    : MetaItem{*new MetaConstructorPrivate{name, owner, std::move(constructor)}}
 {}
 
-MetaConstructor* MetaConstructor::create(std::unique_ptr<IConstructorInvoker> constructor,
-                                         MetaContainer &owner)
+MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
+                                         std::unique_ptr<IConstructorInvoker> constructor)
 {
     if (!constructor)
         return nullptr;
@@ -812,11 +813,13 @@ MetaConstructor* MetaConstructor::create(std::unique_ptr<IConstructorInvoker> co
     if (category != mcatClass)
         throw invalid_meta_define{"Constructor can be defined only for class types"};
 
-    auto name = constructor->signature();
+    if (!name || strnlen(name, 1) == 0)
+        name = constructor->signature();
+
     auto result = const_cast<MetaConstructor*>(owner.getConstructor(name));
     if (!result)
     {
-        result = new MetaConstructor(std::move(constructor), owner);
+        result = new MetaConstructor(name, owner, std::move(constructor));
         static_cast<MetaContainerAccess&>(owner).addItem(result);
     }
     return result;

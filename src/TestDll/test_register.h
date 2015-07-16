@@ -13,7 +13,8 @@ void define_std_vector(rtti::meta_define<std::vector<T>> define)
         .template _constructor<typename V::size_type>()
         .template _constructor<typename V::size_type, const typename V::value_type&>()
         .template _constructor<std::initializer_list<typename V::value_type>>()
-        .template _constructor<typename V::iterator, typename V::iterator>()
+        .template _constructor<typename V::pointer, typename V::pointer>("range1")
+        .template _constructor<typename V::iterator, typename V::iterator>("range2")
     ;
 }
 

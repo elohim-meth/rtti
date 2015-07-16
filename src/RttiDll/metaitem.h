@@ -186,10 +186,10 @@ public:
     }
 
 protected:
-    explicit MetaConstructor(std::unique_ptr<IConstructorInvoker> constructor,
-                             MetaContainer &owner);
-    static MetaConstructor* create(std::unique_ptr<IConstructorInvoker> constructor,
-                                   MetaContainer &owner);
+    explicit MetaConstructor(const char *name, MetaContainer &owner,
+                             std::unique_ptr<IConstructorInvoker> constructor);
+    static MetaConstructor* create(const char *name, MetaContainer &owner,
+                                   std::unique_ptr<IConstructorInvoker> constructor);
 
 private:
     const IConstructorInvoker* constructor() const noexcept;

@@ -36,9 +36,12 @@ int main(int argc, char* argv[])
         if (vec)
         {
             std::cout << vec->qualifiedName() << std::endl;
-            auto construct = vec->getConstructor("constructor(std::initializer_list<int>)");
+            auto construct = vec->getConstructor("range1");
             if (construct)
-                auto v = construct->invoke(std::initializer_list<int>{1, 2, 3, 4, 5});
+            {
+                int a[] = {1,2,3,4,5};
+                auto v = construct->invoke(std::begin(a), std::end(a));
+            }
         }
 
         auto t = g->getNamespace("test");

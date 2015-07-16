@@ -260,7 +260,7 @@ public:
     }
 
     template<typename ...Args>
-    self_t _constructor()
+    self_t _constructor(const char *name = nullptr)
     {
         static_assert(std::is_class<T>::value, "Constructor can be defined only for class types");
         assert(m_currentContainer);
@@ -268,9 +268,9 @@ public:
         assert(category == mcatClass);
         if (category == mcatClass)
         {
-            MetaConstructor::create(std::unique_ptr<IConstructorInvoker>{
-                                        new internal::ConstructorInvoker<T, Args...>{}},
-                                    *m_currentContainer);
+            MetaConstructor::create(name, *m_currentContainer,
+                                    std::unique_ptr<IConstructorInvoker>{
+                                        new internal::ConstructorInvoker<T, Args...>{}});
         }
         return std::move(*this);
     }
