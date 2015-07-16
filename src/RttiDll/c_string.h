@@ -3,14 +3,24 @@
 
 #include <string>
 #include <bits/functional_hash.h>
+#include <type_traits>
 
 class CString
 {
 public:
-    explicit constexpr CString(const char *data = nullptr)
-        : m_data{data},
-          m_length{data ? std::char_traits<char>::length(data) : 0}
+    template<std::size_t N>
+    constexpr explicit CString(const char (&data)[N])
+        : m_data{data}, m_length{N}
     {}
+
+    template<typename T,
+             typename = typename std::enable_if<std::is_same<T, const char*>::value>::type>
+    explicit CString(T data)
+        : m_data{static_cast<const char*>(data)},
+          m_length{m_data ? std::char_traits<char>::length(m_data) : 0}
+    {}
+
+    CString() noexcept = default;
     CString(const CString&) noexcept = default;
     CString(CString&&) noexcept = default;
     CString& operator=(const CString&) noexcept = default;
@@ -102,8 +112,8 @@ private:
         return std::char_traits<char>::compare(m_data, other.m_data, m_length);
     }
 
-    const char *m_data;
-    std::size_t m_length;
+    const char *m_data = nullptr;
+    std::size_t m_length = 0;
 };
 
 namespace std
