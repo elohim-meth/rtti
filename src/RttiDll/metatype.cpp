@@ -4,6 +4,7 @@
 #include <ostream>
 #include <mutex>
 #include <vector>
+#include <array>
 #include <unordered_map>
 
 namespace rtti {
@@ -11,10 +12,10 @@ namespace rtti {
 namespace {
 
 #define DEFINE_TYPE_INFO(NAME, TYPEID) \
-{CString{#NAME}, sizeof(NAME), MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, type_flags<NAME>::value},
+TypeInfo{CString{#NAME}, sizeof(NAME), MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, type_flags<NAME>::value},
 
-static const std::vector<TypeInfo> fundamentalTypes = {
-    {CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, type_flags<void>::value},
+static constexpr std::array<TypeInfo, 41> fundamentalTypes = {
+    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, type_flags<void>::value},
     FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_TYPE_INFO)
     };
 
