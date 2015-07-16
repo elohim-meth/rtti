@@ -121,7 +121,8 @@ private:
             os << type_name<argument_get_t<I>>() << (I < size - 1 ? ", " : "")
         );
         os << ")";
-        return os.str().c_str();
+        //return os.str().c_str();
+        return "!!!";
     }
 
     template<std::size_t ...I>
