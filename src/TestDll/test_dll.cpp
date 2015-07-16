@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
         auto vec = rtti::MetaClass::findByTypeId(rtti::metaTypeId<std::vector<int>>());
         if (vec)
         {
+            //
             std::cout << vec->qualifiedName() << std::endl;
             auto construct = vec->getConstructor("range1");
             if (construct)
