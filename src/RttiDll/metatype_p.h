@@ -17,9 +17,7 @@ struct DLL_LOCAL TypeInfo {
     const MetaType::TypeFlags flags;
     MetaClass *metaClass = nullptr;
 
-    TypeInfo(CString name, unsigned int size,
-             MetaType_ID type, MetaType_ID decay,
-             MetaType::TypeFlags flags)
+    constexpr TypeInfo(CString name, unsigned int size, MetaType_ID type, MetaType_ID decay, MetaType::TypeFlags flags)
         : name{std::move(name)},
           size{size},
           type{type},
