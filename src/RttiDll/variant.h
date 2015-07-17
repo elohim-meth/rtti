@@ -301,11 +301,11 @@ public:
 
         auto fromId = type();
         auto toId = metaTypeId<T>();
-        if (MetaType::hasConverter(fromId, toId, true))
+        if (MetaType::hasConverter(fromId, toId))
         {
             alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
             if (MetaType::convert(raw_data_ptr(), fromId, &buffer, toId))
-                return *reinterpret_cast<T*>(&buffer);
+                return std::move(*reinterpret_cast<T*>(&buffer));
             throw bad_variant_convert{"Conversion failed"};
 
         }
