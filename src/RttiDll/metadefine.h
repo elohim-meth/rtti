@@ -19,26 +19,28 @@ namespace rtti {
 template<typename, typename> class meta_define;
 
 using container_stack_t = std::stack<MetaContainer*>;
-template<typename T>
-using definition_callback_t = void(*)(meta_define<T, void>);
 
 namespace internal {
 
-template<typename T>
+template<typename T, typename F>
 struct DefinitionCallbackHolder: IDefinitionCallbackHolder
 {
-    DefinitionCallbackHolder(definition_callback_t<T> func)
-        : m_func{func}
+    DefinitionCallbackHolder(const F &func)
+        : m_func(func)
     {}
 
-    void invoke(MetaContainer &container) const
+    DefinitionCallbackHolder(F &&func)
+        : m_func(std::move(func))
+    {}
+
+    void invoke(MetaContainer &container)
     {
         container_stack_t stack;
         m_func(meta_define<T, void>{&container, &container, &stack});
     }
 
 private:
-    definition_callback_t<T> m_func;
+    F m_func;
 };
 
 template<typename C, typename ...Args>
@@ -202,14 +204,16 @@ public:
         return _class<C>(type_name<C>());
     }
 
-    self_t _lazy(definition_callback_t<T> func)
+    template<typename F>
+    self_t _lazy(F &&func)
     {
         static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
                       "Deferred definition supported only for namespaces and class types");
 
         assert(m_currentContainer);
+        using holder_t = internal::DefinitionCallbackHolder<T, typename std::decay<F>::type>;
         m_currentContainer->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
-                                                  new internal::DefinitionCallbackHolder<T>{func}});
+                                                  new holder_t{std::forward<F>(func)}});
         return std::move(*this);
     }
 

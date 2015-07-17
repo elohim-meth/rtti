@@ -77,7 +77,8 @@ private:
 
 struct DLL_PUBLIC IDefinitionCallbackHolder
 {
-    virtual void invoke(MetaContainer&) const = 0;
+    virtual void invoke(MetaContainer&) = 0;
+    virtual ~IDefinitionCallbackHolder() noexcept = default;
 };
 
 class DLL_PUBLIC MetaContainer: public MetaItem
@@ -172,6 +173,7 @@ struct DLL_PUBLIC IConstructorInvoker
                            argument arg8 = argument{},
                            argument arg9 = argument{}) const = 0;
     virtual std::string signature() const = 0;
+    virtual ~IConstructorInvoker() noexcept = default;
 };
 
 class DLL_PUBLIC MetaConstructor final: public MetaItem
