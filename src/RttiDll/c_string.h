@@ -128,7 +128,7 @@ struct hash<cstring_base<CharT>>: public std::__hash_base<std::size_t, cstring_b
         if (!value)
             return 0;
 
-        return _Hash_impl::hash(value.data(), value.length());
+        return _Hash_impl::hash(value.data(), value.length() * sizeof(CharT));
     }
 };
 
