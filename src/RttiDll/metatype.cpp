@@ -246,20 +246,17 @@ static inline MetaTypeFunctionList<internal::ConvertFunctionBase>& customConvert
 
 } //namespace
 
-bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId, bool check)
+bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
 {
     if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
         return false;
-    if (check)
-    {
-        auto fromType = MetaType{fromTypeId};
-        auto toType = MetaType{toTypeId};
-        if (fromType.valid() && toType.valid())
-            return customConverters().find({fromType.m_typeInfo->decay,
-                                            toType.m_typeInfo->decay});
-        return false;
-    }
-    return customConverters().find({fromTypeId, toTypeId});
+
+    auto fromType = MetaType{fromTypeId};
+    auto toType = MetaType{toTypeId};
+    if (fromType.valid() && toType.valid())
+        return customConverters().find({fromType.m_typeInfo->decay,
+                                        toType.m_typeInfo->decay});
+    return false;
 }
 
 bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
@@ -267,7 +264,14 @@ bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
 {
     if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
         return false;
-    return customConverters().add({fromTypeId, toTypeId}, &converter);
+
+    auto fromType = MetaType{fromTypeId};
+    auto toType = MetaType{toTypeId};
+    if (fromType.valid() && toType.valid())
+        return customConverters().add({fromType.m_typeInfo->decay,
+                                       toType.m_typeInfo->decay},
+                                      &converter);
+    return false;
 }
 
 bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId)
@@ -275,27 +279,29 @@ bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaT
     if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
         return false;
 
-    auto converter = customConverters().get({fromTypeId, toTypeId});
-    if (converter)
-        return converter->invoke(from, to);
+    auto fromType = MetaType{fromTypeId};
+    auto toType = MetaType{toTypeId};
+    if (fromType.valid() && toType.valid())
+    {
+        auto converter = customConverters().get({fromType.m_typeInfo->decay,
+                                                 toType.m_typeInfo->decay});
+        if (converter)
+            return converter->invoke(from, to);
+    }
 
     return false;
 }
 
-void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId, bool check)
+void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
 {
     if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
         return;
-    if (check)
-    {
-        auto fromType = MetaType{fromTypeId};
-        auto toType = MetaType{toTypeId};
-        if (fromType.valid() && toType.valid())
-            customConverters().remove({fromType.m_typeInfo->decay,
-                                       toType.m_typeInfo->decay});
-        return;
-    }
-    customConverters().remove({fromTypeId, toTypeId});
+
+    auto fromType = MetaType{fromTypeId};
+    auto toType = MetaType{toTypeId};
+    if (fromType.valid() && toType.valid())
+        customConverters().remove({fromType.m_typeInfo->decay,
+                                   toType.m_typeInfo->decay});
 }
 
 } //namespace rtti

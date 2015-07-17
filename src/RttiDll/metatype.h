@@ -169,13 +169,11 @@ public:
     MetaType::TypeFlags typeFlags() const noexcept;
 
 
-    static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId, bool check);
+    static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
     template<typename From, typename To>
     static bool hasConverter()
     {
-        using F = typename std::decay<From>::type;
-        using T = typename std::decay<To>::type;
-        return hasConverter(metaTypeId<F>(), metaTypeId<T>(), false);
+        return hasConverter(metaTypeId<From>(), metaTypeId<To>());
     }
 
     template<typename From, typename To, typename Func>
@@ -187,19 +185,23 @@ public:
     template<typename From, typename To>
     static bool registerConverter();
 
-    static void unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId, bool check);
+    static void unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
     template<typename From, typename To>
     static void unregisterConverter()
     {
-        using F = typename std::decay<From>::type;
-        using T = typename std::decay<To>::type;
-        unregisterConverter(metaTypeId<F>(), metaTypeId<T>(), false);
+        unregisterConverter(metaTypeId<From>(), metaTypeId<To>());
     }
 private:
     static MetaType_ID registerMetaType(const char *name, unsigned int size,
                                         MetaType_ID decay,
                                         MetaType::TypeFlags flags);
 
+    template<typename From, typename To, typename Func>
+    static bool registerConverter_imp(Func &&func);
+    template<typename From, typename To>
+    bool registerConverter_imp(To(From::*func)() const);
+    template<typename From, typename To>
+    bool registerConverter_imp(To(From::*func)(bool*) const);
     static bool registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
                                   const internal::ConvertFunctionBase &converter);
     static bool convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId);
@@ -317,7 +319,7 @@ private:
 };
 
 template<typename From, typename To, typename F>
-struct ConvertFunctor: ConvertFunctionBase
+struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
 {
     using this_t = ConvertFunctor<From, To, F>;
 
@@ -387,32 +389,21 @@ private:
 
 } // namespace internal
 
+
+template<typename From, typename To, typename Func>
+inline bool MetaType::registerConverter_imp(Func &&func)
+{
+    static internal::ConvertFunctor<From, To, Func> converter{std::forward<Func>(func)};
+    return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
+}
+
 template<typename From, typename To, typename Func>
 inline bool MetaType::registerConverter(Func &&func)
 {
     using F = typename std::decay<From>::type;
     using T = typename std::decay<To>::type;
     using Fu = typename std::decay<Func>::type;
-    static internal::ConvertFunctor<F, T, Fu> converter{std::forward<Func>(func)};
-    return registerConverter(metaTypeId<F>(), metaTypeId<T>(), converter);
-}
-
-template<typename From, typename To>
-inline bool MetaType::registerConverter(To(From::*func)() const)
-{
-    using F = typename std::decay<From>::type;
-    using T = typename std::decay<To>::type;
-    static internal::ConvertMethod<F, T> converter{func};
-    return registerConverter(metaTypeId<F>(), metaTypeId<T>(), converter);
-}
-
-template<typename From, typename To>
-inline bool MetaType::registerConverter(To(From::*func)(bool*) const)
-{
-    using F = typename std::decay<From>::type;
-    using T = typename std::decay<To>::type;
-    static internal::ConvertMethodOk<F, T> converter{func};
-    return registerConverter(metaTypeId<F>(), metaTypeId<T>(), converter);
+    return registerConverter_imp<F, T>(std::forward<Fu>(func));
 }
 
 template<typename From, typename To>
@@ -420,6 +411,37 @@ inline bool MetaType::registerConverter()
 {
     return registerConverter<From, To>(internal::default_convert<From, To>);
 }
+
+template<typename From, typename To>
+inline bool MetaType::registerConverter_imp(To(From::*func)() const)
+{
+    static internal::ConvertMethod<From, To> converter{func};
+    return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
+}
+
+template<typename From, typename To>
+inline bool MetaType::registerConverter(To(From::*func)() const)
+{
+    using F = typename std::decay<From>::type;
+    using T = typename std::decay<To>::type;
+    return registerConverter_imp<F, T>(func);
+}
+
+template<typename From, typename To>
+inline bool MetaType::registerConverter_imp(To(From::*func)(bool*) const)
+{
+    static internal::ConvertMethodOk<From, To> converter{func};
+    return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
+}
+
+template<typename From, typename To>
+inline bool MetaType::registerConverter(To(From::*func)(bool*) const)
+{
+    using F = typename std::decay<From>::type;
+    using T = typename std::decay<To>::type;
+    return registerConverter_imp<F, T>(func);
+}
+
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // FUNDAMENTALS
