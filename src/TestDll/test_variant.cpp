@@ -23,7 +23,7 @@ public:
     TestQPointer()
     { PRINT_PRETTY_FUNC }
 
-    TestQPointer(const char *value)
+    explicit TestQPointer(const char *value)
         : m_pImpl(new PrivatePimpl{value})
     {
         PRINT_PRETTY_FUNC
@@ -64,7 +64,6 @@ public:
 
     void swap(TestQPointer &other) noexcept
     {
-        PRINT_PRETTY_FUNC
         std::swap(m_pImpl, other.m_pImpl);
         if (m_pImpl)
             m_pImpl->m_qImpl = this;
@@ -106,7 +105,8 @@ inline void swap(TestQPointer &lhs, TestQPointer &rhs) noexcept
 void test_variant_1()
 {
     auto q1 = TestQPointer{"Hello, World"};
-    auto q2 = std::move(q1);
+    auto q2 = TestQPointer{"qwerty"};
+    q1 = std::move(q2);
     q2.check();
 
 
@@ -121,4 +121,12 @@ void test_variant_1()
         v2.value<TestQPointer>().check();
 
     std::printf("\n");
+
+    rtti::MetaType::registerConverter<const char*, TestQPointer>(
+        [](const char *value) -> TestQPointer { return TestQPointer{value}; });
+    rtti::variant v3 = "Hello, World";
+    auto q3 = v3.to<TestQPointer>();
+
+    std::printf("\n");
+
 }
