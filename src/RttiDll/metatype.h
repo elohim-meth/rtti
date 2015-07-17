@@ -307,6 +307,12 @@ struct DLL_LOCAL ConvertFunctionBase
 {
     using converter_t = bool(*)(const ConvertFunctionBase&, const void*, void*);
 
+    ConvertFunctionBase() = delete;
+    ConvertFunctionBase(const ConvertFunctionBase&) = delete;
+    ConvertFunctionBase(ConvertFunctionBase&&) = delete;
+    ConvertFunctionBase& operator=(const ConvertFunctionBase&) = delete;
+    ConvertFunctionBase& operator=(ConvertFunctionBase&&) = delete;
+
     explicit ConvertFunctionBase(converter_t converter)
         : m_converter(converter)
     {}
@@ -337,7 +343,7 @@ struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
 
     static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
     {
-        auto _this = static_cast<const this_t&>(self);
+        auto &_this = static_cast<const this_t&>(self);
         auto from = static_cast<const From*>(in);
         new (out) To(_this.m_func(*from));
         return true;
@@ -364,7 +370,7 @@ struct ConvertMethod: ConvertFunctionBase
 
     static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
     {
-        auto _this = static_cast<const this_t&>(self);
+        auto &_this = static_cast<const this_t&>(self);
         auto from = static_cast<const From*>(in);
         new (out) To(from->*_this.m_func());
         return true;
@@ -391,7 +397,7 @@ struct ConvertMethodOk: ConvertFunctionBase
 
     static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
     {
-        auto _this = static_cast<const this_t&>(self);
+        auto &_this = static_cast<const this_t&>(self);
         auto from = static_cast<const From*>(in);
         auto result = false;
         new (out) To(from->*_this.m_func(&result));
@@ -503,9 +509,9 @@ template<> inline constexpr MetaType_ID metaTypeId<void>()
     F(char16_t*, 35) \
     F(char32_t*, 36) \
     F(wchar_t*, 37) \
-    F(const void*, 38) \
-    F(const char*, 39) \
-    F(const wchar_t*, 40) \
+    F(void const*, 38) \
+    F(char const*, 39) \
+    F(wchar_t const*, 40) \
 
 #define DEFINE_STATIC_METATYPE_ID(NAME, TYPEID) \
 template<> inline constexpr MetaType_ID metaTypeId<NAME>() \

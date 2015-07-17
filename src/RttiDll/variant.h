@@ -294,7 +294,7 @@ public:
     T to() const
     {
         static_assert(std::is_move_constructible<T>::value,
-                      "Type should be move constructible");
+                      "Type should be MoveConstructible");
 
         if (is<T>())
             return value<T>();
