@@ -166,6 +166,7 @@ public:
     MetaType_ID typeId() const noexcept;
     void setTypeId(MetaType_ID typeId);
     const char* typeName() const noexcept;
+    std::size_t typeSize() const noexcept;
     MetaType::TypeFlags typeFlags() const noexcept;
 
 

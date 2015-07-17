@@ -136,10 +136,9 @@ rtti::MetaType::MetaType(const char *name)
 
 MetaType_ID MetaType::typeId() const noexcept
 {
-    auto result = MetaType_ID{};
     if (m_typeInfo)
-        result = m_typeInfo->type;
-    return result;
+        return m_typeInfo->type;
+    return MetaType_ID{};
 }
 
 void MetaType::setTypeId(MetaType_ID typeId)
@@ -149,10 +148,16 @@ void MetaType::setTypeId(MetaType_ID typeId)
 
 const char* MetaType::typeName() const noexcept
 {
-    const char *result = nullptr;
     if (m_typeInfo)
-        result = m_typeInfo->name.data();
-    return result;
+        return m_typeInfo->name.data();
+    return nullptr;
+}
+
+std::size_t MetaType::typeSize() const noexcept
+{
+    if (m_typeInfo)
+        return m_typeInfo->size;
+    return 0;
 }
 
 MetaType::TypeFlags MetaType::typeFlags() const noexcept
