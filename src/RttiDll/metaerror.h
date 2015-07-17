@@ -44,6 +44,17 @@ public:
     using runtime_error::runtime_error;
 };
 
+class DLL_PUBLIC bad_variant_cast final: public runtime_error
+{
+public:
+    using runtime_error::runtime_error;
+};
+
+class DLL_PUBLIC bad_variant_convert final: public runtime_error
+{
+public:
+    using runtime_error::runtime_error;
+};
 
 }
 

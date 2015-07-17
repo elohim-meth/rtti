@@ -13,7 +13,7 @@
 #define DECLARE_PRIVATE(Class) \
     inline Class##Private* d_func() { return reinterpret_cast<Class##Private *>(d_ptr.get()); } \
     inline const Class##Private* d_func() const { return reinterpret_cast<const Class##Private *>(d_ptr.get()); } \
-    friend class Class##Private;
+    friend class rtti::Class##Private;
 
 namespace rtti {
 
@@ -30,6 +30,7 @@ enum MetaCategory: int {
 // forward
 class variant;
 class MetaItem;
+class MetaItemList;
 class MetaItemPrivate;
 class MetaContainer;
 class MetaContainerPrivate;
@@ -41,6 +42,7 @@ class MetaConstructor;
 class MetaConstructorPrivate;
 class MetaEnum;
 class MetaEnumPrivate;
+template<typename, typename> class meta_define;
 
 class DLL_PUBLIC MetaItem
 {
@@ -71,8 +73,8 @@ protected:
 
 private:
     DECLARE_PRIVATE(MetaItem)
-    friend class MetaItemList;
-    template<typename, typename> friend class meta_define;
+    friend class rtti::MetaItemList;
+    template<typename, typename> friend class rtti::meta_define;
 };
 
 struct DLL_PUBLIC IDefinitionCallbackHolder
@@ -114,7 +116,7 @@ protected:
 
 private:
     DECLARE_PRIVATE(MetaContainer)
-    template<typename, typename> friend class meta_define;
+    template<typename, typename> friend class rtti::meta_define;
 };
 
 class DLL_PUBLIC MetaNamespace final: public MetaContainer
@@ -130,7 +132,7 @@ private:
     MetaNamespace(); //global namespace
 
     DECLARE_PRIVATE(MetaNamespace)
-    template<typename, typename> friend class meta_define;
+    template<typename, typename> friend class rtti::meta_define;
 };
 
 class DLL_PUBLIC MetaClass final: public MetaContainer
@@ -153,7 +155,7 @@ protected:
     void addDerivedClass(MetaType_ID typeId);
 private:
     DECLARE_PRIVATE(MetaClass)
-    template<typename, typename> friend class meta_define;
+    template<typename, typename> friend class rtti::meta_define;
 };
 
 struct DLL_PUBLIC IConstructorInvoker
@@ -198,7 +200,7 @@ private:
     const IConstructorInvoker* constructor() const noexcept;
 
     DECLARE_PRIVATE(MetaConstructor)
-    template<typename, typename> friend class meta_define;
+    template<typename, typename> friend class rtti::meta_define;
 };
 
 class DLL_PUBLIC MetaEnum final: public MetaItem
@@ -218,7 +220,7 @@ protected:
     void addElement(const char *name, variant &&value);
 private:
     DECLARE_PRIVATE(MetaEnum)
-    template<typename, typename> friend class meta_define;
+    template<typename, typename> friend class rtti::meta_define;
 };
 
 class DLL_PUBLIC MetaProperty final: public MetaItem

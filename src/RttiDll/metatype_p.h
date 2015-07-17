@@ -10,7 +10,7 @@ namespace rtti {
 class MetaClass;
 
 struct DLL_LOCAL TypeInfo {
-    CString name;
+    const CString name;
     const unsigned int size;
     const MetaType_ID type;
     const MetaType_ID decay;

@@ -49,14 +49,37 @@ void define_std_string(rtti::meta_define<std::string> define)
     ;
 }
 
-void define_std_namespace(rtti::meta_define<void> define)
+struct define_std_namespace
 {
-    define
-        ._attribute("Description", "Standard C++ library")
-        ._class<std::string>("string")
-            ._lazy(define_std_string)
-        ._end()
-    ;
+    void operator()(rtti::meta_define<void> define)
+    {
+        define
+            ._attribute("Description", "Standard C++ library")
+            ._class<std::string>("string")
+                ._lazy(define_std_string)
+            ._end()
+        ;
+    }
+};
+
+template<typename From>
+bool register_toString_converter()
+{
+    return rtti::MetaType::registerConverter<From, std::string>(
+                static_cast<std::string(*)(From)>(&std::to_string));
+}
+
+template<typename From>
+bool register_asString_converter()
+{
+    auto lambda = [](From from) -> std::string
+    {
+        std::ostringstream os;
+        os << std::boolalpha << from;
+        return os.str();
+
+    };
+    return rtti::MetaType::registerConverter<From, std::string>(lambda);
 }
 
 }
@@ -74,12 +97,30 @@ void register_rtti()
         ._end()
 
         ._namespace("std")
-            ._lazy(define_std_namespace)
+            ._lazy(define_std_namespace{})
         ._end();
     ;
 
     register_std_vector<int>();
     register_std_vector<std::string>();
     register_std_vector<const char*>();
+
+    // default
+    rtti::MetaType::registerConverter<char*, std::string>();
+    rtti::MetaType::registerConverter<const char*, std::string>();
+
+    // std::to_string
+    register_toString_converter<int>();
+    register_toString_converter<unsigned>();
+    register_toString_converter<long>();
+    register_toString_converter<unsigned long>();
+    register_toString_converter<long long>();
+    register_toString_converter<unsigned long long>();
+    register_toString_converter<float>();
+    register_toString_converter<double>();
+    register_toString_converter<long double>();
+
+    // std::ostringstream
+    register_asString_converter<bool>();
 }
 

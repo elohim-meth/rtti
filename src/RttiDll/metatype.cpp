@@ -28,7 +28,7 @@ public:
     CustomTypes& operator=(const CustomTypes &) = delete;
     CustomTypes(CustomTypes &&) = delete;
     CustomTypes& operator=(CustomTypes &&) = delete;
-    ~CustomTypes() = default;
+    ~CustomTypes() noexcept;
 
     const TypeInfo* getTypeInfo(MetaType_ID typeId) const;
     const TypeInfo* getTypeInfo(const char *name) const;
@@ -48,9 +48,17 @@ CustomTypes::CustomTypes()
     : m_names {
           {CString{"void"}, 0},
           FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_MAP)
-      }
+}
 {}
+
 #undef DEFINE_STATIC_TYPE_MAP
+
+CustomTypes::~CustomTypes() noexcept
+{
+    std::lock_guard<std::mutex> lock{m_lock};
+    m_items.clear();
+    m_names.clear();
+}
 
 const TypeInfo* CustomTypes::getTypeInfo(MetaType_ID typeId) const
 {
@@ -106,12 +114,13 @@ inline MetaType_ID CustomTypes::addTypeInfo(const char *name, unsigned int size,
     return MetaType_ID{result};
 }
 
-static inline CustomTypes& customTypes() {
+static inline CustomTypes& customTypes()
+{
     static CustomTypes result;
     return result;
 }
 
-}
+} // namespace internal
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // MetaType
@@ -159,6 +168,134 @@ MetaType_ID MetaType::registerMetaType(const char *name, unsigned int size,
                                        MetaType::TypeFlags flags)
 {
     return customTypes().addTypeInfo(name, size, decay, flags);
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------
+// Converter
+//--------------------------------------------------------------------------------------------------------------------------------
+
+namespace {
+
+template<typename F>
+class MetaTypeFunctionList
+{
+public:
+    using key_t = std::pair<MetaType_ID, MetaType_ID>;
+
+    ~MetaTypeFunctionList() noexcept
+    {
+        std::lock_guard<std::mutex> lock{m_lock};
+        m_items.clear();
+    }
+
+    bool find(const key_t &key) const
+    {
+        std::lock_guard<std::mutex> lock{m_lock};
+        return (m_items.find(key) != std::end(m_items));
+    }
+
+    bool add(key_t key, const F *func)
+    {
+        if (!func)
+            return false;
+
+        std::lock_guard<std::mutex> lock{m_lock};
+        auto search = m_items.find(key);
+        if (search != std::end(m_items))
+            return false;
+
+        m_items.emplace(key, func);
+        return true;
+    }
+
+    const F* get(const key_t &key) const
+    {
+        std::lock_guard<std::mutex> lock{m_lock};
+        auto search = m_items.find(key);
+        if (search != std::end(m_items))
+            return search->second;
+        return nullptr;
+    }
+
+    void remove(const key_t &key)
+    {
+        std::lock_guard<std::mutex> lock{m_lock};
+        m_items.erase(key);
+    }
+private:
+    struct hash_key
+    {
+        using result_type = std::size_t;
+        using argument_type = key_t;
+        result_type operator()(const argument_type &key) const
+        {
+            return std::_Hash_impl::__hash_combine(key.first.value(),
+                        std::_Hash_impl::hash(key.second.value()));
+        }
+    };
+
+    mutable std::mutex m_lock;
+    std::unordered_map<key_t, const F*, hash_key> m_items;
+};
+
+static inline MetaTypeFunctionList<internal::ConvertFunctionBase>& customConverters()
+{
+    static MetaTypeFunctionList<internal::ConvertFunctionBase> result;
+    return result;
+}
+
+} //namespace
+
+bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId, bool check)
+{
+    if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
+        return false;
+    if (check)
+    {
+        auto fromType = MetaType{fromTypeId};
+        auto toType = MetaType{toTypeId};
+        if (fromType.valid() && toType.valid())
+            return customConverters().find({fromType.m_typeInfo->decay,
+                                            toType.m_typeInfo->decay});
+        return false;
+    }
+    return customConverters().find({fromTypeId, toTypeId});
+}
+
+bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
+                                 const internal::ConvertFunctionBase &converter)
+{
+    if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
+        return false;
+    return customConverters().add({fromTypeId, toTypeId}, &converter);
+}
+
+bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId)
+{
+    if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
+        return false;
+
+    auto converter = customConverters().get({fromTypeId, toTypeId});
+    if (converter)
+        return converter->invoke(from, to);
+
+    return false;
+}
+
+void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId, bool check)
+{
+    if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
+        return;
+    if (check)
+    {
+        auto fromType = MetaType{fromTypeId};
+        auto toType = MetaType{toTypeId};
+        if (fromType.valid() && toType.valid())
+            customConverters().remove({fromType.m_typeInfo->decay,
+                                       toType.m_typeInfo->decay});
+        return;
+    }
+    customConverters().remove({fromTypeId, toTypeId});
 }
 
 } //namespace rtti

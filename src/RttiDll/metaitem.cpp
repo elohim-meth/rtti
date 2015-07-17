@@ -155,7 +155,7 @@ private:
     NamedVariantList m_attributes;
     mutable std::string m_qualifiedName;
 
-    friend class MetaItem;
+    friend class rtti::MetaItem;
 };
 
 inline std::string MetaItemPrivate::makeQualifiedName() const
@@ -283,7 +283,7 @@ private:
     mutable bool m_deferredDefine_lock = false;
     mutable std::unique_ptr<IDefinitionCallbackHolder> m_deferredDefine;
 
-    friend class MetaContainer;
+    friend class rtti::MetaContainer;
 };
 
 inline bool MetaContainerPrivate::addItem(MetaItem *value)
@@ -304,7 +304,7 @@ class DLL_LOCAL MetaNamespacePrivate: public MetaContainerPrivate
 public:
     using MetaContainerPrivate::MetaContainerPrivate;
 private:
-    friend class MetaNamespace;
+    friend class rtti::MetaNamespace;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -352,7 +352,7 @@ private:
     MetaTypeIDs m_baseClasses;
     MetaTypeIDs m_derivedClasses;
 
-    friend class MetaClass;
+    friend class rtti::MetaClass;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -370,7 +370,7 @@ public:
 
 private:
     std::unique_ptr<IConstructorInvoker> m_constructor;
-    friend class MetaConstructor;
+    friend class rtti::MetaConstructor;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -388,7 +388,7 @@ private:
     MetaType_ID m_typeId;
     NamedVariantList m_elements;
 
-    friend class MetaEnum;
+    friend class rtti::MetaEnum;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -487,12 +487,12 @@ struct MetaContainerAccess: MetaContainer
     bool addItem(MetaItem *value)
     { return MetaContainer::addItem(value); }
 
-    friend class MetaNamespace;
-    friend class MetaClass;
-    friend class MetaEnum;
-    friend class MetaProperty;
-    friend class MetaConstructor;
-    friend class MetaMethod;
+    friend class rtti::MetaNamespace;
+    friend class rtti::MetaClass;
+    friend class rtti::MetaEnum;
+    friend class rtti::MetaProperty;
+    friend class rtti::MetaConstructor;
+    friend class rtti::MetaMethod;
 };
 }
 

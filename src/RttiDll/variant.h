@@ -2,6 +2,7 @@
 #define VARIANT_H
 
 #include "metatype.h"
+#include "metaerror.h"
 
 #include <type_traits>
 #include <utility>
@@ -178,13 +179,6 @@ template<typename T> T& variant_cast(variant&);
 template<typename T> const T& variant_cast(const variant&);
 template<typename T> T&& variant_cast(variant&&);
 
-class DLL_PUBLIC bad_variant_cast final: public std::bad_cast
-{
-public:
-    const char* what() const noexcept override
-    { return "Bad variant cast"; }
-};
-
 class DLL_PUBLIC variant final
 {
 public:
@@ -296,13 +290,31 @@ public:
         return variant_cast<T>(std::move(*this));
     }
 
+    template<typename T>
+    T to() const
+    {
+        static_assert(std::is_move_constructible<T>::value,
+                      "Type should be move constructible");
+
+        if (is<T>())
+            return value<T>();
+
+        auto fromId = type();
+        auto toId = metaTypeId<T>();
+        if (MetaType::hasConverter(fromId, toId, true))
+        {
+            alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
+            if (MetaType::convert(raw_data_ptr(), fromId, &buffer, toId))
+                return *reinterpret_cast<T*>(&buffer);
+            throw bad_variant_convert{"Conversion failed"};
+
+        }
+        throw bad_variant_convert{"Converter function not found"};
+    }
+
 
     static const variant empty_variant;
 private:
-    template<typename T>
-    friend void* internal::variant_cast_helper(const variant *value) noexcept;
-    friend class rtti::argument;
-
     template<typename T>
     variant(T &&value, std::true_type)
         : manager{internal::function_table_for<internal::decay_t<T>>()}
@@ -327,6 +339,10 @@ private:
 
     table_t* manager = internal::function_table_for<void>();
     storage_t storage = {.buffer = {0}};
+
+    template<typename T>
+    friend void* internal::variant_cast_helper(const variant *value) noexcept;
+    friend class rtti::argument;
 };
 
 namespace internal {
@@ -354,54 +370,40 @@ inline const T& variant_cast(const variant &value)
 {
     auto result = variant_cast<internal::decay_t<T>>(&value);
     if (!result)
-        throw bad_variant_cast{};
+    {
+        if (!value)
+            throw bad_variant_cast{"Variant is NULL"};
+        else
+            throw bad_variant_cast{"Incompatible variant type"};
+    }
     return *result;
 }
-
-//template<typename T>
-//inline T variant_cast(const variant &value)
-//{
-//    static constexpr bool valid =
-//            std::is_copy_constructible<T>::value ||
-//            (std::is_lvalue_reference<T>::value &&
-//             std::is_const<typename std::remove_reference<T>::type>::value);
-//    static_assert(valid, "Type must be CopyConstructible or Lvalue reference to Const");
-
-//    auto result = variant_cast<internal::decay_t<T>>(&value);
-//    if (!result)
-//        throw bad_variant_cast{};
-//    return *result;
-//}
 
 template<typename T>
 inline T& variant_cast(variant &value)
 {
     auto result = variant_cast<internal::decay_t<T>>(&value);
     if (!result)
-        throw bad_variant_cast{};
+    {
+        if (!value)
+            throw bad_variant_cast{"Variant is NULL"};
+        else
+            throw bad_variant_cast{"Incompatible variant type"};
+    }
     return *result;
 }
-
-//template<typename T>
-//inline T variant_cast(variant &value)
-//{
-//    static constexpr bool valid =
-//            std::is_copy_constructible<T>::value ||
-//            std::is_lvalue_reference<T>::value;
-//    static_assert(valid, "Type must be CopyConstructible or Lvalue reference");
-
-//    auto result = variant_cast<internal::decay_t<T>>(&value);
-//    if (!result)
-//        throw bad_variant_cast{};
-//    return *result;
-//}
 
 template<typename T>
 inline T&& variant_cast(variant &&value)
 {
     auto result = variant_cast<internal::decay_t<T>>(&value);
     if (!result)
-        throw bad_variant_cast{};
+    {
+        if (!value)
+            throw bad_variant_cast{"Variant is NULL"};
+        else
+            throw bad_variant_cast{"Incompatible variant type"};
+    }
     return std::move(*result);
 }
 

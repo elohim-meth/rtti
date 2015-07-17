@@ -346,7 +346,7 @@ private:
     }
 
     template<typename> friend class internal::DefinitionCallbackHolder;
-    template<typename, typename> friend class meta_define;
+    template<typename, typename> friend class rtti::meta_define;
 };
 
 class DLL_PUBLIC meta_global: public meta_define<void>
@@ -359,6 +359,7 @@ protected:
     }
 private:
     container_stack_t m_container;
+
     friend meta_global global_define();
 };
 

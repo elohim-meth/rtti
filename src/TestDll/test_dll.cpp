@@ -13,13 +13,9 @@ int main(int argc, char* argv[])
 
         register_rtti();
 
-
-        std::cout << type_name<unsigned long long>() << "\n";
-
         auto lambda = [](const std::string &name, const rtti::variant &value)
         {
-            std::cout << name << std::endl;
-            (void) value;
+            std::cout << name << " = " << value.to<std::string>() << std::endl;
         };
 
         auto g = rtti::MetaNamespace::global();
