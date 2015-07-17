@@ -329,6 +329,10 @@ struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
     explicit ConvertFunctor(F &&func)
         : ConvertFunctionBase{convert}, m_func(std::move(func))
     {}
+    ~ConvertFunctor() noexcept
+    {
+        MetaType::unregisterConverter<From, To>();
+    }
 
     static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
     {
@@ -352,6 +356,11 @@ struct ConvertMethod: ConvertFunctionBase
         : ConvertFunctionBase{convert}, m_func(func)
     {}
 
+    ~ConvertMethod() noexcept
+    {
+        MetaType::unregisterConverter<From, To>();
+    }
+
     static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
     {
         auto _this = static_cast<const this_t&>(self);
@@ -373,6 +382,11 @@ struct ConvertMethodOk: ConvertFunctionBase
     explicit ConvertMethodOk(func_t func)
         : ConvertFunctionBase{convert}, m_func(func)
     {}
+
+    ~ConvertMethodOk() noexcept
+    {
+        MetaType::unregisterConverter<From, To>();
+    }
 
     static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
     {
