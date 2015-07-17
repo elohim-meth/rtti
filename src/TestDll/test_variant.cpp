@@ -104,28 +104,33 @@ inline void swap(TestQPointer &lhs, TestQPointer &rhs) noexcept
 
 void test_variant_1()
 {
-    auto q1 = TestQPointer{"Hello, World"};
-    auto q2 = TestQPointer{"qwerty"};
-    q1 = std::move(q2);
-    q2.check();
-
-
-    std::printf("\n");
-
-    rtti::variant v1 = TestQPointer{"Hello, World"};
-    rtti::variant v2 = TestQPointer{"qwerty"};
-    v1 = std::move(v1);
-    if (v1)
-        v1.value<TestQPointer>().check();
-    if (v2)
-        v2.value<TestQPointer>().check();
+    {
+        auto q1 = TestQPointer{"Hello, World"};
+        auto q2 = TestQPointer{"qwerty"};
+        q1 = std::move(q2);
+        q2.check();
+    }
 
     std::printf("\n");
 
-    rtti::MetaType::registerConverter<const char*, TestQPointer>(
-        [](const char *value) -> TestQPointer { return TestQPointer{value}; });
-    rtti::variant v3 = "Hello, World";
-    auto q3 = v3.to<TestQPointer>();
+    {
+        rtti::variant v1 = TestQPointer{"Hello, World"};
+        rtti::variant v2 = TestQPointer{"qwerty"};
+        v1 = std::move(v1);
+        if (v1)
+            v1.value<TestQPointer>().check();
+        if (v2)
+            v2.value<TestQPointer>().check();
+    }
+
+    std::printf("\n");
+
+    {
+        rtti::MetaType::registerConverter<const char*, TestQPointer>(
+                    [](const char *value) -> TestQPointer { return TestQPointer{value}; });
+        rtti::variant v3 = "Hello, World";
+        auto q3 = v3.to<TestQPointer>();
+    }
 
     std::printf("\n");
 

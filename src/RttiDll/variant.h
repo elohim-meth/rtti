@@ -342,6 +342,7 @@ private:
 
     template<typename T>
     friend void* internal::variant_cast_helper(const variant *value) noexcept;
+    friend class std::hash<rtti::variant>;
     friend class rtti::argument;
 };
 
@@ -410,10 +411,26 @@ inline T&& variant_cast(variant &&value)
 } //namespace rtti
 
 namespace std {
+
 inline void swap(rtti::variant &lhs, rtti::variant &rhs) noexcept
 {
     lhs.swap(rhs);
 }
+
+template<>
+struct hash<rtti::variant>: public std::__hash_base<std::size_t, rtti::variant>
+{
+    using this_t = hash<rtti::variant>;
+    typename this_t::result_type operator()(const typename this_t::argument_type &value) const
+    {
+        if (!value)
+            return 0;
+
+        auto type = rtti::MetaType{value.type()};
+        return _Hash_impl::hash(value.raw_data_ptr(), type.typeSize());
+    }
+};
+
 } //namespace std
 
 #endif // VARIANT_H
