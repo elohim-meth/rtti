@@ -312,6 +312,27 @@ public:
         throw bad_variant_convert{"Converter function not found"};
     }
 
+    template<typename T>
+    bool as() const
+    {
+        if (is<T>())
+            return true;
+
+        auto fromId = type();
+        auto toId = metaTypeId<T>();
+        if (MetaType::hasConverter(fromId, toId))
+        {
+            alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
+            if (MetaType::convert(raw_data_ptr(), fromId, &buffer, toId))
+            {
+                *this = std::move(*reinterpret_cast<T*>(&buffer));
+                return true;
+            }
+            return false;
+
+        }
+        return false;
+    }
 
     static const variant empty_variant;
 private:
