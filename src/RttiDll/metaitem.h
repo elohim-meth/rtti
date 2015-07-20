@@ -96,7 +96,7 @@ public:
 
     const MetaClass* getClass(const char *name) const;
     std::size_t classCount() const noexcept;
-    void for_each_class(std::function<void(const MetaClass*)> &func) const;
+    void for_each_class(std::function<void (const MetaClass*)> &func) const;
 
     const MetaConstructor* getConstructor(const char *name) const;
     std::size_t constructorCount() const noexcept;

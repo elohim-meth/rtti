@@ -6,6 +6,7 @@
 
 #include <finally.h>
 
+#include <mutex>
 #include <array>
 #include <vector>
 #include <map>
@@ -189,19 +190,11 @@ public:
     bool add(MetaItem *value);
     MetaItem* get(std::size_t index) const noexcept;
     MetaItem* get(const char *name) const;
-    std::size_t size() const noexcept
-    {
-        return m_items.size();
-    }
-    auto begin() const noexcept -> std::vector<item_t>::const_iterator
-    {
-        return m_items.begin();
-    }
-    auto end() const noexcept -> std::vector<item_t>::const_iterator
-    {
-        return m_items.end();
-    }
+    std::size_t size() const noexcept;
+    template<typename F> void for_each(F &&func) const;
+
 private:
+    mutable std::mutex m_lock;
     std::vector<item_t> m_items;
     std::map<CString, std::size_t> m_names;
 };
@@ -211,12 +204,13 @@ bool MetaItemList::add(MetaItem *value)
     if (!value)
         return false;
 
+    std::lock_guard<std::mutex> lock{m_lock};
     auto itemFound = (std::find_if(
                           std::begin(m_items), std::end(m_items),
                           [value] (const item_t &item) {
                               return value == item.get();
                           }) != std::end(m_items));
-    auto name = CString{value->name().c_str()};
+    auto name = CString{value->name()};
     auto nameFound = (m_names.find(name) != std::end(m_names));
 
     if (!itemFound && !nameFound) {
@@ -230,6 +224,7 @@ bool MetaItemList::add(MetaItem *value)
 
 inline MetaItem* MetaItemList::get(std::size_t index) const noexcept
 {
+    std::lock_guard<std::mutex> lock{m_lock};
     if (index < m_items.size())
         return m_items[index].get();
     return nullptr;
@@ -240,13 +235,31 @@ inline MetaItem* MetaItemList::get(const char *name) const
     if (!name)
         return nullptr;
 
+    std::lock_guard<std::mutex> lock{m_lock};
     auto it = m_names.find(CString{name});
     if (it != std::end(m_names)) {
         auto index = it->second;
-        return get(index);
+        if (index < m_items.size())
+            return m_items[index].get();
     }
 
     return nullptr;
+}
+
+std::size_t MetaItemList::size() const noexcept
+{
+    std::lock_guard<std::mutex> lock{m_lock};
+    return m_items.size();
+}
+
+template<typename F>
+inline void MetaItemList::for_each(F &&func) const
+{
+    std::lock_guard<std::mutex> lock{m_lock};
+    for(const auto &item: m_items)
+    {
+        func(item.get());
+    }
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -311,7 +324,7 @@ private:
 // MetaClassPrivate
 //--------------------------------------------------------------------------------------------------------------------------------
 
-class DLL_LOCAL MetaTypeIDs
+class DLL_LOCAL DerivedClassList
 {
 public:
     void add(MetaType_ID value) noexcept
@@ -354,6 +367,9 @@ private:
 class DLL_LOCAL BaseClassList
 {
 public:
+    using item_t = std::pair<MetaType_ID, MetaClass::cast_func_t>;
+    using container_t = std::vector<item_t>;
+
     void add(MetaType_ID value, MetaClass::cast_func_t func) noexcept
     {
         if (!find(value))
@@ -374,21 +390,23 @@ public:
 
     bool find(MetaType_ID value) const
     {
-        auto search = std::find_if(std::begin(m_items), std::end(m_items), value);
+        auto search = std::find_if(std::begin(m_items), std::end(m_items), [value](const item_t &item) {
+            return (value == item.first);
+        });
         return (search != std::end(m_items));
     }
 
-    auto begin() const noexcept -> std::vector<MetaType_ID>::const_iterator
+    auto begin() const noexcept -> container_t::const_iterator
     {
         return m_items.begin();
     }
 
-    auto end() const noexcept -> std::vector<MetaType_ID>::const_iterator
+    auto end() const noexcept -> container_t::const_iterator
     {
         return m_items.end();
     }
 private:
-    std::vector<std::pair<MetaType_ID, MetaClass::cast_func_t> m_items;
+    container_t m_items;
 };
 
 class DLL_LOCAL MetaClassPrivate: public MetaContainerPrivate
@@ -399,8 +417,8 @@ public:
     {}
 private:
     MetaType_ID m_typeId;
-    MetaTypeIDs m_baseClasses;
-    MetaTypeIDs m_derivedClasses;
+    BaseClassList m_baseClasses;
+    DerivedClassList m_derivedClasses;
 
     friend class rtti::MetaClass;
 };
@@ -655,15 +673,15 @@ const MetaConstructor *MetaContainer::moveConstructor() const
     return static_cast<const MetaConstructor*>(item(mcatConstructor, "move constructor"));
 }
 
-void MetaContainer::for_each_class(std::function<void (const MetaClass *)> &func) const
+void MetaContainer::for_each_class(std::function<void(const MetaClass*)> &func) const
 {
-    if (!func)
+    if (func)
         return;
+
     auto d = d_func();
-    for(const auto &item: d->m_classes)
-    {
-        func(static_cast<MetaClass*>(item.get()));
-    }
+    d->m_classes.for_each([&func](const MetaItem *item){
+        func(static_cast<const MetaClass*>(item));
+    });
 }
 
 const MetaEnum *MetaContainer::getEnum(const char *name) const
@@ -811,7 +829,7 @@ void MetaClass::addBaseClass(MetaType_ID typeId, cast_func_t caster)
                                      +  " not registered"};
 
     auto d = d_func();
-    d->m_baseClasses.add(typeId);
+    d->m_baseClasses.add(typeId, caster);
     base->addDerivedClass(d->m_typeId);
 }
 
@@ -846,7 +864,7 @@ bool MetaClass::inheritedFrom(const MetaClass *base) const noexcept
     auto d = d_func();
     for (const auto &item: d->m_baseClasses)
     {
-        auto directBase = findByTypeId(item);
+        auto directBase = findByTypeId(item.first);
         assert(directBase);
         if (directBase->inheritedFrom(base))
             return true;
