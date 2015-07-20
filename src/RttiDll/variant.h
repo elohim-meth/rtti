@@ -28,16 +28,6 @@ template<typename T,
          bool Safe = std::is_move_constructible<T>::value>
 using is_inplace = std::integral_constant<bool, Small && Safe>;
 
-template<typename T>
-using is_polymorphic = typename std::conditional<
-    std::is_polymorphic<
-        typename std::remove_pointer<
-            typename std::remove_reference<T>::type
-        >::type
-    >::value,
-    std::true_type, std::false_type>::type;
-
-
 union DLL_PUBLIC variant_type_storage
 {
     alignas(STORAGE_SIZE) std::uint8_t buffer[STORAGE_SIZE];

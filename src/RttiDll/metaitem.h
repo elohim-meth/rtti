@@ -5,6 +5,7 @@
 #include "argument.h"
 
 #include <typelist.h>
+#include <sfinae.h>
 
 #include <memory>
 
@@ -135,9 +136,18 @@ private:
     template<typename, typename> friend class rtti::meta_define;
 };
 
+namespace internal {
+
+template<typename To, typename From>
+To* meta_cast_selector(const From*, std::true_type);
+
+} // namespace internal
+
 class DLL_PUBLIC MetaClass final: public MetaContainer
 {
 public:
+    using cast_func_t = void*(*)(void*);
+
     MetaCategory category() const noexcept override;
     static const MetaClass* findByTypeId(MetaType_ID typeId) noexcept;
     static const MetaClass* findByTypeName(const char *name);
@@ -151,12 +161,68 @@ protected:
     explicit MetaClass(const char *name, const MetaContainer &owner, MetaType_ID typeId);
     static MetaClass* create(const char *name, MetaContainer &owner, MetaType_ID typeId);
 
-    void addBaseClass(MetaType_ID typeId);
+    void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     void addDerivedClass(MetaType_ID typeId);
+    void* cast(const MetaClass *base, void* instance) const;
 private:
     DECLARE_PRIVATE(MetaClass)
     template<typename, typename> friend class rtti::meta_define;
+    template<typename To, typename From>
+    friend To* internal::meta_cast_selector(const From*, std::true_type);
 };
+
+#define DECLARE_METATYPE \
+public: \
+    virtual rtti::MetaType_ID metaTypeId() const \
+    { \
+        return rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(); \
+    } \
+
+namespace internal {
+
+template<typename To, typename From>
+To* meta_cast_selector(const From *from, std::true_type)
+{
+    static_assert(std::is_class<From>::value && std::is_class<To>::value,
+                  "Both template arguments should be classes");
+    if (!from)
+        return nullptr;
+
+    auto fromTypeId = from->metaTypeId();
+    auto fromClass = MetaClass::findByTypeId(fromTypeId);
+    auto toClass = MetaClass::findByTypeId(metaTypeId<To>());
+    if (!fromClass || !toClass)
+        return nullptr;
+
+    auto result = fromClass->cast(toClass, const_cast<From*>(from));
+    if (!result)
+        return nullptr;
+    return static_cast<To*>(result);
+}
+
+template<typename To, typename From>
+To* meta_cast_selector(const From *from, std::false_type)
+{
+    return from;
+}
+
+} // namespace internal
+
+HAS_METHOD(metaTypeId);
+
+template<typename To, typename From>
+To* meta_cast(From *from)
+{
+    return internal::meta_cast_selector<To, From>(
+                from, typename has_method_metaTypeId<MetaType_ID(From::*)() const>::type{});
+}
+
+template<typename To, typename From>
+const To* meta_cast(const From *from)
+{
+    return internal::meta_cast_selector<To, From>(
+                from, typename has_method_metaTypeId<MetaType_ID(From::*)() const>::type{});
+}
 
 struct DLL_PUBLIC IConstructorInvoker
 {

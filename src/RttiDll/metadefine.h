@@ -15,12 +15,19 @@
 
 namespace rtti {
 
+
 //forward
 template<typename, typename> class meta_define;
 
+namespace internal {
+
 using container_stack_t = std::stack<MetaContainer*>;
 
-namespace internal {
+template<typename DerivedType, typename BaseType>
+static void* metacast_to_base(void* value)
+{
+    return static_cast<void*>(static_cast<BaseType*>(static_cast<DerivedType*>(value)));
+}
 
 template<typename T, typename F>
 struct DefinitionCallbackHolder: IDefinitionCallbackHolder
@@ -297,13 +304,13 @@ protected:
     meta_define(meta_define&&) = default;
     meta_define& operator=(meta_define&&) = default;
 
-    meta_define(MetaItem *currentItem, MetaContainer *currentContainer, container_stack_t *containerStack)
+    meta_define(MetaItem *currentItem, MetaContainer *currentContainer, internal::container_stack_t *containerStack)
         : m_currentItem{currentItem}, m_currentContainer{currentContainer}, m_containerStack{containerStack}
     {}
 
     MetaItem *m_currentItem = nullptr;
     MetaContainer *m_currentContainer = nullptr;
-    container_stack_t *m_containerStack = nullptr;
+    internal::container_stack_t *m_containerStack = nullptr;
 
 private:
     template<typename C>
@@ -320,7 +327,8 @@ private:
         typename typelist_map<L, check_is_class>::type t __attribute__((unused));
 
         EXPAND(
-            item->addBaseClass(metaTypeId<typename typelist_get<L, I>::type>())
+            item->addBaseClass(metaTypeId<typename typelist_get<L, I>::type>(),
+                               &internal::metacast_to_base<T, typename typelist_get<L, I>::type>)
         );
     }
 
@@ -358,7 +366,7 @@ protected:
         m_containerStack = &m_container;
     }
 private:
-    container_stack_t m_container;
+    internal::container_stack_t m_container;
 
     friend meta_global global_define();
 };

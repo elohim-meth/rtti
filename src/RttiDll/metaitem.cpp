@@ -319,10 +319,12 @@ public:
         if (!find(value))
             m_items.push_back(value);
     }
+
     std::size_t count() const noexcept
     {
         return m_items.size();
     }
+
     MetaType_ID get(std::size_t index) const noexcept
     {
         if (index < m_items.size())
@@ -335,8 +337,58 @@ public:
         auto search = std::find(std::begin(m_items), std::end(m_items), value);
         return (search != std::end(m_items));
     }
+
+    auto begin() const noexcept -> std::vector<MetaType_ID>::const_iterator
+    {
+        return m_items.begin();
+    }
+
+    auto end() const noexcept -> std::vector<MetaType_ID>::const_iterator
+    {
+        return m_items.end();
+    }
 private:
     std::vector<MetaType_ID> m_items;
+};
+
+class DLL_LOCAL BaseClassList
+{
+public:
+    void add(MetaType_ID value, MetaClass::cast_func_t func) noexcept
+    {
+        if (!find(value))
+            m_items.emplace_back(value, func);
+    }
+
+    std::size_t count() const noexcept
+    {
+        return m_items.size();
+    }
+
+    MetaType_ID get(std::size_t index) const noexcept
+    {
+        if (index < m_items.size())
+            return m_items[index].first;
+        return MetaType_ID{};
+    }
+
+    bool find(MetaType_ID value) const
+    {
+        auto search = std::find_if(std::begin(m_items), std::end(m_items), value);
+        return (search != std::end(m_items));
+    }
+
+    auto begin() const noexcept -> std::vector<MetaType_ID>::const_iterator
+    {
+        return m_items.begin();
+    }
+
+    auto end() const noexcept -> std::vector<MetaType_ID>::const_iterator
+    {
+        return m_items.end();
+    }
+private:
+    std::vector<std::pair<MetaType_ID, MetaClass::cast_func_t> m_items;
 };
 
 class DLL_LOCAL MetaClassPrivate: public MetaContainerPrivate
@@ -347,8 +399,6 @@ public:
     {}
 private:
     MetaType_ID m_typeId;
-    bool m_addBase_lock = false;
-    bool m_addDerived_lock = false;
     MetaTypeIDs m_baseClasses;
     MetaTypeIDs m_derivedClasses;
 
@@ -411,47 +461,47 @@ void MetaItem::checkDeferredDefine() const
 
 const std::string& MetaItem::name() const
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->name();
 }
 
 const MetaContainer *MetaItem::owner() const noexcept
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->owner();
 }
 
 const std::string& MetaItem::qualifiedName() const
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->qualifiedName();
 }
 
 std::size_t MetaItem::attributeCount() const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_attributes.size();
 }
 
 const variant& MetaItem::attribute(std::size_t index) const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_attributes.get(index);
 }
 
 const std::string &MetaItem::attributeName(std::size_t index) const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_attributes.name(index);
 }
 
 const variant& MetaItem::attribute(const char *name) const
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_attributes.get(name);
 }
 
@@ -460,7 +510,7 @@ void MetaItem::for_each_attribute(const std::function<void(const std::string&, c
     if (!func)
         return;
 
-    const auto d = d_func();
+    auto d = d_func();
     for (const auto &item: d->m_attributes)
         func(item.name, item.value);
 }
@@ -541,21 +591,21 @@ void MetaContainer::checkDeferredDefine() const
 std::size_t MetaContainer::count(MetaCategory category) const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->size(category);
 }
 
 const MetaItem* MetaContainer::item(MetaCategory category, const char *name) const
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->item(category, name);
 }
 
 const MetaItem* MetaContainer::item(MetaCategory category, std::size_t index) const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->item(category, index);
 }
 
@@ -609,7 +659,7 @@ void MetaContainer::for_each_class(std::function<void (const MetaClass *)> &func
 {
     if (!func)
         return;
-    const auto d = d_func();
+    auto d = d_func();
     for(const auto &item: d->m_classes)
     {
         func(static_cast<MetaClass*>(item.get()));
@@ -642,7 +692,7 @@ const MetaNamespace* MetaNamespace::global() noexcept
 
 bool MetaNamespace::isGlobal() const noexcept
 {
-    const auto d = d_func();
+    auto d = d_func();
     return (d->owner() == nullptr);
 }
 
@@ -714,21 +764,21 @@ const MetaClass *MetaClass::findByTypeName(const char *name)
 
 MetaType_ID MetaClass::metaTypeId() const noexcept
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_typeId;
 }
 
 std::size_t MetaClass::baseClassCount() const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_baseClasses.count();
 }
 
 const MetaClass* MetaClass::baseClass(std::size_t index) const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     auto typeId = d->m_baseClasses.get(index);
     return findByTypeId(typeId);
 }
@@ -736,27 +786,20 @@ const MetaClass* MetaClass::baseClass(std::size_t index) const noexcept
 std::size_t MetaClass::derivedClassCount() const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_derivedClasses.count();
 }
 
 const MetaClass *MetaClass::derivedClass(std::size_t index) const noexcept
 {
     checkDeferredDefine();
-    const auto d = d_func();
+    auto d = d_func();
     auto typeId = d->m_derivedClasses.get(index);
     return findByTypeId(typeId);
 }
 
-void MetaClass::addBaseClass(MetaType_ID typeId)
+void MetaClass::addBaseClass(MetaType_ID typeId, cast_func_t caster)
 {
-    auto d = d_func();
-    if (d->m_addBase_lock)
-        return;
-
-    d->m_addBase_lock = true;
-    FINALLY { d->m_addBase_lock = false; };
-
     auto type = MetaType{typeId};
     if (!type.valid())
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
@@ -767,19 +810,13 @@ void MetaClass::addBaseClass(MetaType_ID typeId)
                                      + type.typeName()
                                      +  " not registered"};
 
+    auto d = d_func();
     d->m_baseClasses.add(typeId);
     base->addDerivedClass(d->m_typeId);
 }
 
 void MetaClass::addDerivedClass(MetaType_ID typeId)
 {
-    auto d = d_func();
-    if (d->m_addDerived_lock)
-        return;
-
-    d->m_addDerived_lock = true;
-    FINALLY { d->m_addDerived_lock = false; };
-
     auto type = MetaType{typeId};
     if (!type.valid())
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
@@ -790,17 +827,31 @@ void MetaClass::addDerivedClass(MetaType_ID typeId)
                                      + type.typeName()
                                      +  "is not registered"};
 
+    auto d = d_func();
     d->m_derivedClasses.add(typeId);
-    derived->addBaseClass(d->m_typeId);
+}
+
+void *MetaClass::cast(const MetaClass *base, void *instance) const
+{
+    return instance;
 }
 
 bool MetaClass::inheritedFrom(const MetaClass *base) const noexcept
 {
     if (!base)
         return false;
-    auto baseId = base->metaTypeId();
-    const auto d = d_func();
-    return d->m_baseClasses.find(baseId);
+    if (base == this)
+        return true;
+
+    auto d = d_func();
+    for (const auto &item: d->m_baseClasses)
+    {
+        auto directBase = findByTypeId(item);
+        assert(directBase);
+        if (directBase->inheritedFrom(base))
+            return true;
+    }
+    return false;
 }
 
 MetaCategory MetaClass::category() const noexcept
@@ -839,7 +890,7 @@ MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
 
 const IConstructorInvoker* MetaConstructor::constructor() const noexcept
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_constructor.get();
 }
 
@@ -898,25 +949,25 @@ MetaCategory MetaEnum::category() const noexcept
 
 std::size_t MetaEnum::elementCount() const noexcept
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_elements.size();
 }
 
 const variant& MetaEnum::element(std::size_t index) const noexcept
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_elements.get(index);
 }
 
 const std::string &MetaEnum::elementName(std::size_t index) const noexcept
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_elements.name(index);
 }
 
 const variant& MetaEnum::element(const char *name) const
 {
-    const auto d = d_func();
+    auto d = d_func();
     return d->m_elements.get(name);
 }
 
@@ -924,7 +975,7 @@ void MetaEnum::for_each_element(const std::function<void (const std::string &, c
 {
     if (!func)
         return;
-    const auto d = d_func();
+    auto d = d_func();
     for (const auto &item: d->m_elements)
         func(item.name, item.value);
 }

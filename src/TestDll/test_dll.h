@@ -112,18 +112,23 @@ public:
 
 class TestBase1 {
 public:
-    TestBase1() { PRINT_PRETTY_FUNC }
-    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
-    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
-    TestBase1(int, const std::string&){ PRINT_PRETTY_FUNC }
-    virtual ~TestBase1(){ PRINT_PRETTY_FUNC }
+    DECLARE_METATYPE
+
     enum TestEnum {
         te1 = 10,
         te2 = 20
     };
 
+    TestBase1() { PRINT_PRETTY_FUNC }
+    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
+    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
+    TestBase1(int, const std::string&){ PRINT_PRETTY_FUNC }
+    virtual ~TestBase1(){ PRINT_PRETTY_FUNC }
 };
-class TestBase2 {};
-class TestDerived: public TestBase1, public TestBase2 {};
+
+class TestBase2
+{ DECLARE_METATYPE };
+class TestDerived: public TestBase1, public TestBase2
+{ DECLARE_METATYPE };
 
 } // namespace test

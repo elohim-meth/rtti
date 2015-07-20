@@ -18,17 +18,30 @@ int main(int argc, char* argv[])
             std::cout << name << " = " << value.to<std::string>() << std::endl;
         };
 
-        auto g = rtti::MetaNamespace::global();
-        std::cout << "namespace " << (g->isGlobal() ? "<global>" : "error") << std::endl;
-        std::cout << "Attribute count: " << g->attributeCount() << std::endl;
-        g->for_each_attribute(lambda);
+        auto gn = rtti::MetaNamespace::global();
+        std::cout << "namespace " << gn->name() << std::endl;
+        std::cout << "Attribute count: " << gn->attributeCount() << std::endl;
+        gn->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto s = g->getNamespace("std");
-        std::cout << "namespace " << (s->isGlobal() ? "error" : s->qualifiedName().c_str()) << std::endl;
-        std::cout << "Attribute count: " << s->attributeCount() << std::endl;
-        s->for_each_attribute(lambda);
+        auto sn = gn->getNamespace("std");
+        std::cout << "namespace " << sn->qualifiedName() << std::endl;
+        std::cout << "Attribute count: " << sn->attributeCount() << std::endl;
+        sn->for_each_attribute(lambda);
         std::cout << std::endl;
+
+        auto tn = gn->getNamespace("test");
+        std::cout << "namespace " << tn->qualifiedName() << std::endl;
+        std::cout << "Attribute count: " << tn->attributeCount() << std::endl;
+        tn->for_each_attribute(lambda);
+        std::cout << std::endl;
+
+        {
+            test::TestBase1 *t1 = new test::TestDerived{};
+            auto t2 = rtti::meta_cast<test::TestBase2>(t1);
+            auto t3 = rtti::meta_cast<test::TestDerived>(t2);
+            delete t1;
+        }
 
         auto mt = rtti::MetaType{type_name<std::vector<int>>().c_str()};
         auto vec = rtti::MetaClass::findByTypeId(mt.typeId());
@@ -43,8 +56,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        auto t = g->getNamespace("test");
-        vec = t->getClass("TestBase1");
+        vec = tn->getClass("TestBase1");
         if (vec)
         {
 //            auto e = c->getEnum("TestEnum");

@@ -63,9 +63,9 @@ struct define_std_namespace
 };
 
 template<typename From>
-bool register_toString_converter()
+inline bool register_toString_converter()
 {
-    return rtti::MetaType::registerConverter<From, std::string>(
+    return rtti::MetaType::registerConverter(
                 static_cast<std::string(*)(From)>(&std::to_string));
 }
 
@@ -81,6 +81,21 @@ bool register_asString_converter()
     };
     return rtti::MetaType::registerConverter<From, std::string>(lambda);
 }
+
+template<typename To>
+bool register_fromString_converter()
+{
+    auto lambda = [](const std::string &from) -> To
+    {
+        std::istringstream is{from};
+        To to;
+        is >> std::boolalpha >> to;
+        return std::move(to);
+
+    };
+    return rtti::MetaType::registerConverter<std::string, To>(lambda);
+}
+
 
 }
 
@@ -122,5 +137,14 @@ void register_rtti()
 
     // std::ostringstream
     register_asString_converter<bool>();
+
+    rtti::MetaType::registerConverter<std::string, int>(
+                [] (const std::string &value)
+                {
+                    return std::stoi(value);
+                });
+
+    register_fromString_converter<bool>();
+
 }
 

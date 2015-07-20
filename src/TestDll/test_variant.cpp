@@ -102,6 +102,11 @@ inline void swap(TestQPointer &lhs, TestQPointer &rhs) noexcept
 } //std
 
 
+TestQPointer test_convert(const char *value)
+{
+    return TestQPointer(value);
+}
+
 void test_variant_1()
 {
     {
@@ -126,8 +131,7 @@ void test_variant_1()
     std::printf("\n");
 
     {
-        rtti::MetaType::registerConverter<const char*, TestQPointer>(
-                    [](const char *value) -> TestQPointer { return TestQPointer{value}; });
+        rtti::MetaType::registerConverter(test_convert);
         rtti::variant v3 = "Hello, World";
         auto q3 = v3.to<TestQPointer>();
     }
