@@ -12,6 +12,8 @@
 
 namespace rtti {
 
+namespace internal {
+
 template <typename T>
 struct remove_member_pointer
 {
@@ -83,6 +85,35 @@ struct remove_member_pointer<R (C::*)(Args...) const volatile &&>
     using type = R (const volatile C&&, Args...);
 };
 
+template<typename T>
+using is_polymorphic_ptr =
+typename std::conditional<
+    std::is_polymorphic<
+        typename std::remove_cv<
+            typename std::remove_pointer<
+                typename std::remove_cv<
+                    typename std::remove_reference<T>::type
+                >::type
+            >::type
+        >::type
+    >::value, std::true_type, std::false_type
+>::type;
+
+template<typename T>
+using is_class_ptr =
+typename std::conditional<
+    std::is_class<
+        typename std::remove_cv<
+            typename std::remove_pointer<
+                typename std::remove_cv<
+                    typename std::remove_reference<T>::type
+                >::type
+            >::type
+        >::type
+    >::value, std::true_type, std::false_type
+>::type;
+
+
 template<typename T,
          bool Const = std::is_const<T>::value,
          bool Volatile = std::is_volatile<T>::value,
@@ -101,6 +132,8 @@ struct base_type {
         T>::type>::type>::type>::type>::type>::type;
 };
 
+} // namespace internal
+
 struct meta_type_tag {};
 using MetaType_ID = ID<meta_type_tag, uint32_t,
                        std::numeric_limits<uint32_t>::max()>;
@@ -110,7 +143,7 @@ using MetaType_ID = ID<meta_type_tag, uint32_t,
 namespace internal {
 template<typename T> struct meta_type;
 class ConvertFunctionBase;
-}
+} // namespace internal
 
 class TypeInfo;
 class MetaClass;
@@ -180,11 +213,13 @@ public:
     template<typename From, typename To, typename Func>
     static bool registerConverter(Func &&func);
     template<typename From, typename To>
-    bool registerConverter(To(From::*func)() const);
-    template<typename From, typename To>
-    bool registerConverter(To(From::*func)(bool*) const);
+    static bool registerConverter(To(*func)(From));
     template<typename From, typename To>
     static bool registerConverter();
+    template<typename From, typename To>
+    static bool registerConverter(To(From::*func)() const);
+    template<typename From, typename To>
+    static bool registerConverter(To(From::*func)(bool*) const);
 
     static void unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
     template<typename From, typename To>
@@ -200,7 +235,7 @@ private:
     template<typename From, typename To, typename Func>
     static bool registerConverter_imp(Func &&func);
     template<typename From, typename To>
-    bool registerConverter_imp(To(From::*func)() const);
+    static bool registerConverter_imp(To(From::*func)() const);
     template<typename From, typename To>
     bool registerConverter_imp(To(From::*func)(bool*) const);
     static bool registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
@@ -425,6 +460,13 @@ inline bool MetaType::registerConverter(Func &&func)
     using T = typename std::decay<To>::type;
     using Fu = typename std::decay<Func>::type;
     return registerConverter_imp<F, T>(std::forward<Fu>(func));
+}
+
+template<typename From, typename To>
+inline bool MetaType::registerConverter(To(*func)(From))
+{
+    using Func = To(*)(From);
+    return registerConverter<From, To, Func>(std::move(func));
 }
 
 template<typename From, typename To>
