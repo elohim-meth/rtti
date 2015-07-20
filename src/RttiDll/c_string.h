@@ -16,9 +16,13 @@ public:
 
     template<typename T,
              typename = typename std::enable_if<std::is_same<T, const CharT*>::value>::type>
-    explicit cstring_base(T data)
+    explicit cstring_base(T data, std::size_t length = 0)
         : m_data{static_cast<const CharT*>(data)},
-          m_length{m_data ? std::char_traits<CharT>::length(m_data) : 0}
+          m_length{length ? length : m_data ? std::char_traits<CharT>::length(m_data) : 0}
+    {}
+
+    explicit cstring_base(const std::basic_string<CharT> &str)
+        : m_data{str.c_str()}, m_length{str.size()}
     {}
 
     cstring_base() noexcept = default;
