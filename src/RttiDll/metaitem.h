@@ -224,6 +224,24 @@ const To* meta_cast(const From *from)
                 from, typename has_method_metaTypeId<MetaType_ID(From::*)() const>::type{});
 }
 
+template<typename To, typename From>
+To& meta_cast(From &from)
+{
+    auto ptr = meta_cast<To>(&from);
+    if (!ptr)
+        throw;
+    return *ptr;
+}
+
+template<typename To, typename From>
+const To& meta_cast(const From &from)
+{
+    auto ptr = meta_cast<To>(&from);
+    if (!ptr)
+        throw;
+    return *ptr;
+}
+
 struct DLL_PUBLIC IConstructorInvoker
 {
     enum {

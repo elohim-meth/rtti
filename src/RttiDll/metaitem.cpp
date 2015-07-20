@@ -849,11 +849,6 @@ void MetaClass::addDerivedClass(MetaType_ID typeId)
     d->m_derivedClasses.add(typeId);
 }
 
-void *MetaClass::cast(const MetaClass *base, void *instance) const
-{
-    return instance;
-}
-
 bool MetaClass::inheritedFrom(const MetaClass *base) const noexcept
 {
     if (!base)
@@ -870,6 +865,27 @@ bool MetaClass::inheritedFrom(const MetaClass *base) const noexcept
             return true;
     }
     return false;
+}
+
+void* MetaClass::cast(const MetaClass *base, void *instance) const
+{
+    if (!base)
+        return nullptr;
+    if (base == this)
+        return instance;
+
+    auto d = d_func();
+    for (const auto &item: d->m_baseClasses)
+    {
+        auto directBase = findByTypeId(item.first);
+        if (directBase->inheritedFrom(base))
+        {
+            // cast to direct base
+            instance = item.second(instance);
+            return directBase->cast(base, instance);
+        }
+    }
+    return nullptr;
 }
 
 MetaCategory MetaClass::category() const noexcept
