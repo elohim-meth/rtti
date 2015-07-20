@@ -50,6 +50,12 @@ public:
     using runtime_error::runtime_error;
 };
 
+class DLL_PUBLIC bad_argument_cast final: public bad_cast
+{
+public:
+    using bad_cast::bad_cast;
+};
+
 class DLL_PUBLIC bad_variant_cast final: public bad_cast
 {
 public:
@@ -62,7 +68,7 @@ public:
     using bad_cast::bad_cast;
 };
 
-class DLL_PUBLIC bad_rtti_cast final: public bad_cast
+class DLL_PUBLIC bad_meta_cast final: public bad_cast
 {
 public:
     using bad_cast::bad_cast;

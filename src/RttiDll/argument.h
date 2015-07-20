@@ -11,13 +11,6 @@
 
 namespace rtti {
 
-class DLL_PUBLIC bad_argument_cast final: public std::bad_cast
-{
-public:
-    const char* what() const noexcept override
-    { return "Bad argument cast"; }
-};
-
 class DLL_PUBLIC argument final
 {
 public:
@@ -57,7 +50,7 @@ private:
     T value(std::true_type) const
     {
         if (empty() || (metaTypeId<internal::decay_t<T>>() != m_type))
-            throw bad_argument_cast{};
+            throw bad_argument_cast{"Types doesn't match"};
         auto ptr = reinterpret_cast<internal::decay_t<T>*>(
                     const_cast<void*>(m_data));
         return std::move(*ptr);
@@ -67,7 +60,7 @@ private:
     T value(std::false_type) const
     {
         if (empty() || (metaTypeId<internal::decay_t<T>>() != m_type))
-            throw bad_argument_cast{};
+            throw bad_argument_cast{"Types doesn't match"};
         auto ptr = reinterpret_cast<internal::decay_t<T>*>(
                     const_cast<void*>(m_data));
         return *ptr;
