@@ -10,6 +10,7 @@ int main(int argc, char* argv[])
     (void) argc; (void) argv;
     try {
         test_variant_1();
+        test_cast_1();
 
         register_rtti();
 
@@ -35,13 +36,6 @@ int main(int argc, char* argv[])
         std::cout << "Attribute count: " << tn->attributeCount() << std::endl;
         tn->for_each_attribute(lambda);
         std::cout << std::endl;
-
-        {
-            test::TestBase1 *t1 = new test::TestDerived{};
-            auto t2 = rtti::meta_cast<test::TestBase2>(t1);
-            auto t3 = rtti::meta_cast<test::TestDerived>(t2);
-            delete t1;
-        }
 
         auto mt = rtti::MetaType{type_name<std::vector<int>>().c_str()};
         auto vec = rtti::MetaClass::findByTypeId(mt.typeId());

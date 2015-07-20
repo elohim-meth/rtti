@@ -1,5 +1,6 @@
 ﻿#include "test_register.h"
 #include "test_variant.h"
+#include "test_cast.h"
 
 #include <debug.h>
 
@@ -111,9 +112,8 @@ public:
 //};
 
 class TestBase1 {
-public:
     DECLARE_METATYPE
-
+public:
     enum TestEnum {
         te1 = 10,
         te2 = 20

@@ -258,7 +258,8 @@ inline void MetaItemList::for_each(F &&func) const
     std::lock_guard<std::mutex> lock{m_lock};
     for(const auto &item: m_items)
     {
-        func(item.get());
+        if (!func(item.get()))
+            break;
     }
 }
 
@@ -390,7 +391,8 @@ public:
 
     bool find(MetaType_ID value) const
     {
-        auto search = std::find_if(std::begin(m_items), std::end(m_items), [value](const item_t &item) {
+        auto search = std::find_if(std::begin(m_items), std::end(m_items),
+                                   [value](const item_t &item) {
             return (value == item.first);
         });
         return (search != std::end(m_items));
@@ -673,14 +675,14 @@ const MetaConstructor *MetaContainer::moveConstructor() const
     return static_cast<const MetaConstructor*>(item(mcatConstructor, "move constructor"));
 }
 
-void MetaContainer::for_each_class(std::function<void(const MetaClass*)> &func) const
+void MetaContainer::for_each_class(std::function<bool(const MetaClass*)> &func) const
 {
     if (func)
         return;
 
     auto d = d_func();
-    d->m_classes.for_each([&func](const MetaItem *item){
-        func(static_cast<const MetaClass*>(item));
+    d->m_classes.for_each([&func](const MetaItem *item) -> bool{
+        return func(static_cast<const MetaClass*>(item));
     });
 }
 
@@ -871,6 +873,8 @@ void* MetaClass::cast(const MetaClass *base, void *instance) const
 {
     if (!base)
         return nullptr;
+
+    instance = *reinterpret_cast<void**>(instance);
     if (base == this)
         return instance;
 
@@ -881,8 +885,8 @@ void* MetaClass::cast(const MetaClass *base, void *instance) const
         if (directBase->inheritedFrom(base))
         {
             // cast to direct base
-            instance = item.second(instance);
-            return directBase->cast(base, instance);
+            const void *base_ptr = item.second(instance);
+            return directBase->cast(base, &base_ptr);
         }
     }
     return nullptr;

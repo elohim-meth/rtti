@@ -96,7 +96,7 @@ public:
 
     const MetaClass* getClass(const char *name) const;
     std::size_t classCount() const noexcept;
-    void for_each_class(std::function<void (const MetaClass*)> &func) const;
+    void for_each_class(std::function<bool(const MetaClass*)> &func) const;
 
     const MetaConstructor* getConstructor(const char *name) const;
     std::size_t constructorCount() const noexcept;
@@ -163,7 +163,7 @@ protected:
 
     void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     void addDerivedClass(MetaType_ID typeId);
-    void* cast(const MetaClass *base, void* instance) const;
+    void* cast(const MetaClass *base, void *instance) const;
 private:
     DECLARE_PRIVATE(MetaClass)
     template<typename, typename> friend class rtti::meta_define;
@@ -177,6 +177,7 @@ public: \
     { \
         return rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(); \
     } \
+private: \
 
 namespace internal {
 
@@ -194,7 +195,7 @@ To* meta_cast_selector(const From *from, std::true_type)
     if (!fromClass || !toClass)
         return nullptr;
 
-    auto result = fromClass->cast(toClass, const_cast<From*>(from));
+    auto result = fromClass->cast(toClass, &from);
     if (!result)
         return nullptr;
     return static_cast<To*>(result);
@@ -203,7 +204,7 @@ To* meta_cast_selector(const From *from, std::true_type)
 template<typename To, typename From>
 To* meta_cast_selector(const From *from, std::false_type)
 {
-    return from;
+    return const_cast<From*>(from);
 }
 
 } // namespace internal
@@ -229,7 +230,7 @@ To& meta_cast(From &from)
 {
     auto ptr = meta_cast<To>(&from);
     if (!ptr)
-        throw;
+        throw bad_meta_cast{"Bad meta cast"};
     return *ptr;
 }
 
@@ -238,7 +239,7 @@ const To& meta_cast(const From &from)
 {
     auto ptr = meta_cast<To>(&from);
     if (!ptr)
-        throw;
+        throw bad_meta_cast{"Bad meta cast"};
     return *ptr;
 }
 
