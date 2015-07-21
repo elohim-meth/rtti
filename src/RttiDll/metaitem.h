@@ -1,15 +1,9 @@
 ﻿#ifndef METAITEM_H
 #define METAITEM_H
 
-#include "metatype.h"
-#include "argument.h"
-
-#include <typelist.h>
-#include <sfinae.h>
+#include "global.h"
 
 #include <memory>
-
-#include "global.h"
 
 #define DECLARE_PRIVATE(Class) \
     inline Class##Private* d_func() { return reinterpret_cast<Class##Private *>(d_ptr.get()); } \
@@ -30,24 +24,19 @@ enum MetaCategory: int {
 
 // forward
 class variant;
-class MetaItem;
-class MetaItemList;
-class MetaItemPrivate;
 class MetaContainer;
-class MetaContainerPrivate;
-class MetaNamespace;
-class MetaNamespacePrivate;
-class MetaClass;
-class MetaClassPrivate;
-class MetaConstructor;
-class MetaConstructorPrivate;
-class MetaEnum;
-class MetaEnumPrivate;
+class MetaItemPrivate;
+
 template<typename, typename> class meta_define;
+namespace internal {
+class MetaItemList;
+} //namespace internal
 
 class DLL_PUBLIC MetaItem
 {
 public:
+    using enum_attribute_t = std::function<bool(const std::string&, const variant&)>;
+
     virtual MetaCategory category() const noexcept = 0;
     const std::string& name() const;
     const MetaContainer* owner() const noexcept;
@@ -56,7 +45,7 @@ public:
     const variant& attribute(std::size_t index) const noexcept;
     const std::string& attributeName(std::size_t index) const noexcept;
     const variant& attribute(const char *name) const;
-    void for_each_attribute(const std::function<void(const std::string&, const variant&)> &func) const;
+    void for_each_attribute(const enum_attribute_t &func) const;
 protected:
     explicit MetaItem(const char *name, const MetaContainer &owner);
     explicit MetaItem(MetaItemPrivate &value);
@@ -74,247 +63,7 @@ protected:
 
 private:
     DECLARE_PRIVATE(MetaItem)
-    friend class rtti::MetaItemList;
-    template<typename, typename> friend class rtti::meta_define;
-};
-
-struct DLL_PUBLIC IDefinitionCallbackHolder
-{
-    virtual void invoke(MetaContainer&) = 0;
-    virtual ~IDefinitionCallbackHolder() noexcept = default;
-};
-
-class DLL_PUBLIC MetaContainer: public MetaItem
-{
-public:
-    std::size_t count(MetaCategory category) const noexcept;
-    const MetaItem* item(MetaCategory category, std::size_t index) const noexcept;
-    const MetaItem* item(MetaCategory category, const char *name) const;
-
-    const MetaNamespace* getNamespace(const char *name) const;
-    std::size_t namespaceCount() const noexcept;
-
-    const MetaClass* getClass(const char *name) const;
-    std::size_t classCount() const noexcept;
-    void for_each_class(std::function<bool(const MetaClass*)> &func) const;
-
-    const MetaConstructor* getConstructor(const char *name) const;
-    std::size_t constructorCount() const noexcept;
-    const MetaConstructor* defaultConstructor() const;
-    const MetaConstructor* copyConstructor() const;
-    const MetaConstructor* moveConstructor() const;
-
-    const MetaEnum* getEnum(const char *name) const;
-    std::size_t enumCount() const noexcept;
-
-protected:
-    explicit MetaContainer(const char *name, const MetaContainer &owner);
-    explicit MetaContainer(MetaContainerPrivate &value);
-
-    bool addItem(MetaItem *value);
-    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);
-    void checkDeferredDefine() const override;
-
-private:
-    DECLARE_PRIVATE(MetaContainer)
-    template<typename, typename> friend class rtti::meta_define;
-};
-
-class DLL_PUBLIC MetaNamespace final: public MetaContainer
-{
-public:
-    static const MetaNamespace* global() noexcept;
-    bool isGlobal() const noexcept;
-    MetaCategory category() const noexcept override;
-protected:
-    using MetaContainer::MetaContainer;
-    static MetaNamespace* create(const char *name, MetaContainer &owner);
-private:
-    MetaNamespace(); //global namespace
-
-    DECLARE_PRIVATE(MetaNamespace)
-    template<typename, typename> friend class rtti::meta_define;
-};
-
-namespace internal {
-
-template<typename To, typename From>
-To* meta_cast_selector(const From*, std::true_type);
-
-} // namespace internal
-
-class DLL_PUBLIC MetaClass final: public MetaContainer
-{
-public:
-    using cast_func_t = void*(*)(void*);
-
-    MetaCategory category() const noexcept override;
-    static const MetaClass* findByTypeId(MetaType_ID typeId) noexcept;
-    static const MetaClass* findByTypeName(const char *name);
-    MetaType_ID metaTypeId() const noexcept;
-    std::size_t baseClassCount() const noexcept;
-    const MetaClass* baseClass(std::size_t index) const noexcept;
-    std::size_t derivedClassCount() const noexcept;
-    const MetaClass* derivedClass(std::size_t index) const noexcept;
-    bool inheritedFrom(const MetaClass *base) const noexcept;
-protected:
-    explicit MetaClass(const char *name, const MetaContainer &owner, MetaType_ID typeId);
-    static MetaClass* create(const char *name, MetaContainer &owner, MetaType_ID typeId);
-
-    void addBaseClass(MetaType_ID typeId, cast_func_t caster);
-    void addDerivedClass(MetaType_ID typeId);
-    void* cast(const MetaClass *base, const void *instance) const;
-private:
-    DECLARE_PRIVATE(MetaClass)
-    template<typename, typename> friend class rtti::meta_define;
-    template<typename To, typename From>
-    friend To* internal::meta_cast_selector(const From*, std::true_type);
-};
-
-struct DLL_PUBLIC ClassInfo
-{
-    MetaType_ID id;
-    const void* instance;
-
-    constexpr ClassInfo(MetaType_ID id, const void *instance)
-        : id(id), instance(instance)
-    {}
-};
-
-#define DECLARE_CLASSINFO \
-public: \
-    virtual rtti::ClassInfo classInfo() const \
-    { \
-        return {rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(), this}; \
-    } \
-private: \
-
-namespace internal {
-
-template<typename To, typename From>
-To* meta_cast_selector(const From *from, std::true_type)
-{
-    static_assert(std::is_class<From>::value && std::is_class<To>::value,
-                  "Both template arguments should be classes");
-    if (!from)
-        return nullptr;
-
-    auto info = from->classInfo();
-    auto fromClass = MetaClass::findByTypeId(info.id);
-    auto toClass = MetaClass::findByTypeId(metaTypeId<To>());
-    if (!fromClass || !toClass)
-        return nullptr;
-
-    auto result = fromClass->cast(toClass, info.instance);
-    if (!result)
-        return nullptr;
-    return static_cast<To*>(result);
-}
-
-template<typename To, typename From>
-To* meta_cast_selector(const From *from, std::false_type)
-{
-    return const_cast<From*>(from);
-}
-
-} // namespace internal
-
-HAS_METHOD(classInfo);
-
-template<typename To, typename From>
-To* meta_cast(From *from)
-{
-    return internal::meta_cast_selector<To, From>(
-                from, typename has_method_classInfo<ClassInfo(From::*)() const>::type{});
-}
-
-template<typename To, typename From>
-const To* meta_cast(const From *from)
-{
-    return internal::meta_cast_selector<To, From>(
-                from, typename has_method_classInfo<ClassInfo(From::*)() const>::type{});
-}
-
-template<typename To, typename From>
-To& meta_cast(From &from)
-{
-    auto ptr = meta_cast<To>(&from);
-    if (!ptr)
-        throw bad_meta_cast{"Bad meta cast"};
-    return *ptr;
-}
-
-template<typename To, typename From>
-const To& meta_cast(const From &from)
-{
-    auto ptr = meta_cast<To>(&from);
-    if (!ptr)
-        throw bad_meta_cast{"Bad meta cast"};
-    return *ptr;
-}
-
-struct DLL_PUBLIC IConstructorInvoker
-{
-    enum {
-        MaxNumberOfArguments = 10
-    };
-
-    virtual variant invoke(argument arg0 = argument{},
-                           argument arg1 = argument{},
-                           argument arg2 = argument{},
-                           argument arg3 = argument{},
-                           argument arg4 = argument{},
-                           argument arg5 = argument{},
-                           argument arg6 = argument{},
-                           argument arg7 = argument{},
-                           argument arg8 = argument{},
-                           argument arg9 = argument{}) const = 0;
-    virtual std::string signature() const = 0;
-    virtual ~IConstructorInvoker() noexcept = default;
-};
-
-class DLL_PUBLIC MetaConstructor final: public MetaItem
-{
-public:
-    MetaCategory category() const noexcept override;
-    template<typename ...Args>
-    variant invoke(Args&&... args) const
-    {
-        static_assert(sizeof...(Args) <= IConstructorInvoker::MaxNumberOfArguments,
-                      "Maximum supported metaconstructor arguments: 10");
-        return constructor()->invoke(std::forward<Args>(args)...);
-    }
-
-protected:
-    explicit MetaConstructor(std::string &&name, MetaContainer &owner,
-                             std::unique_ptr<IConstructorInvoker> constructor);
-    static MetaConstructor* create(const char *name, MetaContainer &owner,
-                                   std::unique_ptr<IConstructorInvoker> constructor);
-
-private:
-    const IConstructorInvoker* constructor() const noexcept;
-
-    DECLARE_PRIVATE(MetaConstructor)
-    template<typename, typename> friend class rtti::meta_define;
-};
-
-class DLL_PUBLIC MetaEnum final: public MetaItem
-{
-public:
-    MetaCategory category() const noexcept override;
-
-    std::size_t elementCount() const noexcept;
-    const variant& element(std::size_t index) const noexcept;
-    const std::string& elementName(std::size_t index) const noexcept;
-    const variant& element(const char *name) const;
-    void for_each_element(const std::function<void(const std::string&, const variant&)> &func) const;
-protected:
-    explicit MetaEnum(const char *name, const MetaContainer &owner, MetaType_ID typeId);
-    static MetaEnum* create(const char *name, MetaContainer &owner, MetaType_ID typeId);
-
-    void addElement(const char *name, variant &&value);
-private:
-    DECLARE_PRIVATE(MetaEnum)
+    friend class rtti::internal::MetaItemList;
     template<typename, typename> friend class rtti::meta_define;
 };
 

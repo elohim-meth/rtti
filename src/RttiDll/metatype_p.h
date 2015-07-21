@@ -3,11 +3,10 @@
 
 #include "metatype.h"
 #include "c_string.h"
+
 #include "global.h"
 
 namespace rtti {
-
-class MetaClass;
 
 struct DLL_LOCAL TypeInfo {
     const CString name;

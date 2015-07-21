@@ -1,7 +1,13 @@
 ﻿set(SOURCES
+    ./argument.cpp
     ./metatype.cpp
     ./variant.cpp
     ./metaitem.cpp
+    ./metacontainer.cpp
+    ./metanamespace.cpp
+    ./metaclass.cpp
+    ./metaconstructor.cpp
+    ./metaenum.cpp
     ./metadefine.cpp
 )
 
@@ -11,7 +17,19 @@ set(HEADERS
     ./argument.h
     ./metatype.h
     ./metatype_p.h
+    ./variant.h
     ./metaitem.h
+    ./metaitem_p.h
+    ./metacontainer.h
+    ./metacontainer_p.h
+    ./metanamespace.h
+    ./metanamespace_p.h
+    ./metaclass.h
+    ./metaclass_p.h
+    ./metaconstructor.h
+    ./metaconstructor_p.h
+    ./metaenum.h
+    ./metaenum_p.h
     ./metadefine.h
     ./metaerror.h
     ./rtti.h

@@ -3,12 +3,7 @@
 
 #include "metatype.h"
 #include "metaerror.h"
-
-#include <type_traits>
-#include <utility>
-#include <new>
-
-#include "global.h"
+#include "metaclass.h"
 
 namespace rtti {
 
@@ -17,9 +12,6 @@ class argument;
 class variant;
 
 namespace internal {
-
-template<typename T>
-using decay_t = typename std::decay<T>::type;
 
 constexpr std::size_t STORAGE_SIZE = sizeof(void*) * 2;
 

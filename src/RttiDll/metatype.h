@@ -86,6 +86,9 @@ struct remove_member_pointer<R (C::*)(Args...) const volatile &&>
 };
 
 template<typename T>
+using decay_t = typename std::decay<T>::type;
+
+template<typename T>
 using is_polymorphic_ptr =
 typename std::conditional<
     std::is_polymorphic<

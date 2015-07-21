@@ -2,7 +2,7 @@
 #define ARGUMENT_H
 
 #include "metatype.h"
-#include "variant.h"
+#include "metaerror.h"
 
 #include <type_traits>
 #include <utility>
@@ -11,14 +11,14 @@
 
 namespace rtti {
 
+// forward
+class variant;
+
 class DLL_PUBLIC argument final
 {
 public:
     argument() noexcept = default;
-
-    argument(const variant &value) noexcept
-        : m_data{value.raw_data_ptr()}, m_type{value.type()}
-    {}
+    argument(const variant &value) noexcept;
 
     template<typename T,
              typename = typename std::enable_if<

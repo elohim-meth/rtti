@@ -17,6 +17,7 @@ int main(int argc, char* argv[])
         auto lambda = [](const std::string &name, const rtti::variant &value)
         {
             std::cout << name << " = " << value.to<std::string>() << std::endl;
+            return true;
         };
 
         auto gn = rtti::MetaNamespace::global();

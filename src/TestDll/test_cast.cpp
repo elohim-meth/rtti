@@ -1,5 +1,6 @@
 ﻿#include "test_cast.h"
 
+#include <rtti.h>
 #include <debug.h>
 
 #include <memory>

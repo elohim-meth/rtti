@@ -1,8 +1,12 @@
 ﻿#ifndef METADEFINE_H
 #define METADEFINE_H
 
+#include "metaenum.h"
+#include "metaconstructor.h"
+#include "metaclass.h"
+#include "metanamespace.h"
+#include "metacontainer.h"
 #include "metaitem.h"
-#include "metaerror.h"
 
 #include <typelist.h>
 
@@ -10,8 +14,6 @@
 #include <stack>
 #include <cassert>
 #include <type_traits>
-
-#include "global.h"
 
 namespace rtti {
 

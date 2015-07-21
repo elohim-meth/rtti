@@ -21,7 +21,7 @@ static constexpr std::array<TypeInfo, 41> fundamentalTypes = {
 
 #undef DEFINE_STATIC_TYPE_INFO
 
-class CustomTypes {
+class DLL_LOCAL CustomTypes {
 public:
     CustomTypes();
     CustomTypes(const CustomTypes &) = delete;
@@ -120,7 +120,7 @@ static inline CustomTypes& customTypes()
     return result;
 }
 
-} // namespace internal
+} // namespace
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // MetaType
