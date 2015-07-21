@@ -91,7 +91,120 @@ private:
     friend class PrivatePimpl;
 };
 
-}
+class A
+{
+    A()
+    { PRINT_PRETTY_FUNC }
+
+    explicit A(int value)
+        : a(value)
+    {
+        PRINT_PRETTY_FUNC
+    }
+
+    A(const A &other)
+    {
+        PRINT_PRETTY_FUNC
+        a = other.a;
+    }
+
+    A(A &&other) noexcept
+    {
+        PRINT_PRETTY_FUNC
+        swap(other);
+    }
+
+    A& operator=(const A &other)
+    {
+        PRINT_PRETTY_FUNC
+        if (this != &other)
+            A{other}.swap(*this);
+        return *this;
+    }
+
+    A& operator=(A &&other) noexcept
+    {
+        PRINT_PRETTY_FUNC
+        if (this != &other)
+            A{std::move(other)}.swap(*this);
+        return *this;
+    }
+
+    void swap(A &other) noexcept
+    {
+        std::swap(a, other.a);
+    }
+
+
+    virtual ~A()
+    {
+        PRINT_PRETTY_FUNC
+        a = -1;
+    }
+
+private:
+    int a = -1;
+};
+
+class B: public A
+{
+    B()
+    { PRINT_PRETTY_FUNC }
+
+    explicit B(int value)
+        : b(value)
+    {
+        PRINT_PRETTY_FUNC
+    }
+
+    B(const B &other)
+    {
+        PRINT_PRETTY_FUNC
+        b = other.b;
+    }
+
+    B(B &&other) noexcept
+    {
+        PRINT_PRETTY_FUNC
+        swap(other);
+    }
+
+    B& operator=(const B &other)
+    {
+        PRINT_PRETTY_FUNC
+        if (this != &other)
+            B{other}.swap(*this);
+        return *this;
+    }
+
+    B& operator=(B &&other) noexcept
+    {
+        PRINT_PRETTY_FUNC
+        if (this != &other)
+            B{std::move(other)}.swap(*this);
+        return *this;
+    }
+
+    void swap(B &other) noexcept
+    {
+        std::swap(b, other.b);
+    }
+
+
+    virtual ~B()
+    {
+        PRINT_PRETTY_FUNC
+        b = -1;
+    }
+
+private:
+    int b = -1;
+};
+
+
+
+
+} // namespace
 
 namespace std {
 template<>

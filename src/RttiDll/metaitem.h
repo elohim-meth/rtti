@@ -163,7 +163,7 @@ protected:
 
     void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     void addDerivedClass(MetaType_ID typeId);
-    void* cast(const MetaClass *base, void *instance) const;
+    void* cast(const MetaClass *base, const void *instance) const;
 private:
     DECLARE_PRIVATE(MetaClass)
     template<typename, typename> friend class rtti::meta_define;
@@ -171,11 +171,21 @@ private:
     friend To* internal::meta_cast_selector(const From*, std::true_type);
 };
 
+struct DLL_PUBLIC ClassInfo
+{
+    MetaType_ID id;
+    const void* instance;
+
+    constexpr ClassInfo(MetaType_ID id, const void *instance)
+        : id(id), instance(instance)
+    {}
+};
+
 #define DECLARE_METATYPE \
 public: \
-    virtual rtti::MetaType_ID metaTypeId() const \
+    virtual rtti::ClassInfo classInfo() const \
     { \
-        return rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(); \
+        return {rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(), this}; \
     } \
 private: \
 
@@ -189,13 +199,13 @@ To* meta_cast_selector(const From *from, std::true_type)
     if (!from)
         return nullptr;
 
-    auto fromTypeId = from->metaTypeId();
-    auto fromClass = MetaClass::findByTypeId(fromTypeId);
+    auto info = from->classInfo();
+    auto fromClass = MetaClass::findByTypeId(info.id);
     auto toClass = MetaClass::findByTypeId(metaTypeId<To>());
     if (!fromClass || !toClass)
         return nullptr;
 
-    auto result = fromClass->cast(toClass, &from);
+    auto result = fromClass->cast(toClass, info.instance);
     if (!result)
         return nullptr;
     return static_cast<To*>(result);
@@ -209,20 +219,20 @@ To* meta_cast_selector(const From *from, std::false_type)
 
 } // namespace internal
 
-HAS_METHOD(metaTypeId);
+HAS_METHOD(classInfo);
 
 template<typename To, typename From>
 To* meta_cast(From *from)
 {
     return internal::meta_cast_selector<To, From>(
-                from, typename has_method_metaTypeId<MetaType_ID(From::*)() const>::type{});
+                from, typename has_method_classInfo<ClassInfo(From::*)() const>::type{});
 }
 
 template<typename To, typename From>
 const To* meta_cast(const From *from)
 {
     return internal::meta_cast_selector<To, From>(
-                from, typename has_method_metaTypeId<MetaType_ID(From::*)() const>::type{});
+                from, typename has_method_classInfo<ClassInfo(From::*)() const>::type{});
 }
 
 template<typename To, typename From>

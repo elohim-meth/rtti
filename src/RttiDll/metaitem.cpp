@@ -869,14 +869,14 @@ bool MetaClass::inheritedFrom(const MetaClass *base) const noexcept
     return false;
 }
 
-void* MetaClass::cast(const MetaClass *base, void *instance) const
+void* MetaClass::cast(const MetaClass *base, const void *instance) const
 {
     if (!base)
         return nullptr;
 
-    instance = *reinterpret_cast<void**>(instance);
+    auto result = const_cast<void*>(instance);
     if (base == this)
-        return instance;
+        return result;
 
     auto d = d_func();
     for (const auto &item: d->m_baseClasses)
@@ -885,8 +885,8 @@ void* MetaClass::cast(const MetaClass *base, void *instance) const
         if (directBase->inheritedFrom(base))
         {
             // cast to direct base
-            const void *base_ptr = item.second(instance);
-            return directBase->cast(base, &base_ptr);
+            result = item.second(result);
+            return directBase->cast(base, result);
         }
     }
     return nullptr;

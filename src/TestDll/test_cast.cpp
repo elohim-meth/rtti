@@ -30,6 +30,7 @@ struct C: B
 struct D
 {
     int d = 4;
+    virtual ~D() = default;
     DECLARE_METATYPE
 };
 
@@ -127,8 +128,10 @@ void test_cast_1()
         assert(!d1);
         try
         {
+            //should throw exception
             auto &d2 = meta_cast<D>(*a);
             (void) d2;
+            assert(false);
         }
         catch(const bad_meta_cast &e)
         {
@@ -139,22 +142,52 @@ void test_cast_1()
 
     {
         using namespace rtti;
-        auto a = unique_ptr<A>(new E());
+        auto d = unique_ptr<D>(new E());
 
-        auto e1 = meta_cast<E>(a.get());
+        auto e1 = meta_cast<E>(d.get());
         assert(e1 && e1->e == 5);
-        auto &e2 = meta_cast<E>(*a);
+        auto &e2 = meta_cast<E>(*d);
         assert(e2.e == 5);
 
-        auto d1 = meta_cast<D>(a.get());
+        auto d1 = meta_cast<D>(d.get());
         assert(d1 && d1->d == 4);
-        auto &d2 = meta_cast<D>(*a);
+        auto &d2 = meta_cast<D>(*d);
         assert(d2.d == 4);
 
-        auto c1 = meta_cast<C>(a.get());
+        auto c1 = meta_cast<C>(d.get());
         assert(c1 && c1->c == 3);
-        auto &c2 = meta_cast<C>(*a);
+        auto &c2 = meta_cast<C>(*d);
         assert(c2.c == 3);
+
+        auto b1 = meta_cast<B>(d.get());
+        assert(b1 && b1->b == 2);
+        auto &b2 = meta_cast<B>(*d);
+        assert(b2.b == 2);
+
+        auto a1 = meta_cast<A>(d.get());
+        assert(a1 && a1->a == 1);
+        auto &a2 = meta_cast<A>(*d);
+        assert(a2.a == 1);
+    }
+
+    {
+        using namespace rtti;
+        auto a = unique_ptr<A>(new VC());
+
+        auto c1 = meta_cast<VC>(a.get());
+        assert(c1 && c1->vc == 100);
+        auto &c2 = meta_cast<VC>(*a);
+        assert(c2.vc == 100);
+
+        auto vb1 = meta_cast<VB1>(a.get());
+        assert(vb1 && vb1->vb1 == 10);
+        auto &vb11 = meta_cast<VB1>(*a);
+        assert(vb11.vb1 == 10);
+
+        auto vb2 = meta_cast<VB2>(a.get());
+        assert(vb2 && vb2->vb2 == 20);
+        auto &vb21 = meta_cast<VB2>(*a);
+        assert(vb21.vb2 == 20);
 
         auto b1 = meta_cast<B>(a.get());
         assert(b1 && b1->b == 2);
@@ -165,39 +198,7 @@ void test_cast_1()
         assert(a1 && a1->a == 1);
         auto &a2 = meta_cast<A>(*a);
         assert(a2.a == 1);
-    }
 
-    {
-        using namespace rtti;
-        A* a = new VC();
-
-        auto c1 = meta_cast<VC>(a);
-        c1 = a;
-        assert(c1 && c1->vc == 100);
-        auto &c2 = meta_cast<VC>(*a);
-        assert(c2.vc == 100);
-
-//        auto b1 = meta_cast<B>(a.get());
-//        assert(b1 && b1->b == 2);
-//        auto &b2 = meta_cast<B>(*a);
-//        assert(b2.b == 2);
-
-//        auto a1 = meta_cast<A>(a.get());
-//        assert(a1 && a1->a == 1);
-//        auto &a2 = meta_cast<A>(*a);
-//        assert(a2.a == 1);
-
-//        auto d1 = meta_cast<D>(a.get());
-//        assert(!d1);
-//        try
-//        {
-//            auto &d2 = meta_cast<D>(*a);
-//        }
-//        catch(const bad_meta_cast &e)
-//        {
-//            printf(e.what());
-//            printf("\n");
-//        }
     }
 
 }
