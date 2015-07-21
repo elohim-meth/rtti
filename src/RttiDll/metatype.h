@@ -186,6 +186,9 @@ public:
         MoveConstructible    = 1 << 20,
         MoveAssignable       = 1 << 21,
         Destructible         = 1 << 22,
+
+        ClassPtr             = 1 << 23,
+        PolymorphicPtr       = 1 << 24
     };
 
     MetaType() noexcept = default;
@@ -276,7 +279,10 @@ struct type_flags {
         (std::is_copy_assignable<T>::value ? Flags::CopyAssignable : Flags::None) |
         (std::is_move_constructible<T>::value ? Flags::MoveConstructible : Flags::None) |
         (std::is_move_assignable<T>::value ? Flags::MoveAssignable : Flags::None) |
-        (std::is_destructible<T>::value ? Flags::Destructible : Flags::None));
+        (std::is_destructible<T>::value ? Flags::Destructible : Flags::None) |
+        (internal::is_class_ptr<T>::value ? Flags::ClassPtr : Flags::None) |
+        (internal::is_polymorphic_ptr<T>::value ? Flags::PolymorphicPtr : Flags::None)
+    );
 };
 
 namespace internal {

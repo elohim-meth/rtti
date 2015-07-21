@@ -530,6 +530,7 @@ void MetaItem::for_each_attribute(const std::function<void(const std::string&, c
     if (!func)
         return;
 
+    checkDeferredDefine();
     auto d = d_func();
     for (const auto &item: d->m_attributes)
         func(item.name, item.value);
@@ -680,6 +681,7 @@ void MetaContainer::for_each_class(std::function<bool(const MetaClass*)> &func) 
     if (func)
         return;
 
+    checkDeferredDefine();
     auto d = d_func();
     d->m_classes.for_each([&func](const MetaItem *item) -> bool{
         return func(static_cast<const MetaClass*>(item));
@@ -858,6 +860,7 @@ bool MetaClass::inheritedFrom(const MetaClass *base) const noexcept
     if (base == this)
         return true;
 
+    checkDeferredDefine();
     auto d = d_func();
     for (const auto &item: d->m_baseClasses)
     {
@@ -878,6 +881,7 @@ void* MetaClass::cast(const MetaClass *base, const void *instance) const
     if (base == this)
         return result;
 
+    checkDeferredDefine();
     auto d = d_func();
     for (const auto &item: d->m_baseClasses)
     {

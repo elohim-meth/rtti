@@ -49,10 +49,10 @@ struct DLL_PUBLIC variant_function_table
     const destroy_t f_destroy = nullptr;
 
     variant_function_table(type_t type,
-                       access_t access,
-                       clone_t clone,
-                       move_t move,
-                       destroy_t destroy) noexcept
+                           access_t access,
+                           clone_t clone,
+                           move_t move,
+                           destroy_t destroy) noexcept
         : f_type{type},
           f_access{access},
           f_clone{clone},

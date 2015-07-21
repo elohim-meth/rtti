@@ -112,7 +112,7 @@ public:
 //};
 
 class TestBase1 {
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 public:
     enum TestEnum {
         te1 = 10,
@@ -127,8 +127,8 @@ public:
 };
 
 class TestBase2
-{ DECLARE_METATYPE };
+{ DECLARE_CLASSINFO };
 class TestDerived: public TestBase1, public TestBase2
-{ DECLARE_METATYPE };
+{ DECLARE_CLASSINFO };
 
 } // namespace test

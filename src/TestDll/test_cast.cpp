@@ -1,4 +1,4 @@
-#include "test_cast.h"
+﻿#include "test_cast.h"
 
 #include <debug.h>
 
@@ -11,52 +11,52 @@ struct A
 {
     int a = 1;
     virtual ~A() = default;
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 };
 
 struct B: A
 {
     int b = 2;
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 };
 
 
 struct C: B
 {
     int c = 3;
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 };
 
 struct D
 {
     int d = 4;
     virtual ~D() = default;
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 };
 
 struct E: C, D
 {
     int e = 5;
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 };
 
 struct VB1: virtual B
 {
     int vb1 = 10;
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 };
 
 struct VB2: virtual B
 {
     int vb2 = 20;
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 };
 
 
 struct VC: VB1, VB2
 {
     int vc = 100;
-    DECLARE_METATYPE
+    DECLARE_CLASSINFO
 };
 
 void register_classes()
@@ -136,7 +136,7 @@ void test_cast_1()
         catch(const bad_meta_cast &e)
         {
             printf(e.what());
-            printf("\n");
+            printf("\n\n");
         }
     }
 

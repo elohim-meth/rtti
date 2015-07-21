@@ -8,13 +8,20 @@ class TestQPointer;
 
 class PrivatePimpl {
 public:
-    PrivatePimpl(const char *value)
+    PrivatePimpl() = delete;
+    PrivatePimpl(const PrivatePimpl &other)
+        : m_value{other.m_value}
+    { PRINT_PRETTY_FUNC }
+    PrivatePimpl& operator=(const PrivatePimpl&) = delete;
+    PrivatePimpl(PrivatePimpl &&) = delete;
+    PrivatePimpl& operator=(PrivatePimpl&&) = delete;
+    explicit PrivatePimpl(const char *value)
         : m_value{value}
     { PRINT_PRETTY_FUNC }
 
 private:
     std::string m_value;
-    TestQPointer *m_qImpl;
+    TestQPointer *m_qImpl = nullptr;
     friend class TestQPointer;
 };
 
@@ -24,20 +31,18 @@ public:
     { PRINT_PRETTY_FUNC }
 
     explicit TestQPointer(const char *value)
-        : m_pImpl(new PrivatePimpl{value})
+        : m_pImpl{new PrivatePimpl{value}}
     {
         PRINT_PRETTY_FUNC
         m_pImpl->m_qImpl = this;
     }
 
     TestQPointer(const TestQPointer &other)
+        : m_pImpl{other.m_pImpl ? new PrivatePimpl(*other.m_pImpl) : nullptr}
     {
         PRINT_PRETTY_FUNC
-        if (other.m_pImpl)
-        {
-            m_pImpl = new PrivatePimpl(*other.m_pImpl);
+        if (m_pImpl)
             m_pImpl->m_qImpl = this;
-        }
     }
 
     TestQPointer(TestQPointer &&other) noexcept
@@ -93,6 +98,7 @@ private:
 
 class A
 {
+public:
     A()
     { PRINT_PRETTY_FUNC }
 
@@ -103,9 +109,9 @@ class A
     }
 
     A(const A &other)
+        : a(other.a)
     {
         PRINT_PRETTY_FUNC
-        a = other.a;
     }
 
     A(A &&other) noexcept
@@ -142,25 +148,31 @@ class A
         a = -1;
     }
 
+    virtual void print()
+    {
+        std::printf("a = %d\n", a);
+    }
+
 private:
     int a = -1;
 };
 
 class B: public A
 {
-    B()
+public:
+    B() : A()
     { PRINT_PRETTY_FUNC }
 
     explicit B(int value)
-        : b(value)
+        : A{value}, b(value)
     {
         PRINT_PRETTY_FUNC
     }
 
     B(const B &other)
+        : A(other), b(other.b)
     {
         PRINT_PRETTY_FUNC
-        b = other.b;
     }
 
     B(B &&other) noexcept
@@ -187,6 +199,7 @@ class B: public A
 
     void swap(B &other) noexcept
     {
+        A::swap(other);
         std::swap(b, other.b);
     }
 
@@ -195,6 +208,12 @@ class B: public A
     {
         PRINT_PRETTY_FUNC
         b = -1;
+    }
+
+    void print() override
+    {
+        A::print();
+        std::printf("b = %d\n", b);
     }
 
 private:
@@ -226,6 +245,7 @@ void test_variant_1()
         auto q1 = TestQPointer{"Hello, World"};
         auto q2 = TestQPointer{"qwerty"};
         q1 = std::move(q2);
+        q1.check();
         q2.check();
     }
 
@@ -234,7 +254,7 @@ void test_variant_1()
     {
         rtti::variant v1 = TestQPointer{"Hello, World"};
         rtti::variant v2 = TestQPointer{"qwerty"};
-        v1 = std::move(v1);
+        v1 = std::move(v2);
         if (v1)
             v1.value<TestQPointer>().check();
         if (v2)
@@ -247,6 +267,16 @@ void test_variant_1()
         rtti::MetaType::registerConverter(test_convert);
         rtti::variant v3 = "Hello, World";
         auto q3 = v3.to<TestQPointer>();
+    }
+
+    std::printf("\n");
+
+    {
+        B b(100);
+        A a = std::move(b);
+        b.print();
+        a.print();
+
     }
 
     std::printf("\n");

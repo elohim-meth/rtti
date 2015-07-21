@@ -181,7 +181,7 @@ struct DLL_PUBLIC ClassInfo
     {}
 };
 
-#define DECLARE_METATYPE \
+#define DECLARE_CLASSINFO \
 public: \
     virtual rtti::ClassInfo classInfo() const \
     { \
