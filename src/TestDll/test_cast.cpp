@@ -7,7 +7,6 @@
 
 namespace {
 
-
 struct A
 {
     int a = 1;
