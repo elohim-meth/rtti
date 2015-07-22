@@ -5,6 +5,8 @@
 #include "metaerror.h"
 #include "metaclass.h"
 
+#include <cassert>
+
 namespace rtti {
 
 // forward
@@ -16,7 +18,7 @@ namespace internal {
 constexpr std::size_t STORAGE_SIZE = sizeof(void*) * 2;
 
 template<typename T,
-         bool Small = sizeof(typename std::decay<T>::type) <= STORAGE_SIZE,
+         bool Small = sizeof(decay_t<T>) <= STORAGE_SIZE,
          bool Safe = std::is_move_constructible<T>::value>
 using is_inplace = std::integral_constant<bool, Small && Safe>;
 
@@ -147,7 +149,7 @@ private:
     static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
     {
         using registered_t = typename has_method_classInfo<ClassInfo(class_t::*)() const>::type;
-        return info_selector_registered(registered_t());
+        return info_selector_registered(value, registered_t());
     }
     static ClassInfo info_selector_registered(const variant_type_storage &value, std::false_type)
     {
@@ -156,7 +158,8 @@ private:
     }
     static ClassInfo info_selector_registered(const variant_type_storage &value, std::true_type)
     {
-        return static_cast<class_t*>(selector_t::access(value))->classInfo();
+        auto ptr = reinterpret_cast<class_t**>(selector_t::access(value));
+        return (*ptr)->classInfo();
     }
 };
 template<typename T>
@@ -177,7 +180,7 @@ template<>
 inline const variant_function_table* function_table_for<void>()
 {
     static const auto result = variant_function_table{
-        [] () noexcept -> MetaType_ID { return metaTypeId<void>(); },
+        [] () noexcept -> MetaType_ID { return MetaType_ID(); },
         [] (const variant_type_storage&) noexcept -> void* { return nullptr; },
         [] (const variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&, variant_type_storage&) noexcept {},
@@ -187,16 +190,7 @@ inline const variant_function_table* function_table_for<void>()
     return &result;
 }
 
-// forward
-template<typename T>
-void* variant_cast_helper(const variant *value) noexcept;
-
 } // namespace internal
-
-// forward
-template<typename T> T& variant_cast(variant&);
-template<typename T> const T& variant_cast(const variant&);
-template<typename T> T&& variant_cast(variant&&);
 
 class DLL_PUBLIC variant final
 {
@@ -288,25 +282,25 @@ public:
     template<typename T>
     bool is() const noexcept
     {
-        return metafunc_is<T>::invoke(*this);
+        return metafunc_is<internal::full_decay_t<T>>::invoke(*this);
     }
 
     template<typename T>
     const T& value() const &
     {
-        return variant_cast<T>(*this);
+        return metafunc_cast<internal::full_decay_t<T>>::invoke(*this);
     }
 
     template<typename T>
     T& value() &
     {
-        return variant_cast<T>(*this);
+        return metafunc_cast<internal::full_decay_t<T>>::invoke(*this);
     }
 
     template<typename T>
     T&& value() &&
     {
-        return variant_cast<T>(std::move(*this));
+        return metafunc_cast<internal::full_decay_t<T>>::invoke(std::move(*this));
     }
 
     template<typename T>
@@ -359,16 +353,16 @@ public:
 private:
     template<typename T>
     variant(T &&value, std::true_type)
-        : manager{internal::function_table_for<internal::decay_t<T>>()}
+        : manager{internal::function_table_for<internal::full_decay_t<T>>()}
     {
         new (&storage.buffer) internal::decay_t<T>(std::forward<T>(value));
     }
 
     template<typename T>
     variant(T &&value, std::false_type)
-        : manager{internal::function_table_for<internal::decay_t<T>>()}
+        : manager{internal::function_table_for<internal::full_decay_t<T>>()}
     {
-        storage.ptr = new internal::decay_t<T>(std::forward<T>(value));
+        storage.ptr = new internal::full_decay_t<T>(std::forward<T>(value));
     }
 
     void* raw_data_ptr() const noexcept
@@ -379,11 +373,16 @@ private:
     template<typename T>
     struct metafunc_is
     {
+        static_assert(!std::is_reference<T>::value,
+                      "Type cannot be reference");
+
         static bool invoke(const variant &self)
         {
+            if (self.empty())
+                return false;
             if (self.type() == metaTypeId<T>())
                 return true;
-            return invoke_for_class(is_class_t(), is_class_ptr_t());
+            return invoke_for_class(self, is_class_t(), is_class_ptr_t());
         }
 
     private:
@@ -391,45 +390,164 @@ private:
         using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
         using class_t = typename std::remove_pointer<T>::type;
 
-        // not class and not class ptr
+        // nope
         static bool invoke_for_class(const variant&, std::false_type, std::false_type)
         { return false; }
+        // class
         static bool invoke_for_class(const variant &self, std::true_type, std::false_type)
         {
             auto type = MetaType{self.type()};
-            if (type.typeFlags() & MetaType::TypeFlags::Class)
-                return true;
+            if (type.typeFlags() & MetaType::Class)
+                return invoke_imp(self);
             return false;
         }
+        // class ptr
         static bool invoke_for_class(const variant &self, std::false_type, std::true_type)
         {
+            auto type = MetaType{self.type()};
+            if (type.typeFlags() & MetaType::ClassPtr)
+                return invoke_imp(self);
             return false;
         }
+        // implementaion
+        static bool invoke_imp(const variant &self)
+        {
+            const auto &info = self.manager->f_info(self.storage);
+
+            auto fromType = MetaType{info.typeId};
+            if (!fromType.valid())
+                return false;
+
+            auto fromClass = MetaClass::findByTypeId(info.typeId);
+            auto toClass = MetaClass::findByTypeId(metaTypeId<class_t>());
+            if (!fromClass && !toClass)
+                return false;
+            return fromClass->inheritedFrom(toClass);
+        }
+
     };
 
     template<typename T>
-    T* to_class(std::true_type) const
+    struct metafunc_cast
     {
-        auto info = manager->f_info(storage);
-        if (!info.instance)
+        struct helper
+        {
+            helper(void *result) noexcept
+                : m_result(result), m_resultptr(&m_result)
+            {}
+            T* result_selector(std::false_type) const noexcept
+            {
+                return static_cast<T*>(m_result);
+            }
+            T* result_selector(std::true_type) const noexcept
+            {
+                return static_cast<T*>(m_resultptr);
+            }
+        private:
+            void* m_result;
+            void* m_resultptr;
+        };
+
+        static const T& invoke(const variant &self)
+        {
+            if (self.empty())
+                throw bad_variant_cast{"Variant is empty"};
+            if (!self.is<T>())
+                throw bad_variant_cast{"Incompatible types"};
+
+            T* result = nullptr;
+            if (self.type() == metaTypeId<T>())
+               result = static_cast<T*>(self.raw_data_ptr());
+            else
+            {
+               const auto &tmp = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               result = tmp.result_selector(is_class_ptr_t());
+            }
+
+            assert(result);
+            return *result;
+        }
+
+        static T& invoke(variant &self)
+        {
+            if (self.empty())
+                throw bad_variant_cast{"Variant is empty"};
+            if (!self.is<T>())
+                throw bad_variant_cast{"Incompatible types"};
+
+            T* result = nullptr;
+            if (self.type() == metaTypeId<T>())
+               result = static_cast<T*>(self.raw_data_ptr());
+            else
+            {
+               const auto &tmp = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               result = tmp.result_selector(is_class_ptr_t());
+            }
+
+            assert(result);
+            return *result;
+        }
+
+        static T&& invoke(variant &&self)
+        {
+            if (self.empty())
+                throw bad_variant_cast{"Variant is empty"};
+            if (!self.is<T>())
+                throw bad_variant_cast{"Incompatible types"};
+
+            T* result = nullptr;
+            if (self.type() == metaTypeId<T>())
+               result = static_cast<T*>(self.raw_data_ptr());
+            else
+            {
+               const auto &tmp = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               result = tmp.result_selector(is_class_ptr_t());
+            }
+
+            assert(result);
+            return std::move(*result);
+        }
+    private:
+        using is_class_t = typename std::is_class<T>::type;
+        using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
+        using class_t = typename std::remove_pointer<T>::type;
+
+        // nope
+        static helper invoke_for_class(const variant&, std::false_type, std::false_type)
+        { return nullptr; }
+        // class
+        static helper invoke_for_class(const variant &self, std::true_type, std::false_type)
+        {
+            auto type = MetaType{self.type()};
+            if (type.typeFlags() & MetaType::Class)
+                return invoke_imp(self);
             return nullptr;
-
-        auto fromClass = MetaClass::findByTypeId(info.id);
-        auto toClass = MetaClass::findByTypeId(metaTypeId<T>());
-        if (!fromClass || !toClass)
+        }
+        // class ptr
+        static helper invoke_for_class(const variant &self, std::false_type, std::true_type)
+        {
+            auto type = MetaType{self.type()};
+            if (type.typeFlags() & MetaType::ClassPtr)
+                return invoke_imp(self);
             return nullptr;
+        }
+        // implementaion
+        static void* invoke_imp(const variant &self)
+        {
+            const auto &info = self.manager->f_info(self.storage);
 
-        auto result = fromClass->cast(toClass, info.instance);
-        if (!result)
-           return nullptr;
-        return static_cast<T*>(result);
-    }
+            auto fromType = MetaType{info.typeId};
+            if (!fromType.valid())
+                return false;
 
-    template<typename T>
-    T* to_class(std::false_type) const
-    {
-        return nullptr;
-    }
+            auto fromClass = MetaClass::findByTypeId(info.typeId);
+            auto toClass = MetaClass::findByTypeId(metaTypeId<class_t>());
+            if (!fromClass && !toClass)
+                return nullptr;
+
+            return fromClass->cast(toClass, info.instance);
+        }
+    };
 
     using table_t = const internal::variant_function_table;
     using storage_t = internal::variant_type_storage;
@@ -437,73 +555,9 @@ private:
     table_t* manager = internal::function_table_for<void>();
     storage_t storage = {.buffer = {0}};
 
-    template<typename T>
-    friend void* internal::variant_cast_helper(const variant *value) noexcept;
     friend class std::hash<rtti::variant>;
     friend class rtti::argument;
 };
-
-namespace internal {
-template<typename T>
-inline void* variant_cast_helper(const variant *value) noexcept
-{
-    return value && value->is<T>() ? value->raw_data_ptr() : nullptr;
-}
-} //namespace internal
-
-template<typename T>
-inline T* variant_cast(variant *value) noexcept
-{
-    return static_cast<T*>(internal::variant_cast_helper<T>(value));
-}
-
-template<typename T>
-inline const T* variant_cast(const variant *value)  noexcept
-{
-    return static_cast<T*>(internal::variant_cast_helper<T>(value));
-}
-
-template<typename T>
-inline const T& variant_cast(const variant &value)
-{
-    auto result = variant_cast<internal::decay_t<T>>(&value);
-    if (!result)
-    {
-        if (!value)
-            throw bad_variant_cast{"Variant is NULL"};
-        else
-            throw bad_variant_cast{"Incompatible variant type"};
-    }
-    return *result;
-}
-
-template<typename T>
-inline T& variant_cast(variant &value)
-{
-    auto result = variant_cast<internal::decay_t<T>>(&value);
-    if (!result)
-    {
-        if (!value)
-            throw bad_variant_cast{"Variant is NULL"};
-        else
-            throw bad_variant_cast{"Incompatible variant type"};
-    }
-    return *result;
-}
-
-template<typename T>
-inline T&& variant_cast(variant &&value)
-{
-    auto result = variant_cast<internal::decay_t<T>>(&value);
-    if (!result)
-    {
-        if (!value)
-            throw bad_variant_cast{"Variant is NULL"};
-        else
-            throw bad_variant_cast{"Incompatible variant type"};
-    }
-    return std::move(*result);
-}
 
 } //namespace rtti
 

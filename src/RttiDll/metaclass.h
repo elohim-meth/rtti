@@ -42,16 +42,17 @@ private:
     template<typename, typename> friend class rtti::meta_define;
     template<typename To, typename From>
     friend To* internal::meta_cast_selector(const From*, std::true_type);
+    friend class rtti::variant;
 };
 
 struct DLL_PUBLIC ClassInfo
 {
-    MetaType_ID id;
+    MetaType_ID typeId;
     const void* instance = nullptr;
 
     constexpr ClassInfo() noexcept = default;
-    constexpr ClassInfo(MetaType_ID id, const void *instance)
-        : id(id), instance(instance)
+    constexpr ClassInfo(MetaType_ID typeId, const void *instance)
+        : typeId(typeId), instance(instance)
     {}
 };
 
@@ -73,8 +74,8 @@ To* meta_cast_selector(const From *from, std::true_type)
     if (!from)
         return nullptr;
 
-    auto info = from->classInfo();
-    auto fromClass = MetaClass::findByTypeId(info.id);
+    const auto &info = from->classInfo();
+    auto fromClass = MetaClass::findByTypeId(info.typeId);
     auto toClass = MetaClass::findByTypeId(metaTypeId<To>());
     if (!fromClass || !toClass)
         return nullptr;

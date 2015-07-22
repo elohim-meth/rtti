@@ -98,6 +98,7 @@ private:
 
 class A
 {
+    DECLARE_CLASSINFO
 public:
     A()
     { PRINT_PRETTY_FUNC }
@@ -117,7 +118,7 @@ public:
     A(A &&other) noexcept
     {
         PRINT_PRETTY_FUNC
-        swap(other);
+        std::swap(a, other.a);
     }
 
     A& operator=(const A &other)
@@ -142,7 +143,7 @@ public:
     }
 
 
-    virtual ~A()
+    virtual ~A() noexcept
     {
         PRINT_PRETTY_FUNC
         a = -1;
@@ -159,26 +160,28 @@ private:
 
 class B: public A
 {
+    DECLARE_CLASSINFO
 public:
     B() : A()
     { PRINT_PRETTY_FUNC }
 
     explicit B(int value)
-        : A{value}, b(value)
+        : A{value}, b{value}
     {
         PRINT_PRETTY_FUNC
     }
 
     B(const B &other)
-        : A(other), b(other.b)
+        : A{other}, b{other.b}
     {
         PRINT_PRETTY_FUNC
     }
 
     B(B &&other) noexcept
+        : A{std::move(other)}
     {
         PRINT_PRETTY_FUNC
-        swap(other);
+        std::swap(b, other.b);
     }
 
     B& operator=(const B &other)
@@ -204,7 +207,7 @@ public:
     }
 
 
-    virtual ~B()
+    virtual ~B() noexcept
     {
         PRINT_PRETTY_FUNC
         b = -1;
@@ -221,7 +224,16 @@ private:
 };
 
 
-
+void register_classes()
+{
+    using namespace rtti;
+    global_define()
+        ._namespace("anonimous_2")
+            ._class<A>("A")._end()
+            ._class<B>("B")._base<A>()._end()
+        ._end()
+    ;
+}
 
 } // namespace
 
@@ -255,11 +267,20 @@ void test_variant_1()
         rtti::variant v1 = TestQPointer{"Hello, World"};
         rtti::variant v2 = TestQPointer{"qwerty"};
         v1 = std::move(v2);
-        if (v1)
-            v1.value<TestQPointer>().check();
-        if (v2)
-            v2.value<TestQPointer>().check();
+        assert(v1);
+        v1.value<TestQPointer>().check();
+        assert(!v2);
     }
+
+    std::printf("\n");
+
+
+    {
+        auto lambda = []() { return rtti::variant{TestQPointer{"123456"}}; };
+        auto q1 = lambda().value<TestQPointer>();
+        q1.check();
+    }
+
 
     std::printf("\n");
 
@@ -271,14 +292,43 @@ void test_variant_1()
 
     std::printf("\n");
 
+    register_classes();
     {
-        B b(100);
-        A a = std::move(b);
-        b.print();
-        a.print();
-
+        rtti::variant v = B{100};
+        assert(v.is<B>() && v.is<const B>());
+        assert(v.is<A>() && v.is<const A>());
+        assert(!v.is<B*>() && !v.is<const B*>());
+        assert(!v.is<A*>() && !v.is<const A*>());
+        v.value<A>().print();
+        assert(!v.is<int>());
     }
 
     std::printf("\n");
 
+    {
+        rtti::variant v = new B{100};
+        assert(v.is<B*>() && v.is<const B*>());
+        assert(v.is<A*>() && v.is<const A*>());
+        assert(!v.is<B>() && !v.is<const B>());
+        assert(!v.is<A>() && !v.is<const A>());
+        v.value<A*>()->print();
+        assert(!v.is<int*>() && !v.is<const int*>());
+        delete v.value<B*>();
+    }
+
+    std::printf("\n");
+
+    {
+        const A *a = new B{100};
+        rtti::variant v = a;
+        assert(v.is<B*>() && v.is<const B*>());
+        assert(v.is<A*>() && v.is<const A*>());
+        assert(!v.is<B>() && !v.is<const B>());
+        assert(!v.is<A>() && !v.is<const A>());
+        v.value<B*>()->print();
+        assert(!v.is<int*>() && !v.is<const int*>());
+        delete a;
+    }
+
+    std::printf("\n");
 }
