@@ -123,20 +123,16 @@ struct function_table_selector<T, false>
 };
 
 template<typename T>
-struct class_info_selector
+struct class_info_get
 {
     static ClassInfo info(const variant_type_storage &value)
     {
-        using is_class_t = typename std::is_class<T>::type;
-        using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
-//        using is_class_ptr_t = typename std::conditional<
-//                                    std::is_pointer<T>::value && std::is_class<class_t>::value,
-//                                    std::true_type, std::false_type
-//                                >::type;
         return info_selector(value, is_class_t(), is_class_ptr_t());
     }
 private:
     using selector_t = function_table_selector<T>;
+    using is_class_t = typename std::is_class<T>::type;
+    using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
     using class_t = typename std::remove_pointer<T>::type;
 
     static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::false_type)
@@ -172,7 +168,7 @@ inline const variant_function_table* function_table_for()
         &function_table_selector<T>::clone,
         &function_table_selector<T>::move,
         &function_table_selector<T>::destroy,
-        &class_info_selector<T>::info
+        &class_info_get<T>::info
     };
     return &result;
 }
@@ -292,7 +288,7 @@ public:
     template<typename T>
     bool is() const noexcept
     {
-        return (metaTypeId<T>() == type());
+        return metafunc_is<T>::invoke(*this);
     }
 
     template<typename T>
@@ -381,6 +377,37 @@ private:
     }
 
     template<typename T>
+    struct metafunc_is
+    {
+        static bool invoke(const variant &self)
+        {
+            if (self.type() == metaTypeId<T>())
+                return true;
+            return invoke_for_class(is_class_t(), is_class_ptr_t());
+        }
+
+    private:
+        using is_class_t = typename std::is_class<T>::type;
+        using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
+        using class_t = typename std::remove_pointer<T>::type;
+
+        // not class and not class ptr
+        static bool invoke_for_class(const variant&, std::false_type, std::false_type)
+        { return false; }
+        static bool invoke_for_class(const variant &self, std::true_type, std::false_type)
+        {
+            auto type = MetaType{self.type()};
+            if (type.typeFlags() & MetaType::TypeFlags::Class)
+                return true;
+            return false;
+        }
+        static bool invoke_for_class(const variant &self, std::false_type, std::true_type)
+        {
+            return false;
+        }
+    };
+
+    template<typename T>
     T* to_class(std::true_type) const
     {
         auto info = manager->f_info(storage);
@@ -403,7 +430,6 @@ private:
     {
         return nullptr;
     }
-
 
     using table_t = const internal::variant_function_table;
     using storage_t = internal::variant_type_storage;
