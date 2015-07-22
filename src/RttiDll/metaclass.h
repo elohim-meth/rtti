@@ -47,8 +47,9 @@ private:
 struct DLL_PUBLIC ClassInfo
 {
     MetaType_ID id;
-    const void* instance;
+    const void* instance = nullptr;
 
+    constexpr ClassInfo() noexcept = default;
     constexpr ClassInfo(MetaType_ID id, const void *instance)
         : id(id), instance(instance)
     {}

@@ -91,31 +91,18 @@ using decay_t = typename std::decay<T>::type;
 template<typename T>
 using is_polymorphic_ptr =
 typename std::conditional<
-    std::is_polymorphic<
-        typename std::remove_cv<
-            typename std::remove_pointer<
-                typename std::remove_cv<
-                    typename std::remove_reference<T>::type
-                >::type
-            >::type
-        >::type
-    >::value, std::true_type, std::false_type
+    std::is_pointer<typename std::remove_reference<T>::type>::value &&
+    std::is_polymorphic<typename std::remove_reference<typename std::remove_pointer<T>::type>::type>::value,
+    std::true_type, std::false_type
 >::type;
 
 template<typename T>
 using is_class_ptr =
 typename std::conditional<
-    std::is_class<
-        typename std::remove_cv<
-            typename std::remove_pointer<
-                typename std::remove_cv<
-                    typename std::remove_reference<T>::type
-                >::type
-            >::type
-        >::type
-    >::value, std::true_type, std::false_type
+    std::is_pointer<typename std::remove_reference<T>::type>::value &&
+    std::is_class<typename std::remove_reference<typename std::remove_pointer<T>::type>::type>::value,
+    std::true_type, std::false_type
 >::type;
-
 
 template<typename T,
          bool Const = std::is_const<T>::value,

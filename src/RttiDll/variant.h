@@ -33,23 +33,21 @@ struct DLL_PUBLIC variant_function_table
     using clone_t = void (*) (const variant_type_storage&, variant_type_storage&);
     using move_t = void (*) (variant_type_storage&, variant_type_storage&);
     using destroy_t = void (*) (variant_type_storage&);
+    using info_t = ClassInfo(*)(const variant_type_storage&);
 
     const type_t f_type = nullptr;
     const access_t f_access = nullptr;
     const clone_t f_clone = nullptr;
     const move_t f_move = nullptr;
     const destroy_t f_destroy = nullptr;
+    const info_t f_info = nullptr;
 
-    variant_function_table(type_t type,
-                           access_t access,
-                           clone_t clone,
-                           move_t move,
-                           destroy_t destroy) noexcept
-        : f_type{type},
-          f_access{access},
-          f_clone{clone},
-          f_move{move},
-          f_destroy{destroy}
+    variant_function_table(type_t type, access_t access,
+                           clone_t clone, move_t move,
+                           destroy_t destroy, info_t info) noexcept
+        : f_type{type}, f_access{access},
+          f_clone{clone}, f_move{move},
+          f_destroy{destroy}, f_info(info)
     {}
 };
 
@@ -125,6 +123,47 @@ struct function_table_selector<T, false>
 };
 
 template<typename T>
+struct class_info_selector
+{
+    static ClassInfo info(const variant_type_storage &value)
+    {
+        using is_class_t = typename std::is_class<T>::type;
+        using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
+//        using is_class_ptr_t = typename std::conditional<
+//                                    std::is_pointer<T>::value && std::is_class<class_t>::value,
+//                                    std::true_type, std::false_type
+//                                >::type;
+        return info_selector(value, is_class_t(), is_class_ptr_t());
+    }
+private:
+    using selector_t = function_table_selector<T>;
+    using class_t = typename std::remove_pointer<T>::type;
+
+    static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::false_type)
+    {
+        (void) value;
+        return ClassInfo();
+    }
+    static ClassInfo info_selector(const variant_type_storage &value, std::true_type, std::false_type)
+    {
+        return ClassInfo(selector_t::type(), selector_t::access(value));
+    }
+    static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
+    {
+        using registered_t = typename has_method_classInfo<ClassInfo(class_t::*)() const>::type;
+        return info_selector_registered(registered_t());
+    }
+    static ClassInfo info_selector_registered(const variant_type_storage &value, std::false_type)
+    {
+        (void) value;
+        return ClassInfo();
+    }
+    static ClassInfo info_selector_registered(const variant_type_storage &value, std::true_type)
+    {
+        return static_cast<class_t*>(selector_t::access(value))->classInfo();
+    }
+};
+template<typename T>
 inline const variant_function_table* function_table_for()
 {
     static const auto result = variant_function_table{
@@ -132,7 +171,8 @@ inline const variant_function_table* function_table_for()
         &function_table_selector<T>::access,
         &function_table_selector<T>::clone,
         &function_table_selector<T>::move,
-        &function_table_selector<T>::destroy
+        &function_table_selector<T>::destroy,
+        &class_info_selector<T>::info
     };
     return &result;
 }
@@ -145,7 +185,8 @@ inline const variant_function_table* function_table_for<void>()
         [] (const variant_type_storage&) noexcept -> void* { return nullptr; },
         [] (const variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&, variant_type_storage&) noexcept {},
-        [] (variant_type_storage&) noexcept {}
+        [] (variant_type_storage&) noexcept {},
+        [] (const variant_type_storage&) { return ClassInfo(); }
     };
     return &result;
 }
@@ -275,6 +316,8 @@ public:
     template<typename T>
     T to() const
     {
+        static_assert(!std::is_reference<T>::value,
+                      "Type cannot be reference");
         static_assert(std::is_move_constructible<T>::value,
                       "Type should be MoveConstructible");
 
@@ -336,6 +379,31 @@ private:
     {
         return manager->f_access(storage);
     }
+
+    template<typename T>
+    T* to_class(std::true_type) const
+    {
+        auto info = manager->f_info(storage);
+        if (!info.instance)
+            return nullptr;
+
+        auto fromClass = MetaClass::findByTypeId(info.id);
+        auto toClass = MetaClass::findByTypeId(metaTypeId<T>());
+        if (!fromClass || !toClass)
+            return nullptr;
+
+        auto result = fromClass->cast(toClass, info.instance);
+        if (!result)
+           return nullptr;
+        return static_cast<T*>(result);
+    }
+
+    template<typename T>
+    T* to_class(std::false_type) const
+    {
+        return nullptr;
+    }
+
 
     using table_t = const internal::variant_function_table;
     using storage_t = internal::variant_type_storage;
