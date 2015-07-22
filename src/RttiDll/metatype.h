@@ -153,6 +153,20 @@ typename std::conditional<
     std::true_type, std::false_type
 >::type;
 
+template<typename T, typename ...Args>
+struct is_converting_constructor: std::false_type
+{};
+
+template<typename T>
+struct is_converting_constructor<T>: std::false_type
+{};
+
+template<typename T, typename Arg>
+struct is_converting_constructor<T, Arg>:
+    std::conditional<!std::is_same<T, internal::full_decay_t<Arg>>::value,
+                     std::true_type, std::false_type>::type
+{};
+
 } // namespace internal
 
 struct meta_type_tag {};
@@ -362,6 +376,13 @@ To default_convert(From value)
 {
     return value;
 }
+
+template<typename From, typename To>
+To constructor_convert(From value)
+{
+    return To(value);
+}
+
 
 struct DLL_LOCAL ConvertFunctionBase
 {

@@ -284,6 +284,7 @@ public:
             MetaConstructor::create(name, *m_currentContainer,
                                     std::unique_ptr<IConstructorInvoker>{
                                         new internal::ConstructorInvoker<T, Args...>{}});
+            register_converting_constructor<type_list<Args...>>(typename internal::is_converting_constructor<T, Args...>::type());
         }
         return std::move(*this);
     }
@@ -334,25 +335,30 @@ private:
         );
     }
 
-    void default_constructor_selector(std::false_type)
-    {}
+    void default_constructor_selector(std::false_type) {}
     void default_constructor_selector(std::true_type)
     {
         _constructor();
     }
 
-    void copy_constructor_selector(std::false_type)
-    {}
+    void copy_constructor_selector(std::false_type) {}
     void copy_constructor_selector(std::true_type)
     {
         _constructor<const T&>();
     }
 
-    void move_constructor_selector(std::false_type)
-    {}
+    void move_constructor_selector(std::false_type) {}
     void move_constructor_selector(std::true_type)
     {
         _constructor<T&&>();
+    }
+
+    template<typename L>
+    void register_converting_constructor(std::false_type) {}
+    template<typename L>
+    void register_converting_constructor(std::true_type)
+    {
+        MetaType::registerConverter(&internal::constructor_convert<typename typelist_get<L, 0>::type, T>);
     }
 
     template<typename> friend class internal::DefinitionCallbackHolder;

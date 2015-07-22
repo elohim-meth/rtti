@@ -231,6 +231,9 @@ void register_classes()
         ._namespace("anonimous_2")
             ._class<A>("A")._end()
             ._class<B>("B")._base<A>()._end()
+            ._class<TestQPointer>("TestQPointer")
+                ._constructor<const char*>()
+            ._end()
         ._end()
     ;
 }
@@ -245,11 +248,6 @@ inline void swap(TestQPointer &lhs, TestQPointer &rhs) noexcept
 }
 } //std
 
-
-TestQPointer test_convert(const char *value)
-{
-    return TestQPointer(value);
-}
 
 void test_variant_1()
 {
@@ -281,18 +279,17 @@ void test_variant_1()
         q1.check();
     }
 
+    register_classes();
 
     std::printf("\n");
 
     {
-        rtti::MetaType::registerConverter(test_convert);
         rtti::variant v3 = "Hello, World";
         auto q3 = v3.to<TestQPointer>();
     }
 
     std::printf("\n");
 
-    register_classes();
     {
         rtti::variant v = B{100};
         assert(v.is<B>() && v.is<const B>());
