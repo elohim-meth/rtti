@@ -9,6 +9,10 @@ int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
+//        using ttt = const void *;
+//        std::cout << type_name<ttt>() << rtti::MetaType(rtti::metaTypeId<ttt>()).typeName();
+//        return 0;
+
         test_variant_1();
         test_cast_1();
 
@@ -37,6 +41,14 @@ int main(int argc, char* argv[])
         std::cout << "Attribute count: " << tn->attributeCount() << std::endl;
         tn->for_each_attribute(lambda);
         std::cout << std::endl;
+
+        auto m = gn->getMethod("test_method");
+        if (m)
+            m->invoke((const char*)"Hello, World");
+        m = gn->getMethod(rtti::method_signature<const char*>::get("test_method"));
+        if (m)
+            m->invoke("Hello, World");
+
 
         auto mt = rtti::MetaType{type_name<std::vector<int>>().c_str()};
         auto vec = rtti::MetaClass::findByTypeId(mt.typeId());

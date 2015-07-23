@@ -46,6 +46,7 @@ void define_std_string(rtti::meta_define<std::string> define)
 {
     define
         ._constructor<const char*>()
+        ._constructor<const char*, std::size_t>()
     ;
 }
 
@@ -96,6 +97,12 @@ bool register_fromString_converter()
     return rtti::MetaType::registerConverter<std::string, To>(lambda);
 }
 
+void test_method(const char *value)
+{
+    std::printf(value);
+    std::printf("\n");
+}
+
 
 }
 
@@ -106,6 +113,7 @@ void register_rtti()
         ._attribute("Attribute 1", std::string{"standard string object"})
         ._attribute("Attribute 2", true)
         ._attribute("Attribute 3", 3.14)
+        ._method("test_method", &test_method)
 
         ._namespace("test")
             ._lazy(define_test_namespace)
@@ -122,7 +130,6 @@ void register_rtti()
 
     // default
     rtti::MetaType::registerConverter<char*, std::string>();
-    rtti::MetaType::registerConverter<const char*, std::string>();
 
     // std::to_string
     register_toString_converter<int>();

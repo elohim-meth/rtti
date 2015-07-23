@@ -597,9 +597,9 @@ template<> inline constexpr MetaType_ID metaTypeId<void>()
     F(char16_t*, 35) \
     F(char32_t*, 36) \
     F(wchar_t*, 37) \
-    F(void const*, 38) \
-    F(char const*, 39) \
-    F(wchar_t const*, 40) \
+    F(const void*, 38) \
+    F(const char*, 39) \
+    F(const wchar_t*, 40) \
 
 #define DEFINE_STATIC_METATYPE_ID(NAME, TYPEID) \
 template<> inline constexpr MetaType_ID metaTypeId<NAME>() \

@@ -1,4 +1,4 @@
-#ifndef METAMETHOD_P_H
+﻿#ifndef METAMETHOD_P_H
 #define METAMETHOD_P_H
 
 #include "metaitem_p.h"
@@ -17,7 +17,7 @@ public:
 
 private:
     std::unique_ptr<IMethodInvoker> m_invoker;
-    friend class rtti::MetaConstructor;
+    friend class rtti::MetaMethod;
 };
 
 } // namespace rtti

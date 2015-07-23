@@ -158,6 +158,11 @@ std::size_t MetaContainer::namespaceCount() const noexcept
     return count(mcatNamespace);
 }
 
+const MetaNamespace *MetaContainer::getNamespace(std::size_t index) const noexcept
+{
+    return static_cast<const MetaNamespace*>(item(mcatNamespace, index));
+}
+
 const MetaClass* MetaContainer::getClass(const char *name) const
 {
     return static_cast<const MetaClass*>(item(mcatClass, name));
@@ -166,6 +171,11 @@ const MetaClass* MetaContainer::getClass(const char *name) const
 std::size_t MetaContainer::classCount() const noexcept
 {
     return count(mcatClass);
+}
+
+const MetaClass* MetaContainer::getClass(std::size_t index) const noexcept
+{
+    return static_cast<const MetaClass*>(item(mcatClass, index));
 }
 
 const MetaConstructor* MetaContainer::getConstructor(const char *name) const
@@ -196,7 +206,7 @@ const MetaConstructor *MetaContainer::moveConstructor() const
 
 void MetaContainer::for_each_class(const enum_class_t &func) const
 {
-    if (func)
+    if (!func)
         return;
 
     checkDeferredDefine();
@@ -204,6 +214,75 @@ void MetaContainer::for_each_class(const enum_class_t &func) const
     d->m_classes.for_each([&func](const MetaItem *item) -> bool
     {
         return func(static_cast<const MetaClass*>(item));
+    });
+}
+
+const MetaMethod* MetaContainer::getMethod(const char *name) const
+{
+    if (!name)
+        return nullptr;
+    checkDeferredDefine();
+
+    auto d = d_func();
+    auto tmp = CString{name};
+    const MetaMethod *result = nullptr;
+    d->m_methods.for_each([&tmp, &result](const MetaItem *item) -> bool
+    {
+        auto method = static_cast<const MetaMethod*>(item);
+        const auto &methodName = method->name();
+
+        auto pos = methodName.find('(');
+        if (pos != std::string::npos)
+        {
+            auto length = std::min(pos, tmp.length());
+            auto cmp = methodName.compare(0, pos, tmp.data(), length);
+            if (cmp == 0)
+            {
+                 if (pos == tmp.length())
+                 {
+                     result = method;
+                     return false;
+                 }
+
+                 cmp = methodName.compare(pos, methodName.size() - pos,
+                                          tmp.data() + pos, tmp.length() - pos);
+                 if (cmp == 0)
+                 {
+                     result = method;
+                     return false;
+                 }
+            }
+        }
+        return true;
+    });
+    return result;
+}
+
+const MetaMethod *MetaContainer::getMethod(const std::string name) const
+{
+    return getMethod(name.c_str());
+}
+
+std::size_t MetaContainer::methodCount() const noexcept
+{
+    return count(mcatMethod);
+}
+
+const MetaMethod *MetaContainer::getMethod(std::size_t index) const noexcept
+{
+    return static_cast<const MetaMethod*>(item(mcatMethod, index));
+}
+
+void MetaContainer::for_each_method(const enum_method_t &func) const
+{
+    if (!func)
+        return;
+
+    checkDeferredDefine();
+    auto d = d_func();
+    d->m_methods.for_each([&func](const MetaItem *item) -> bool
+    {
+        return func(static_cast<const MetaMethod*>(item));
     });
 }
 

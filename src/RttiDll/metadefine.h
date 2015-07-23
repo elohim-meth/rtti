@@ -1,8 +1,9 @@
 ﻿#ifndef METADEFINE_H
 #define METADEFINE_H
 
-#include "metaenum.h"
 #include "metaconstructor.h"
+#include "metamethod.h"
+#include "metaenum.h"
 #include "metaclass.h"
 #include "metanamespace.h"
 #include "metacontainer.h"
@@ -16,6 +17,33 @@
 #include <type_traits>
 
 namespace rtti {
+
+template<typename ...Args>
+struct method_signature
+{
+    static std::string get(const char *name)
+    {
+        return method_signature_imp(name, argument_indexes_t{});
+    }
+
+private:
+    template<std::size_t I>
+    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
+    using argument_indexes_t = typename index_sequence_for<Args...>::type;
+
+    template<std::size_t ...I>
+    static std::string method_signature_imp(const char *name, index_sequence<I...>)
+    {
+        constexpr auto size = sizeof...(I);
+        std::ostringstream os;
+        os << (name ? name : "")  << "(";
+        EXPAND (
+            os << type_name<argument_get_t<I>>() << (I < size - 1 ? ", " : "")
+        );
+        os << ")";
+        return os.str();
+    }
+};
 
 
 //forward
@@ -52,6 +80,78 @@ private:
     F m_func;
 };
 
+template<typename Signature> struct MethodInvoker;
+
+template<typename ...Args>
+struct MethodInvoker<void(*)(Args...)>: IMethodInvoker
+{
+    static_assert(sizeof...(Args) <= MaxNumberOfArguments,
+                  "Maximum supported arguments: 10");
+
+    template<std::size_t I>
+    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
+    using argument_indexes_t = index_sequence_for_t<Args...>;
+    using argument_array_t = std::array<const argument*, MaxNumberOfArguments>;
+    using func_t = void(*)(Args...);
+
+    MethodInvoker(func_t func) noexcept
+        : m_func(func)
+    {}
+
+    variant invoke(argument arg0 = argument{},
+                   argument arg1 = argument{},
+                   argument arg2 = argument{},
+                   argument arg3 = argument{},
+                   argument arg4 = argument{},
+                   argument arg5 = argument{},
+                   argument arg6 = argument{},
+                   argument arg7 = argument{},
+                   argument arg8 = argument{},
+                   argument arg9 = argument{}) const override
+    {
+        argument_array_t args = {
+            &arg0, &arg1, &arg2, &arg3, &arg4,
+            &arg5, &arg6, &arg7, &arg8, &arg9};
+
+        auto count = sizeof...(Args);
+        for (const auto &item: args)
+        {
+            if (item->empty())
+                break;
+            --count;
+        }
+
+        if (count != 0)
+            throw invoke_error{"Invalid number of arguments"};
+
+        return invoke_imp(args, argument_indexes_t{});
+    }
+
+    MetaType_ID returnTypeId() const override
+    {
+        return metaTypeId<void>();
+    }
+
+    std::vector<MetaType_ID> parametersTypeId() const override
+    {
+        return {metaTypeId<Args>()...};
+    }
+
+    std::string signature(const char *name) const override
+    {
+        return method_signature<Args...>::get(name);
+    }
+private:
+    template<std::size_t ...I>
+    variant invoke_imp(const argument_array_t &args, index_sequence<I...>) const
+    {
+        m_func(args[I]->value<argument_get_t<I>>()...);
+        return variant::empty_variant;
+    }
+
+    func_t m_func = nullptr;
+};
+
 template<typename C, typename ...Args>
 struct ConstructorInvoker: IConstructorInvoker
 {
@@ -62,8 +162,8 @@ struct ConstructorInvoker: IConstructorInvoker
                   "Type can not be constructed with given arguments");
 
     template<std::size_t I>
-    using argument_get_t = typename typelist_get<type_list<Args...>, I>::type;
-    using argument_indexes_t = typename index_sequence_for<Args...>::type;
+    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
+    using argument_indexes_t = index_sequence_for_t<Args...>;
     using argument_array_t = std::array<const argument*, MaxNumberOfArguments>;
 
     variant invoke(argument arg0 = argument{},
@@ -95,8 +195,19 @@ struct ConstructorInvoker: IConstructorInvoker
         return invoke_imp(args, argument_indexes_t{});
     }
 
-    std::string signature() const override
+    MetaType_ID returnTypeId() const override
     {
+        return metaTypeId<C>();
+    }
+
+    std::vector<MetaType_ID> parametersTypeId() const override
+    {
+        return {metaTypeId<Args>()...};
+    }
+
+    std::string signature(const char *name) const override
+    {
+        (void) name;
         return signature_imp(argument_indexes_t{});
     }
 
@@ -106,33 +217,23 @@ private:
         return "default constructor";
     }
 
+    static std::string signature_imp(index_sequence<0>)
+    {
+        using Arg = argument_get_t<0>;
+        if (std::is_same<internal::decay_t<Arg>, C>::value)
+        {
+            if (std::is_rvalue_reference<Arg>::value)
+                return "move constructor";
+            else
+                return "copy constructor";
+        }
+        return method_signature<Args...>::get("constructor");
+    }
+
     template<std::size_t ...I>
     static std::string signature_imp(index_sequence<I...>)
     {
-        constexpr auto size = sizeof...(I);
-        if (size == 1)
-        {
-            using Arg = argument_get_t<0>;
-            if (std::is_same<Arg, C>::value)
-                return "copy constructor";
-
-            using Decayed = typename std::decay<Arg>::type;
-            if (std::is_same<Decayed, C>::value)
-            {
-                if (std::is_lvalue_reference<Arg>::value)
-                    return "copy constructor";
-                if (std::is_rvalue_reference<Arg>::value)
-                    return "move constructor";
-            }
-        }
-
-        std::ostringstream os;
-        os << "constructor(";
-        EXPAND (
-            os << type_name<argument_get_t<I>>() << (I < size - 1 ? ", " : "")
-        );
-        os << ")";
-        return os.str();
+        return method_signature<Args...>::get("constructor");
     }
 
     template<std::size_t ...I>
@@ -276,17 +377,37 @@ public:
     self_t _constructor(const char *name = nullptr)
     {
         static_assert(std::is_class<T>::value, "Constructor can be defined only for class types");
-        assert(m_currentContainer);
-        auto category = m_currentContainer->category();
-        assert(category == mcatClass);
-        if (category == mcatClass)
-        {
-            MetaConstructor::create(name, *m_currentContainer,
-                                    std::unique_ptr<IConstructorInvoker>{
-                                        new internal::ConstructorInvoker<T, Args...>{}});
-            register_converting_constructor<type_list<Args...>>(typename internal::is_converting_constructor<T, Args...>::type());
-        }
+        assert(m_currentContainer && m_currentContainer->category() == mcatClass);
+        MetaConstructor::create(name, *m_currentContainer,
+                                std::unique_ptr<IConstructorInvoker>{
+                                    new internal::ConstructorInvoker<T, Args...>{}});
+        register_converting_constructor<type_list<Args...>>(
+                    typename internal::is_converting_constructor<T, Args...>::type());
         return std::move(*this);
+    }
+
+    template<typename ...Args>
+    self_t _constructor(const std::string &name)
+    {
+        return _constructor<Args...>(name.c_str());
+    }
+
+    template<typename F>
+    self_t _method(const char *name, F &&func)
+    {
+        static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
+                      "Method can be defined in namespace or class");
+        assert(m_currentContainer);
+        MetaMethod::create(name, *m_currentContainer,
+                           std::unique_ptr<IMethodInvoker>{
+                                new internal::MethodInvoker<internal::decay_t<F>>{std::forward<F>(func)}});
+        return std::move(*this);
+    }
+
+    template<typename F>
+    self_t _method(const std::string &name, F &&func)
+    {
+        return _method(name.c_str(), std::forward<F>(func));
     }
 
     MB _end()
@@ -307,8 +428,11 @@ protected:
     meta_define(meta_define&&) = default;
     meta_define& operator=(meta_define&&) = default;
 
-    meta_define(MetaItem *currentItem, MetaContainer *currentContainer, internal::container_stack_t *containerStack)
-        : m_currentItem{currentItem}, m_currentContainer{currentContainer}, m_containerStack{containerStack}
+    meta_define(MetaItem *currentItem, MetaContainer *currentContainer,
+                internal::container_stack_t *containerStack)
+        : m_currentItem{currentItem},
+          m_currentContainer{currentContainer},
+          m_containerStack{containerStack}
     {}
 
     MetaItem *m_currentItem = nullptr;
