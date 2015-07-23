@@ -20,7 +20,7 @@ public:
     {
         static_assert(sizeof...(Args) <= IConstructorInvoker::MaxNumberOfArguments,
                       "Maximum supported metaconstructor arguments: 10");
-        return constructor()->invoke(std::forward<Args>(args)...);
+        return constructor()->invoke_static(std::forward<Args>(args)...);
     }
 
 protected:

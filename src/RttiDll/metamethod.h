@@ -20,16 +20,27 @@ struct DLL_PUBLIC IMethodInvoker
     virtual MetaType_ID returnTypeId() const = 0;
     virtual std::vector<MetaType_ID> parametersTypeId() const = 0;
     virtual std::string signature(const char *name = nullptr) const = 0;
-    virtual variant invoke(argument arg0 = argument{},
-                           argument arg1 = argument{},
-                           argument arg2 = argument{},
-                           argument arg3 = argument{},
-                           argument arg4 = argument{},
-                           argument arg5 = argument{},
-                           argument arg6 = argument{},
-                           argument arg7 = argument{},
-                           argument arg8 = argument{},
-                           argument arg9 = argument{}) const = 0;
+    virtual variant invoke_static(argument arg0 = argument{},
+                                  argument arg1 = argument{},
+                                  argument arg2 = argument{},
+                                  argument arg3 = argument{},
+                                  argument arg4 = argument{},
+                                  argument arg5 = argument{},
+                                  argument arg6 = argument{},
+                                  argument arg7 = argument{},
+                                  argument arg8 = argument{},
+                                  argument arg9 = argument{}) const = 0;
+    virtual variant invoke_method(const variant &instance,
+                                  argument arg0 = argument{},
+                                  argument arg1 = argument{},
+                                  argument arg2 = argument{},
+                                  argument arg3 = argument{},
+                                  argument arg4 = argument{},
+                                  argument arg5 = argument{},
+                                  argument arg6 = argument{},
+                                  argument arg7 = argument{},
+                                  argument arg8 = argument{},
+                                  argument arg9 = argument{}) const = 0;
     virtual ~IMethodInvoker() noexcept = default;
 };
 
@@ -45,7 +56,11 @@ public:
     {
         static_assert(sizeof...(Args) <= IMethodInvoker::MaxNumberOfArguments,
                       "Maximum supported metamethod arguments: 10");
-        return invoker()->invoke(std::forward<Args>(args)...);
+        auto interface = invoker();
+        if (interface->isStatic())
+            return invoker()->invoke_static(std::forward<Args>(args)...);
+        else
+            return invoker()->invoke_method(std::forward<Args>(args)...);
     }
 protected:
     explicit MetaMethod(std::string &&name, MetaContainer &owner,

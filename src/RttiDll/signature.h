@@ -35,6 +35,10 @@ private:
     }
 };
 
+template<typename ...Args>
+struct signature<type_list<Args...>>: signature<Args...>
+{};
+
 } //namespace rtti
 
 #endif // SIGNATURE_H

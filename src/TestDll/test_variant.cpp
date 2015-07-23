@@ -149,7 +149,7 @@ public:
         a = -1;
     }
 
-    virtual void print()
+    virtual void print() const
     {
         std::printf("a = %d\n", a);
     }
@@ -213,7 +213,7 @@ public:
         b = -1;
     }
 
-    void print() override
+    void print() const override
     {
         A::print();
         std::printf("b = %d\n", b);
@@ -230,7 +230,7 @@ void register_classes()
     global_define()
         ._namespace("anonimous_2")
             ._class<A>("A")
-                ._method("print", A::print)
+                ._method("print", &A::print)
             ._end()
             ._class<B>("B")._base<A>()._end()
             ._class<TestQPointer>("TestQPointer")
@@ -326,6 +326,11 @@ void test_variant_1()
         assert(!v.is<A>() && !v.is<const A>());
         v.value<B*>()->print();
         assert(!v.is<int*>() && !v.is<const int*>());
+
+        auto c = rtti::MetaClass::findByTypeId(rtti::metaTypeId<A>());
+        auto m = c->getMethod("print");
+        if (m)
+            m->invoke(v);
         delete a;
     }
 

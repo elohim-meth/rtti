@@ -10,6 +10,8 @@
 #include "metaitem.h"
 #include "signature.h"
 
+#include <function_traits.h>
+
 #include <stack>
 #include <cassert>
 #include <type_traits>
@@ -50,13 +52,218 @@ private:
     F m_func;
 };
 
-template<typename F> struct method_invoker;
 
-template<typename ...Args>
-struct method_invoker<void(*)(Args...)>
+//template<typename F> struct method_invoker;
+
+//template<typename ...Args>
+//struct method_invoker<void(*)(Args...)>
+//{
+//    using func_t = void(*)(Args...);
+//    static_assert(sizeof...(Args) <= IMethodInvoker::MaxNumberOfArguments,
+//                  "Maximum supported arguments: 10");
+
+//    static bool isStatic() noexcept
+//    { return true; }
+//    static MetaType_ID returnTypeId() noexcept
+//    { return metaTypeId<void>(); }
+//    static std::vector<MetaType_ID> parametersTypeId() noexcept
+//    { return {metaTypeId<Args>()...}; }
+//    static std::string signature(const char *name)
+//    { return ::rtti::signature<Args...>::get(name); }
+
+//    static variant invoke(func_t func,
+//                          const argument &arg0, const argument &arg1,
+//                          const argument &arg2, const argument &arg3,
+//                          const argument &arg4, const argument &arg5,
+//                          const argument &arg6, const argument &arg7,
+//                          const argument &arg8, const argument &arg9)
+//    {
+//        argument_array_t args = {
+//            &arg0, &arg1, &arg2, &arg3, &arg4,
+//            &arg5, &arg6, &arg7, &arg8, &arg9};
+
+//        auto count = sizeof...(Args);
+//        for (const auto &item: args)
+//        {
+//            if (item->empty())
+//                break;
+//            --count;
+//        }
+
+//        if (count != 0)
+//            throw invoke_error{"Invalid number of arguments"};
+
+//        return invoke_imp(func, args, argument_indexes_t{});
+//    }
+
+//    static variant invoke(func_t, const variant&,
+//                          argument, argument, argument, argument, argument,
+//                          argument, argument, argument, argument, argument)
+//    { assert(false); return variant::empty_variant; }
+//private:
+//    template<std::size_t I>
+//    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
+//    using argument_indexes_t = index_sequence_for_t<Args...>;
+//    using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
+
+//    template<std::size_t ...I>
+//    static variant invoke_imp(func_t func, const argument_array_t &args, index_sequence<I...>)
+//    {
+//        func(args[I]->value<argument_get_t<I>>()...);
+//        return variant::empty_variant;
+//    }
+//};
+
+//template<typename C, typename ...Args>
+//struct method_invoker<void(C::*)(Args...)>
+//{
+//    using func_t = void(C::*)(Args...);
+//    static_assert(sizeof...(Args) <= IMethodInvoker::MaxNumberOfArguments,
+//                  "Maximum supported arguments: 10");
+
+//    static bool isStatic() noexcept
+//    { return false; }
+//    static MetaType_ID returnTypeId() noexcept
+//    { return metaTypeId<void>(); }
+//    static std::vector<MetaType_ID> parametersTypeId() noexcept
+//    { return {metaTypeId<Args>()...}; }
+//    static std::string signature(const char *name)
+//    { return ::rtti::signature<Args...>::get(name); }
+
+//    static variant invoke(func_t func,
+//                          const variant &instance,
+//                          const argument &arg0, const argument &arg1,
+//                          const argument &arg2, const argument &arg3,
+//                          const argument &arg4, const argument &arg5,
+//                          const argument &arg6, const argument &arg7,
+//                          const argument &arg8, const argument &arg9)
+//    {
+//        argument_array_t args = {
+//            &arg0, &arg1, &arg2, &arg3, &arg4,
+//            &arg5, &arg6, &arg7, &arg8, &arg9};
+
+//        auto count = sizeof...(Args);
+//        for (const auto &item: args)
+//        {
+//            if (item->empty())
+//                break;
+//            --count;
+//        }
+
+//        if (count != 0)
+//            throw invoke_error{"Invalid number of arguments"};
+
+//        return invoke_imp(func, instance, args, argument_indexes_t{});
+//    }
+
+//    static variant invoke(func_t,
+//                          argument, argument, argument, argument, argument,
+//                          argument, argument, argument, argument, argument)
+//    { assert(false); return variant::empty_variant; }
+//private:
+//    template<std::size_t I>
+//    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
+//    using argument_indexes_t = index_sequence_for_t<Args...>;
+//    using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
+
+//    template<std::size_t ...I>
+//    static variant invoke_imp(func_t func, const variant &instance,
+//                              const argument_array_t &args, index_sequence<I...>)
+//    {
+//        auto type = MetaType{instance.type()};
+//        if (type.typeFlags() & MetaType::Class)
+//            (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
+//        else if (type.typeFlags() & MetaType::ClassPtr)
+//            (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+//        return variant::empty_variant;
+//    }
+//};
+
+//template<typename C, typename ...Args>
+//struct method_invoker<void(C::*)(Args...) const>: method_invoker<void(C::*)(Args...)>
+//{};
+
+//template<typename RT, typename ...Args>
+//struct method_invoker<RT(*)(Args...)>
+//{
+//    using func_t = RT(*)(Args...);
+//    static_assert(sizeof...(Args) <= IMethodInvoker::MaxNumberOfArguments,
+//                  "Maximum supported arguments: 10");
+
+//    static bool isStatic() noexcept
+//    { return true; }
+//    static MetaType_ID returnTypeId() noexcept
+//    { return metaTypeId<RT>(); }
+//    static std::vector<MetaType_ID> parametersTypeId() noexcept
+//    { return {metaTypeId<Args>()...}; }
+//    static std::string signature(const char *name)
+//    { return ::rtti::signature<Args...>::get(name); }
+
+//    static variant invoke(func_t func,
+//                          const argument &arg0,
+//                          const argument &arg1,
+//                          const argument &arg2,
+//                          const argument &arg3,
+//                          const argument &arg4,
+//                          const argument &arg5,
+//                          const argument &arg6,
+//                          const argument &arg7,
+//                          const argument &arg8,
+//                          const argument &arg9)
+//    {
+//        argument_array_t args = {
+//            &arg0, &arg1, &arg2, &arg3, &arg4,
+//            &arg5, &arg6, &arg7, &arg8, &arg9};
+
+//        auto count = sizeof...(Args);
+//        for (const auto &item: args)
+//        {
+//            if (item->empty())
+//                break;
+//            --count;
+//        }
+
+//        if (count != 0)
+//            throw invoke_error{"Invalid number of arguments"};
+
+//        return invoke_imp(func, args, argument_indexes_t{});
+//    }
+
+//    static variant invoke(func_t, const variant&,
+//                          argument, argument, argument, argument, argument,
+//                          argument, argument, argument, argument, argument)
+//    { assert(false); return variant::empty_variant; }
+//private:
+//    template<std::size_t I>
+//    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
+//    using argument_indexes_t = index_sequence_for_t<Args...>;
+//    using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
+
+//    template<std::size_t ...I>
+//    static variant invoke_imp(func_t func, const argument_array_t &args, index_sequence<I...>)
+//    {
+//        return func(args[I]->value<argument_get_t<I>>()...);
+//    }
+//};
+
+struct void_static_func{};
+struct return_static_func{};
+struct void_member_func {};
+struct return_member_func {};
+
+template<typename F>
+using method_invoker_tag =
+typename std::conditional<std::is_same<typename function_traits<F>::result_type, void>::value,
+    typename std::conditional<std::is_same<typename function_traits<F>::class_type, void>::value, void_static_func, void_member_func>::type,
+    typename std::conditional<std::is_same<typename function_traits<F>::class_type, void>::value, return_static_func, return_member_func>::type>::type;
+
+template<typename F, typename Tag> struct method_invoker;
+
+template<typename F>
+struct method_invoker<F, void_static_func>
 {
-    using func_t = void(*)(Args...);
-    static_assert(sizeof...(Args) <= IMethodInvoker::MaxNumberOfArguments,
+    using Args = typename function_traits<F>::args;
+    static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic() noexcept
@@ -64,27 +271,22 @@ struct method_invoker<void(*)(Args...)>
     static MetaType_ID returnTypeId() noexcept
     { return metaTypeId<void>(); }
     static std::vector<MetaType_ID> parametersTypeId() noexcept
-    { return {metaTypeId<Args>()...}; }
+    { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
-    { return ::rtti::signature<Args...>::get(name); }
+    { return ::rtti::signature<Args>::get(name); }
 
-    static variant invoke(func_t func,
-                          const argument &arg0,
-                          const argument &arg1,
-                          const argument &arg2,
-                          const argument &arg3,
-                          const argument &arg4,
-                          const argument &arg5,
-                          const argument &arg6,
-                          const argument &arg7,
-                          const argument &arg8,
-                          const argument &arg9)
+    static variant invoke(F func,
+                          const argument &arg0, const argument &arg1,
+                          const argument &arg2, const argument &arg3,
+                          const argument &arg4, const argument &arg5,
+                          const argument &arg6, const argument &arg7,
+                          const argument &arg8, const argument &arg9)
     {
         argument_array_t args = {
             &arg0, &arg1, &arg2, &arg3, &arg4,
             &arg5, &arg6, &arg7, &arg8, &arg9};
 
-        auto count = sizeof...(Args);
+        auto count = typelist_size<Args>::value;
         for (const auto &item: args)
         {
             if (item->empty())
@@ -97,114 +299,59 @@ struct method_invoker<void(*)(Args...)>
 
         return invoke_imp(func, args, argument_indexes_t{});
     }
+
+    static variant invoke(F, const variant&,
+                          argument, argument, argument, argument, argument,
+                          argument, argument, argument, argument, argument)
+    { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
-    using argument_indexes_t = index_sequence_for_t<Args...>;
+    using argument_get_t = typelist_get_t<Args, I>;
+    using argument_indexes_t = index_sequence_for_t<Args>;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
 
     template<std::size_t ...I>
-    static variant invoke_imp(func_t func, const argument_array_t &args, index_sequence<I...>)
+    static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
+    {
+        return { metaTypeId<argument_get_t<I>>()... };
+    }
+
+    template<std::size_t ...I>
+    static variant invoke_imp(F func, const argument_array_t &args, index_sequence<I...>)
     {
         func(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
     }
 };
 
-template<typename C, typename ...Args>
-struct method_invoker<void(C::*)(Args...)>
+template<typename F>
+struct method_invoker<F, return_static_func>
 {
-    using func_t = void(C::*)(Args...);
-    static_assert(sizeof...(Args) < IMethodInvoker::MaxNumberOfArguments,
-                  "Maximum supported arguments: 9");
-
-    static bool isStatic() noexcept
-    { return false; }
-    static MetaType_ID returnTypeId() noexcept
-    { return metaTypeId<void>(); }
-    static std::vector<MetaType_ID> parametersTypeId() noexcept
-    { return {metaTypeId<Args>()...}; }
-    static std::string signature(const char *name)
-    { return ::rtti::signature<Args...>::get(name); }
-
-    static variant invoke(func_t func,
-                          const argument &arg0,
-                          const argument &arg1,
-                          const argument &arg2,
-                          const argument &arg3,
-                          const argument &arg4,
-                          const argument &arg5,
-                          const argument &arg6,
-                          const argument &arg7,
-                          const argument &arg8,
-                          const argument &arg9)
-    {
-        argument_array_t args = {
-            &arg1, &arg2, &arg3, &arg4,
-            &arg5, &arg6, &arg7, &arg8, &arg9};
-
-        auto count = sizeof...(Args);
-        for (const auto &item: args)
-        {
-            if (item->empty())
-                break;
-            --count;
-        }
-
-        if (count != 0)
-            throw invoke_error{"Invalid number of arguments"};
-
-        variant instance = arg0;
-        return invoke_imp(func, instance, args, argument_indexes_t{});
-    }
-private:
-    template<std::size_t I>
-    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
-    using argument_indexes_t = index_sequence_for_t<Args...>;
-    using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments - 1>;
-
-    template<std::size_t ...I>
-    static variant invoke_imp(func_t func, variant &instance,
-                              const argument_array_t &args, index_sequence<I...>)
-    {
-        (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
-        return variant::empty_variant;
-    }
-};
-
-template<typename RT, typename ...Args>
-struct method_invoker<RT(*)(Args...)>
-{
-    using func_t = RT(*)(Args...);
-    static_assert(sizeof...(Args) <= IMethodInvoker::MaxNumberOfArguments,
+    using Args = typename function_traits<F>::args;
+    static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic() noexcept
     { return true; }
     static MetaType_ID returnTypeId() noexcept
-    { return metaTypeId<RT>(); }
+    { return metaTypeId<typename function_traits<F>::result_type>(); }
     static std::vector<MetaType_ID> parametersTypeId() noexcept
-    { return {metaTypeId<Args>()...}; }
+    { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
-    { return ::rtti::signature<Args...>::get(name); }
+    { return ::rtti::signature<Args>::get(name); }
 
-    static variant invoke(func_t func,
-                          const argument &arg0,
-                          const argument &arg1,
-                          const argument &arg2,
-                          const argument &arg3,
-                          const argument &arg4,
-                          const argument &arg5,
-                          const argument &arg6,
-                          const argument &arg7,
-                          const argument &arg8,
-                          const argument &arg9)
+    static variant invoke(F func,
+                          const argument &arg0, const argument &arg1,
+                          const argument &arg2, const argument &arg3,
+                          const argument &arg4, const argument &arg5,
+                          const argument &arg6, const argument &arg7,
+                          const argument &arg8, const argument &arg9)
     {
         argument_array_t args = {
             &arg0, &arg1, &arg2, &arg3, &arg4,
             &arg5, &arg6, &arg7, &arg8, &arg9};
 
-        auto count = sizeof...(Args);
+        auto count = typelist_size<Args>::value;
         for (const auto &item: args)
         {
             if (item->empty())
@@ -217,22 +364,219 @@ struct method_invoker<RT(*)(Args...)>
 
         return invoke_imp(func, args, argument_indexes_t{});
     }
+
+    static variant invoke(F, const variant&,
+                          argument, argument, argument, argument, argument,
+                          argument, argument, argument, argument, argument)
+    { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
-    using argument_indexes_t = index_sequence_for_t<Args...>;
+    using argument_get_t = typelist_get_t<Args, I>;
+    using argument_indexes_t = index_sequence_for_t<Args>;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
 
     template<std::size_t ...I>
-    static variant invoke_imp(func_t func, const argument_array_t &args, index_sequence<I...>)
+    static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
+    {
+        return { metaTypeId<argument_get_t<I>>()... };
+    }
+
+    template<std::size_t ...I>
+    static variant invoke_imp(F func, const argument_array_t &args, index_sequence<I...>)
     {
         return func(args[I]->value<argument_get_t<I>>()...);
     }
 };
 
 template<typename F>
+struct method_invoker<F, void_member_func>
+{
+    using Args = typename function_traits<F>::args;
+    static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+                  "Maximum supported arguments: 10");
+
+    static bool isStatic() noexcept
+    { return false; }
+    static MetaType_ID returnTypeId() noexcept
+    { return metaTypeId<void>(); }
+    static std::vector<MetaType_ID> parametersTypeId() noexcept
+    { return parametersTypeId(argument_indexes_t{}); }
+    static std::string signature(const char *name)
+    { return ::rtti::signature<Args>::get(name); }
+
+    static variant invoke(F func,
+                          const variant &instance,
+                          const argument &arg0, const argument &arg1,
+                          const argument &arg2, const argument &arg3,
+                          const argument &arg4, const argument &arg5,
+                          const argument &arg6, const argument &arg7,
+                          const argument &arg8, const argument &arg9)
+    {
+        argument_array_t args = {
+            &arg0, &arg1, &arg2, &arg3, &arg4,
+            &arg5, &arg6, &arg7, &arg8, &arg9};
+
+        auto count = typelist_size<Args>::value;
+        for (const auto &item: args)
+        {
+            if (item->empty())
+                break;
+            --count;
+        }
+
+        if (count != 0)
+            throw invoke_error{"Invalid number of arguments"};
+
+        return invoke_imp(func, instance, args, argument_indexes_t{});
+    }
+
+    static variant invoke(F,
+                          argument, argument, argument, argument, argument,
+                          argument, argument, argument, argument, argument)
+    { assert(false); return variant::empty_variant; }
+private:
+    template<std::size_t I>
+    using argument_get_t = typelist_get_t<Args, I>;
+    using argument_indexes_t = index_sequence_for_t<Args>;
+    using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
+    using C = typename function_traits<F>::class_type;
+    using is_const = typename function_traits<F>::is_const;
+    using conditional_t = typename std::conditional<is_const::value, const variant&, variant&>::type;
+
+    template<std::size_t ...I>
+    static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
+    {
+        return { metaTypeId<argument_get_t<I>>()... };
+    }
+
+    template<std::size_t ...I>
+    static variant invoke_imp(F func, const variant &instance,
+                              const argument_array_t &args, index_sequence<I...> seq)
+    {
+        return invoke_imp_selector(func, const_cast<conditional_t>(instance), args, seq);
+    }
+
+    template<std::size_t ...I>
+    static variant invoke_imp_selector(F func, variant &instance, const argument_array_t &args,
+                              index_sequence<I...>)
+    {
+        auto type = MetaType{instance.type()};
+        if (type.typeFlags() & MetaType::Class)
+            (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
+        else if (type.typeFlags() & MetaType::ClassPtr)
+            (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+        return variant::empty_variant;
+    }
+
+    template<std::size_t ...I>
+    static variant invoke_imp_selector(F func, const variant &instance, const argument_array_t &args,
+                                       index_sequence<I...>)
+    {
+        auto type = MetaType{instance.type()};
+        if (type.typeFlags() & MetaType::Class)
+            (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
+        else if (type.typeFlags() & MetaType::ClassPtr)
+            (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+        return variant::empty_variant;
+    }
+};
+
+template<typename F>
+struct method_invoker<F, return_member_func>
+{
+    using Args = typename function_traits<F>::args;
+    static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+                  "Maximum supported arguments: 10");
+
+    static bool isStatic() noexcept
+    { return false; }
+    static MetaType_ID returnTypeId() noexcept
+    { return metaTypeId<typename function_traits<F>::result_type>(); }
+    static std::vector<MetaType_ID> parametersTypeId() noexcept
+    { return parametersTypeId(argument_indexes_t{}); }
+    static std::string signature(const char *name)
+    { return ::rtti::signature<Args>::get(name); }
+
+    static variant invoke(F func,
+                          const variant &instance,
+                          const argument &arg0, const argument &arg1,
+                          const argument &arg2, const argument &arg3,
+                          const argument &arg4, const argument &arg5,
+                          const argument &arg6, const argument &arg7,
+                          const argument &arg8, const argument &arg9)
+    {
+        argument_array_t args = {
+            &arg0, &arg1, &arg2, &arg3, &arg4,
+            &arg5, &arg6, &arg7, &arg8, &arg9};
+
+        auto count = typelist_size<Args>::value;
+        for (const auto &item: args)
+        {
+            if (item->empty())
+                break;
+            --count;
+        }
+
+        if (count != 0)
+            throw invoke_error{"Invalid number of arguments"};
+
+        return invoke_imp(func, instance, args, argument_indexes_t{});
+    }
+
+    static variant invoke(F,
+                          argument, argument, argument, argument, argument,
+                          argument, argument, argument, argument, argument)
+    { assert(false); return variant::empty_variant; }
+private:
+    template<std::size_t I>
+    using argument_get_t = typelist_get_t<Args, I>;
+    using argument_indexes_t = index_sequence_for_t<Args>;
+    using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
+    using C = typename function_traits<F>::class_type;
+    using is_const = typename function_traits<F>::is_const;
+    using conditional_t = typename std::conditional<is_const::value, const variant&, variant&>::type;
+
+    template<std::size_t ...I>
+    static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
+    {
+        return { metaTypeId<argument_get_t<I>>()... };
+    }
+
+    template<std::size_t ...I>
+    static variant invoke_imp(F func, const variant &instance,
+                              const argument_array_t &args, index_sequence<I...> seq)
+    {
+        return invoke_imp_selector(func, const_cast<conditional_t>(instance), args, seq);
+    }
+
+    template<std::size_t ...I>
+    static variant invoke_imp_selector(F func, variant &instance, const argument_array_t &args,
+                              index_sequence<I...>)
+    {
+        auto type = MetaType{instance.type()};
+        if (type.typeFlags() & MetaType::Class)
+            return (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
+        else if (type.typeFlags() & MetaType::ClassPtr)
+            return (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+    }
+
+    template<std::size_t ...I>
+    static variant invoke_imp_selector(F func, const variant &instance, const argument_array_t &args,
+                                       index_sequence<I...>)
+    {
+        auto type = MetaType{instance.type()};
+        if (type.typeFlags() & MetaType::Class)
+            return (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
+        else if (type.typeFlags() & MetaType::ClassPtr)
+            return (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+    }
+};
+
+template<typename F>
 struct MethodInvoker: IMethodInvoker
 {
+    using invoker_t = method_invoker<F, method_invoker_tag<F>>;
+
     MethodInvoker(const F &func) noexcept
         : m_func(func)
     {}
@@ -241,29 +585,46 @@ struct MethodInvoker: IMethodInvoker
     {}
 
     bool isStatic() const override
-    { return method_invoker<F>::isStatic(); }
+    { return invoker_t::isStatic(); }
 
     MetaType_ID returnTypeId() const override
-    { return method_invoker<F>::returnTypeId(); }
+    { return invoker_t::returnTypeId(); }
 
     std::vector<MetaType_ID> parametersTypeId() const override
-    { return method_invoker<F>::parametersTypeId(); }
+    { return invoker_t::parametersTypeId(); }
 
     std::string signature(const char *name) const override
-    { return method_invoker<F>::signature(name); }
+    { return invoker_t::signature(name); }
 
-    variant invoke(argument arg0 = argument{},
-                   argument arg1 = argument{},
-                   argument arg2 = argument{},
-                   argument arg3 = argument{},
-                   argument arg4 = argument{},
-                   argument arg5 = argument{},
-                   argument arg6 = argument{},
-                   argument arg7 = argument{},
-                   argument arg8 = argument{},
-                   argument arg9 = argument{}) const override
+    variant invoke_static(argument arg0 = argument{},
+                          argument arg1 = argument{},
+                          argument arg2 = argument{},
+                          argument arg3 = argument{},
+                          argument arg4 = argument{},
+                          argument arg5 = argument{},
+                          argument arg6 = argument{},
+                          argument arg7 = argument{},
+                          argument arg8 = argument{},
+                          argument arg9 = argument{}) const override
     {
-        return method_invoker<F>::invoke(m_func,
+        return invoker_t::invoke(m_func,
+                                         arg0, arg1, arg2, arg3, arg4,
+                                         arg5, arg6, arg7, arg8, arg9);
+    }
+
+    variant invoke_method(const variant &instance,
+                          argument arg0 = argument{},
+                          argument arg1 = argument{},
+                          argument arg2 = argument{},
+                          argument arg3 = argument{},
+                          argument arg4 = argument{},
+                          argument arg5 = argument{},
+                          argument arg6 = argument{},
+                          argument arg7 = argument{},
+                          argument arg8 = argument{},
+                          argument arg9 = argument{}) const
+    {
+        return invoker_t::invoke(m_func, instance,
                                          arg0, arg1, arg2, arg3, arg4,
                                          arg5, arg6, arg7, arg8, arg9);
     }
@@ -287,7 +648,7 @@ struct ConstructorInvoker: IConstructorInvoker
 
     bool isStatic() const override
     {
-        return false;
+        return true;
     }
 
     MetaType_ID returnTypeId() const override
@@ -305,16 +666,16 @@ struct ConstructorInvoker: IConstructorInvoker
         return signature_imp(argument_indexes_t{});
     }
 
-    variant invoke(argument arg0 = argument{},
-                   argument arg1 = argument{},
-                   argument arg2 = argument{},
-                   argument arg3 = argument{},
-                   argument arg4 = argument{},
-                   argument arg5 = argument{},
-                   argument arg6 = argument{},
-                   argument arg7 = argument{},
-                   argument arg8 = argument{},
-                   argument arg9 = argument{}) const override
+    variant invoke_static(argument arg0 = argument{},
+                          argument arg1 = argument{},
+                          argument arg2 = argument{},
+                          argument arg3 = argument{},
+                          argument arg4 = argument{},
+                          argument arg5 = argument{},
+                          argument arg6 = argument{},
+                          argument arg7 = argument{},
+                          argument arg8 = argument{},
+                          argument arg9 = argument{}) const override
     {
         argument_array_t args = {
             &arg0, &arg1, &arg2, &arg3, &arg4,
@@ -333,6 +694,11 @@ struct ConstructorInvoker: IConstructorInvoker
 
         return invoke_imp(args, argument_indexes_t{});
     }
+
+    variant invoke_method(const variant&,
+                          argument, argument, argument, argument, argument,
+                          argument, argument, argument, argument, argument) const
+    { assert(false); }
 
 private:
     static constexpr const char* signature_imp(index_sequence<>)
