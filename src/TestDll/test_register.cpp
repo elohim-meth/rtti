@@ -97,12 +97,16 @@ bool register_fromString_converter()
     return rtti::MetaType::registerConverter<std::string, To>(lambda);
 }
 
-void test_method(const char *value)
-{
-    std::printf(value);
-    std::printf("\n");
-}
+void test_method(const char *)
+{ PRINT_PRETTY_FUNC }
 
+void test_method(int)
+{ PRINT_PRETTY_FUNC }
+
+test::Small test_return(std::int8_t value)
+{
+    return test::Small(value);
+}
 
 }
 
@@ -113,7 +117,9 @@ void register_rtti()
         ._attribute("Attribute 1", std::string{"standard string object"})
         ._attribute("Attribute 2", true)
         ._attribute("Attribute 3", 3.14)
-        ._method("test_method", &test_method)
+        ._method<void(const char*)>("test_method", &test_method)
+        ._method<void(int)>("test_method", &test_method)
+        ._method("test_return", &test_return)
 
         ._namespace("test")
             ._lazy(define_test_namespace)

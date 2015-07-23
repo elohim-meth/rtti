@@ -258,7 +258,7 @@ const MetaMethod* MetaContainer::getMethod(const char *name) const
     return result;
 }
 
-const MetaMethod *MetaContainer::getMethod(const std::string name) const
+const MetaMethod *MetaContainer::getMethod(const std::string &name) const
 {
     return getMethod(name.c_str());
 }

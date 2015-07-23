@@ -29,11 +29,7 @@ public:
         : m_array{std::is_array<typename std::remove_reference<T>::type>::value},
           m_data{const_cast<void*>(reinterpret_cast<const void*>(std::addressof(value)))},
           m_type{metaTypeId<internal::full_decay_t<T>>()}
-    {
-//         static_assert(!std::is_array<typename std::remove_reference<T>::type>::value,
-//                       "Array types are not supported! "
-//                       "Use std::array or explicitly convert to pointer type");
-    }
+    {}
 
     bool empty() const noexcept
     {

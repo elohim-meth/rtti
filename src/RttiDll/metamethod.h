@@ -16,6 +16,10 @@ struct DLL_PUBLIC IMethodInvoker
         MaxNumberOfArguments = 10
     };
 
+    virtual bool isStatic() const = 0;
+    virtual MetaType_ID returnTypeId() const = 0;
+    virtual std::vector<MetaType_ID> parametersTypeId() const = 0;
+    virtual std::string signature(const char *name = nullptr) const = 0;
     virtual variant invoke(argument arg0 = argument{},
                            argument arg1 = argument{},
                            argument arg2 = argument{},
@@ -26,9 +30,6 @@ struct DLL_PUBLIC IMethodInvoker
                            argument arg7 = argument{},
                            argument arg8 = argument{},
                            argument arg9 = argument{}) const = 0;
-    virtual MetaType_ID returnTypeId() const = 0;
-    virtual std::vector<MetaType_ID> parametersTypeId() const = 0;
-    virtual std::string signature(const char *name = nullptr) const = 0;
     virtual ~IMethodInvoker() noexcept = default;
 };
 
