@@ -44,10 +44,10 @@ int main(int argc, char* argv[])
 
         auto m = gn->getMethod("test_method");
         if (m)
-            m->invoke((const char*)"Hello, World");
-        m = gn->getMethod(rtti::method_signature<const char*>::get("test_method"));
-        if (m)
             m->invoke("Hello, World");
+        m = gn->getMethod<int>("test_method");
+        if (m)
+            m->invoke(256);
 
 
         auto mt = rtti::MetaType{type_name<std::vector<int>>().c_str()};

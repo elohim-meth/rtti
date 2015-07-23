@@ -14,6 +14,7 @@
 
 set(HEADERS
     ./global.h
+    ./signature.h
     ./c_string.h
     ./argument.h
     ./metatype.h

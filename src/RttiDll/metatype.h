@@ -383,7 +383,6 @@ To constructor_convert(From value)
     return To(value);
 }
 
-
 struct DLL_LOCAL ConvertFunctionBase
 {
     using converter_t = bool(*)(const ConvertFunctionBase&, const void*, void*);

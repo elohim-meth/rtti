@@ -137,9 +137,8 @@ private:
     using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
     using class_t = typename std::remove_pointer<T>::type;
 
-    static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::false_type)
+    static ClassInfo info_selector(const variant_type_storage&, std::false_type, std::false_type)
     {
-        (void) value;
         return ClassInfo();
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::true_type, std::false_type)
@@ -151,9 +150,8 @@ private:
         using registered_t = typename has_method_classInfo<ClassInfo(class_t::*)() const>::type;
         return info_selector_registered(value, registered_t());
     }
-    static ClassInfo info_selector_registered(const variant_type_storage &value, std::false_type)
+    static ClassInfo info_selector_registered(const variant_type_storage&, std::false_type)
     {
-        (void) value;
         return ClassInfo();
     }
     static ClassInfo info_selector_registered(const variant_type_storage &value, std::true_type)
