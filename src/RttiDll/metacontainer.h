@@ -12,6 +12,7 @@ class MetaContainerPrivate;
 class MetaNamespace;
 class MetaClass;
 class MetaConstructor;
+class MetaMethod;
 class MetaEnum;
 
 struct DLL_PUBLIC IDefinitionCallbackHolder

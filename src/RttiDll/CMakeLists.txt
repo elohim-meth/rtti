@@ -7,6 +7,7 @@
     ./metanamespace.cpp
     ./metaclass.cpp
     ./metaconstructor.cpp
+    ./metamethod.cpp
     ./metaenum.cpp
     ./metadefine.cpp
 )
@@ -28,6 +29,8 @@ set(HEADERS
     ./metaclass_p.h
     ./metaconstructor.h
     ./metaconstructor_p.h
+    ./metamethod.h
+    ./metamethod_p.h
     ./metaenum.h
     ./metaenum_p.h
     ./metadefine.h

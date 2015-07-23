@@ -187,13 +187,5 @@ MetaCategory MetaProperty::category() const noexcept
     return mcatProperty;
 }
 
-//--------------------------------------------------------------------------------------------------------------------------------
-// MetaMethod
-//--------------------------------------------------------------------------------------------------------------------------------
-
-MetaCategory MetaMethod::category() const noexcept
-{
-    return mcatMethod;
-}
 
 } // namespace rtti

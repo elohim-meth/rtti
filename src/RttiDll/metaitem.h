@@ -73,11 +73,6 @@ public:
     MetaCategory category() const noexcept override;
 };
 
-class DLL_PUBLIC MetaMethod final: public MetaItem
-{
-public:
-    MetaCategory category() const noexcept override;
-};
 
 } //namespace rtti
 
