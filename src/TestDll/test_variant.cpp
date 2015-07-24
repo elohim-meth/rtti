@@ -310,7 +310,7 @@ void test_variant_1()
         assert(v.is<A*>() && v.is<const A*>());
         assert(!v.is<B>() && !v.is<const B>());
         assert(!v.is<A>() && !v.is<const A>());
-        v.to<A*>()->print();
+        v.value<A*>()->print();
         assert(!v.is<int*>() && !v.is<const int*>());
         delete v.value<B*>();
     }
@@ -324,10 +324,10 @@ void test_variant_1()
         assert(v.is<A*>() && v.is<const A*>());
         assert(!v.is<B>() && !v.is<const B>());
         assert(!v.is<A>() && !v.is<const A>());
-        v.to<B*>()->print();
+        v.value<B*>()->print();
         assert(!v.is<int*>() && !v.is<const int*>());
 
-        auto c = rtti::MetaClass::findByTypeId(rtti::metaTypeId<A>());
+        auto c = rtti::MetaClass::findByTypeId(rtti::metaTypeId<B>());
         auto m = c->getMethod("print");
         if (m)
             m->invoke(v);
