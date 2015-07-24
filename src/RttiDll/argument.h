@@ -28,7 +28,7 @@ public:
     argument(T &&value) noexcept
         : m_array{std::is_array<typename std::remove_reference<T>::type>::value},
           m_data{const_cast<void*>(reinterpret_cast<const void*>(std::addressof(value)))},
-          m_type{metaTypeId<internal::full_decay_t<T>>()}
+          m_typeId{metaTypeId<internal::full_decay_t<T>>()}
     {}
 
     bool empty() const noexcept
@@ -46,7 +46,7 @@ private:
     template<typename T>
     T value(std::true_type) const
     {
-        if (empty() || (metaTypeId<internal::full_decay_t<T>>() != m_type))
+        if (empty() || (metaTypeId<internal::full_decay_t<T>>() != m_typeId))
             throw bad_argument_cast{"Types doesn't match"};
 
         internal::decay_t<T> *ptr = nullptr;
@@ -61,7 +61,7 @@ private:
     template<typename T>
     T value(std::false_type) const
     {
-        if (empty() || (metaTypeId<internal::full_decay_t<T>>() != m_type))
+        if (empty() || (metaTypeId<internal::full_decay_t<T>>() != m_typeId))
             throw bad_argument_cast{"Types doesn't match"};
 
         internal::decay_t<T> *ptr = nullptr;
@@ -75,7 +75,7 @@ private:
     bool m_array = false;
     void *m_data = nullptr;
     void *m_dataptr = &m_data;
-    const MetaType_ID m_type;
+    const MetaType_ID m_typeId;
 };
 
 }

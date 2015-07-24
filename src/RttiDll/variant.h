@@ -272,7 +272,7 @@ public:
         std::swap(manager, other.manager);
     }
 
-    MetaType_ID type() const noexcept
+    MetaType_ID typeId() const noexcept
     {
         return manager->f_type();
     }
@@ -312,7 +312,7 @@ public:
         if (is<T>())
             return value<T>();
 
-        auto fromId = type();
+        auto fromId = typeId();
         auto toId = metaTypeId<T>();
         if (MetaType::hasConverter(fromId, toId))
         {
@@ -331,7 +331,7 @@ public:
         if (is<T>())
             return true;
 
-        auto fromId = type();
+        auto fromId = typeId();
         auto toId = metaTypeId<T>();
         if (MetaType::hasConverter(fromId, toId))
         {
@@ -378,7 +378,7 @@ private:
         {
             if (self.empty())
                 return false;
-            if (self.type() == metaTypeId<T>())
+            if (self.typeId() == metaTypeId<T>())
                 return true;
             return invoke_for_class(self, is_class_t(), is_class_ptr_t());
         }
@@ -394,7 +394,7 @@ private:
         // class
         static bool invoke_for_class(const variant &self, std::true_type, std::false_type)
         {
-            auto type = MetaType{self.type()};
+            auto type = MetaType{self.typeId()};
             if (type.typeFlags() & MetaType::Class)
                 return invoke_imp(self);
             return false;
@@ -402,7 +402,7 @@ private:
         // class ptr
         static bool invoke_for_class(const variant &self, std::false_type, std::true_type)
         {
-            auto type = MetaType{self.type()};
+            auto type = MetaType{self.typeId()};
             if (type.typeFlags() & MetaType::ClassPtr)
                 return invoke_imp(self);
             return false;
@@ -454,7 +454,7 @@ private:
                 throw bad_variant_cast{"Incompatible types"};
 
             T* result = nullptr;
-            if (self.type() == metaTypeId<T>())
+            if (self.typeId() == metaTypeId<T>())
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
@@ -474,7 +474,7 @@ private:
                 throw bad_variant_cast{"Incompatible types"};
 
             T* result = nullptr;
-            if (self.type() == metaTypeId<T>())
+            if (self.typeId() == metaTypeId<T>())
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
@@ -494,7 +494,7 @@ private:
                 throw bad_variant_cast{"Incompatible types"};
 
             T* result = nullptr;
-            if (self.type() == metaTypeId<T>())
+            if (self.typeId() == metaTypeId<T>())
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
@@ -516,7 +516,7 @@ private:
         // class
         static helper invoke_for_class(const variant &self, std::true_type, std::false_type)
         {
-            auto type = MetaType{self.type()};
+            auto type = MetaType{self.typeId()};
             if (type.typeFlags() & MetaType::Class)
                 return invoke_imp(self);
             return nullptr;
@@ -524,7 +524,7 @@ private:
         // class ptr
         static helper invoke_for_class(const variant &self, std::false_type, std::true_type)
         {
-            auto type = MetaType{self.type()};
+            auto type = MetaType{self.typeId()};
             if (type.typeFlags() & MetaType::ClassPtr)
                 return invoke_imp(self);
             return nullptr;
@@ -575,7 +575,7 @@ struct hash<rtti::variant>: public std::__hash_base<std::size_t, rtti::variant>
         if (!value)
             return 0;
 
-        auto type = rtti::MetaType{value.type()};
+        auto type = rtti::MetaType{value.typeId()};
         return _Hash_impl::hash(value.raw_data_ptr(), type.typeSize());
     }
 };

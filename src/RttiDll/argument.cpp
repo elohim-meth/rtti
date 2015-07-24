@@ -4,7 +4,7 @@
 namespace rtti {
 
 argument::argument(const variant &value) noexcept
-    : m_data{value.raw_data_ptr()}, m_type{value.type()}
+    : m_data{value.raw_data_ptr()}, m_typeId{value.typeId()}
 {}
 
 } //namespace rtti

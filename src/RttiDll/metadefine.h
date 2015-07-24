@@ -267,7 +267,7 @@ private:
     static variant invoke_imp_selector(F func, variant &instance, const argument_array_t &args,
                               index_sequence<I...>)
     {
-        auto type = MetaType{instance.type()};
+        auto type = MetaType{instance.typeId()};
         if (type.typeFlags() & MetaType::Class)
             (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
@@ -279,7 +279,7 @@ private:
     static variant invoke_imp_selector(F func, const variant &instance, const argument_array_t &args,
                                        index_sequence<I...>)
     {
-        auto type = MetaType{instance.type()};
+        auto type = MetaType{instance.typeId()};
         if (type.typeFlags() & MetaType::Class)
             (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
@@ -360,7 +360,7 @@ private:
     static variant invoke_imp_selector(F func, variant &instance, const argument_array_t &args,
                               index_sequence<I...>)
     {
-        auto type = MetaType{instance.type()};
+        auto type = MetaType{instance.typeId()};
         if (type.typeFlags() & MetaType::Class)
             return (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
@@ -371,7 +371,7 @@ private:
     static variant invoke_imp_selector(F func, const variant &instance, const argument_array_t &args,
                                        index_sequence<I...>)
     {
-        auto type = MetaType{instance.type()};
+        auto type = MetaType{instance.typeId()};
         if (type.typeFlags() & MetaType::Class)
             return (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
@@ -403,16 +403,11 @@ struct MethodInvoker: IMethodInvoker
     std::string signature(const char *name) const override
     { return invoker_t::signature(name); }
 
-    variant invoke_static(argument arg0 = argument{},
-                          argument arg1 = argument{},
-                          argument arg2 = argument{},
-                          argument arg3 = argument{},
-                          argument arg4 = argument{},
-                          argument arg5 = argument{},
-                          argument arg6 = argument{},
-                          argument arg7 = argument{},
-                          argument arg8 = argument{},
-                          argument arg9 = argument{}) const override
+    variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
+                          argument arg2 = argument{}, argument arg3 = argument{},
+                          argument arg4 = argument{}, argument arg5 = argument{},
+                          argument arg6 = argument{}, argument arg7 = argument{},
+                          argument arg8 = argument{}, argument arg9 = argument{}) const override
     {
         return invoker_t::invoke(m_func,
                                          arg0, arg1, arg2, arg3, arg4,
@@ -420,16 +415,11 @@ struct MethodInvoker: IMethodInvoker
     }
 
     variant invoke_method(const variant &instance,
-                          argument arg0 = argument{},
-                          argument arg1 = argument{},
-                          argument arg2 = argument{},
-                          argument arg3 = argument{},
-                          argument arg4 = argument{},
-                          argument arg5 = argument{},
-                          argument arg6 = argument{},
-                          argument arg7 = argument{},
-                          argument arg8 = argument{},
-                          argument arg9 = argument{}) const
+                          argument arg0 = argument{}, argument arg1 = argument{},
+                          argument arg2 = argument{}, argument arg3 = argument{},
+                          argument arg4 = argument{}, argument arg5 = argument{},
+                          argument arg6 = argument{}, argument arg7 = argument{},
+                          argument arg8 = argument{}, argument arg9 = argument{}) const
     {
         return invoker_t::invoke(m_func, instance,
                                          arg0, arg1, arg2, arg3, arg4,
@@ -473,16 +463,11 @@ struct ConstructorInvoker: IConstructorInvoker
         return signature_imp(argument_indexes_t{});
     }
 
-    variant invoke_static(argument arg0 = argument{},
-                          argument arg1 = argument{},
-                          argument arg2 = argument{},
-                          argument arg3 = argument{},
-                          argument arg4 = argument{},
-                          argument arg5 = argument{},
-                          argument arg6 = argument{},
-                          argument arg7 = argument{},
-                          argument arg8 = argument{},
-                          argument arg9 = argument{}) const override
+    variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
+                          argument arg2 = argument{}, argument arg3 = argument{},
+                          argument arg4 = argument{}, argument arg5 = argument{},
+                          argument arg6 = argument{}, argument arg7 = argument{},
+                          argument arg8 = argument{}, argument arg9 = argument{}) const override
     {
         argument_array_t args = {
             &arg0, &arg1, &arg2, &arg3, &arg4,
