@@ -288,7 +288,7 @@ private:
         if (type.typeFlags() & MetaType::Class)
             (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
-            (instance.to<const C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+            (instance.to<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
     }
 };
