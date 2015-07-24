@@ -97,12 +97,6 @@ MetaContainer::MetaContainer(MetaContainerPrivate &value)
     : MetaItem(value)
 {}
 
-bool MetaContainer::addItem(MetaItem *value)
-{
-    auto d = d_func();
-    return d->addItem(value);
-}
-
 void MetaContainer::setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback)
 {
     auto d = d_func();
@@ -125,6 +119,12 @@ void MetaContainer::checkDeferredDefine() const
     };
 
     d->m_deferredDefine->invoke(*const_cast<MetaContainer*>(this));
+}
+
+bool MetaContainer::addItem(MetaItem *value)
+{
+    auto d = d_func();
+    return d->addItem(value);
 }
 
 std::size_t MetaContainer::count(MetaCategory category) const noexcept
@@ -217,10 +217,8 @@ void MetaContainer::for_each_class(const enum_class_t &func) const
     });
 }
 
-const MetaMethod* MetaContainer::getMethod(const char *name) const
+const MetaMethod *MetaContainer::getMethodInternal(const char *name) const
 {
-    if (!name)
-        return nullptr;
     checkDeferredDefine();
 
     auto d = d_func();
@@ -256,6 +254,13 @@ const MetaMethod* MetaContainer::getMethod(const char *name) const
         return true;
     });
     return result;
+}
+
+const MetaMethod* MetaContainer::getMethod(const char *name) const
+{
+    if (!name)
+        return nullptr;
+    return getMethodInternal(name);
 }
 
 const MetaMethod *MetaContainer::getMethod(const std::string &name) const

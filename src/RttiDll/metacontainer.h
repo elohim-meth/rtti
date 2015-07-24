@@ -65,13 +65,15 @@ protected:
     explicit MetaContainer(const char *name, const MetaContainer &owner);
     explicit MetaContainer(MetaContainerPrivate &value);
 
+    bool addItem(MetaItem *value);
     std::size_t count(MetaCategory category) const noexcept;
     const MetaItem* item(MetaCategory category, std::size_t index) const noexcept;
     const MetaItem* item(MetaCategory category, const char *name) const;
 
-    bool addItem(MetaItem *value);
     void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);
     void checkDeferredDefine() const override;
+
+    virtual const MetaMethod* getMethodInternal(const char *name) const;
 
 private:
     DECLARE_PRIVATE(MetaContainer)

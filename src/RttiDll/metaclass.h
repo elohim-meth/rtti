@@ -37,6 +37,8 @@ protected:
     void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     void addDerivedClass(MetaType_ID typeId);
     void* cast(const MetaClass *base, const void *instance) const;
+
+    const MetaMethod* getMethodInternal(const char *name) const override;
 private:
     DECLARE_PRIVATE(MetaClass)
     template<typename, typename> friend class rtti::meta_define;

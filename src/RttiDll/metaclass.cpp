@@ -158,12 +158,33 @@ void* MetaClass::cast(const MetaClass *base, const void *instance) const
     for (const auto &item: d->m_baseClasses)
     {
         auto directBase = findByTypeId(item.first);
+        assert(directBase);
         if (directBase->inheritedFrom(base))
         {
             // cast to direct base
             result = item.second(result);
             return directBase->cast(base, result);
         }
+    }
+    return nullptr;
+}
+
+const MetaMethod* MetaClass::getMethodInternal(const char *name) const
+{
+    if (!name)
+        return nullptr;
+    auto result = MetaContainer::getMethodInternal(name);
+    if (result)
+        return result;
+
+    auto d = d_func();
+    for (const auto &item: d->m_baseClasses)
+    {
+        auto directBase = findByTypeId(item.first);
+        assert(directBase);
+        result = directBase->getMethodInternal(name);
+        if (result)
+            return result;
     }
     return nullptr;
 }
