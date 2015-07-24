@@ -239,7 +239,7 @@ struct method_invoker<F, void_member_func>
         if (count != 0)
             throw invoke_error{"Invalid number of arguments"};
 
-        return invoke_imp(func, instance, args, argument_indexes_t{});
+        return invoke_imp(func, const_cast<variant&>(instance), args, argument_indexes_t{});
     }
 
     static variant invoke(F,
@@ -253,7 +253,8 @@ private:
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
     using C = typename function_traits<F>::class_type;
     using is_const = typename function_traits<F>::is_const;
-    using conditional_t = typename std::conditional<is_const::value, const variant&, variant&>::type;
+    using class_t = typename std::conditional<is_const::value, const C, C>::type;
+    using class_ptr_t = typename std::conditional<is_const::value, const C*, C*>::type;
 
     template<std::size_t ...I>
     static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
@@ -262,33 +263,14 @@ private:
     }
 
     template<std::size_t ...I>
-    static variant invoke_imp(F func, const variant &instance,
-                              const argument_array_t &args, index_sequence<I...> seq)
-    {
-        return invoke_imp_selector(func, const_cast<conditional_t>(instance), args, seq);
-    }
-
-    template<std::size_t ...I>
-    static variant invoke_imp_selector(F func, variant &instance, const argument_array_t &args,
-                              index_sequence<I...>)
+    static variant invoke_imp(F func, variant &instance,
+                              const argument_array_t &args, index_sequence<I...>)
     {
         auto type = MetaType{instance.typeId()};
         if (type.typeFlags() & MetaType::Class)
-            (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
+            (instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
-            (instance.to<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
-        return variant::empty_variant;
-    }
-
-    template<std::size_t ...I>
-    static variant invoke_imp_selector(F func, const variant &instance, const argument_array_t &args,
-                                       index_sequence<I...>)
-    {
-        auto type = MetaType{instance.typeId()};
-        if (type.typeFlags() & MetaType::Class)
-            (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
-        else if (type.typeFlags() & MetaType::ClassPtr)
-            (instance.to<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+            (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
     }
 };
@@ -337,7 +319,7 @@ struct method_invoker<F, return_member_func>
         if (count != 0)
             throw invoke_error{"Invalid number of arguments"};
 
-        return invoke_imp(func, instance, args, argument_indexes_t{});
+        return invoke_imp(func, const_cast<variant&>(instance), args, argument_indexes_t{});
     }
 
     static variant invoke(F,
@@ -351,7 +333,8 @@ private:
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
     using C = typename function_traits<F>::class_type;
     using is_const = typename function_traits<F>::is_const;
-    using conditional_t = typename std::conditional<is_const::value, const variant&, variant&>::type;
+    using class_t = typename std::conditional<is_const::value, const C, C>::type;
+    using class_ptr_t = typename std::conditional<is_const::value, const C*, C*>::type;
 
     template<std::size_t ...I>
     static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
@@ -360,32 +343,15 @@ private:
     }
 
     template<std::size_t ...I>
-    static variant invoke_imp(F func, const variant &instance,
-                              const argument_array_t &args, index_sequence<I...> seq)
-    {
-        return invoke_imp_selector(func, const_cast<conditional_t>(instance), args, seq);
-    }
-
-    template<std::size_t ...I>
-    static variant invoke_imp_selector(F func, variant &instance, const argument_array_t &args,
-                              index_sequence<I...>)
+    static variant invoke_imp(F func, variant &instance,
+                              const argument_array_t &args, index_sequence<I...>)
     {
         auto type = MetaType{instance.typeId()};
         if (type.typeFlags() & MetaType::Class)
-            return (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
+            return (instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
-            return (instance.to<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
-    }
-
-    template<std::size_t ...I>
-    static variant invoke_imp_selector(F func, const variant &instance, const argument_array_t &args,
-                                       index_sequence<I...>)
-    {
-        auto type = MetaType{instance.typeId()};
-        if (type.typeFlags() & MetaType::Class)
-            return (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
-        else if (type.typeFlags() & MetaType::ClassPtr)
-            return (instance.to<const C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+            return (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
+        return variant::empty_variant;
     }
 };
 

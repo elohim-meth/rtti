@@ -289,19 +289,22 @@ public:
     template<typename T>
     const T& value() const &
     {
-        return metafunc_cast<internal::full_decay_t<T>>::invoke(*this);
+        auto &result = metafunc_cast<internal::full_decay_t<T>>::invoke(*this);
+        return const_cast<const T&>(result);
     }
 
     template<typename T>
     T& value() &
     {
-        return metafunc_cast<internal::full_decay_t<T>>::invoke(*this);
+        auto &result = metafunc_cast<internal::full_decay_t<T>>::invoke(*this);
+        return const_cast<T&>(result);
     }
 
     template<typename T>
     T&& value() &&
     {
-        return metafunc_cast<internal::full_decay_t<T>>::invoke(std::move(*this));
+        auto &&result = metafunc_cast<internal::full_decay_t<T>>::invoke(std::move(*this));
+        return const_cast<T&&>(result);
     }
 
     template<typename T>
