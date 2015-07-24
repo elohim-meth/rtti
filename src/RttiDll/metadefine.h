@@ -209,7 +209,12 @@ struct method_invoker<F, void_member_func>
     static std::vector<MetaType_ID> parametersTypeId() noexcept
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
-    { return ::rtti::signature<Args>::get(name); }
+    {
+        using UniformArgs = typename function_traits<
+            typename function_traits<F>::uniform_signature
+        >::args;
+        return ::rtti::signature<UniformArgs>::get(name);
+    }
 
     static variant invoke(F func,
                           const variant &instance,
@@ -271,7 +276,7 @@ private:
         if (type.typeFlags() & MetaType::Class)
             (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
-            (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+            (instance.to<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
     }
 
@@ -283,7 +288,7 @@ private:
         if (type.typeFlags() & MetaType::Class)
             (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
-            (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+            (instance.to<const C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
     }
 };
@@ -302,7 +307,12 @@ struct method_invoker<F, return_member_func>
     static std::vector<MetaType_ID> parametersTypeId() noexcept
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
-    { return ::rtti::signature<Args>::get(name); }
+    {
+        using UniformArgs = typename function_traits<
+            typename function_traits<F>::uniform_signature
+        >::args;
+        return ::rtti::signature<UniformArgs>::get(name);
+    }
 
     static variant invoke(F func,
                           const variant &instance,
@@ -364,7 +374,7 @@ private:
         if (type.typeFlags() & MetaType::Class)
             return (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
-            return (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+            return (instance.to<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
     }
 
     template<std::size_t ...I>
@@ -375,7 +385,7 @@ private:
         if (type.typeFlags() & MetaType::Class)
             return (instance.value<C>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.typeFlags() & MetaType::ClassPtr)
-            return (instance.value<C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
+            return (instance.to<const C*>()->*func)(args[I]->value<argument_get_t<I>>()...);
     }
 };
 
@@ -490,7 +500,7 @@ struct ConstructorInvoker: IConstructorInvoker
     variant invoke_method(const variant&,
                           argument, argument, argument, argument, argument,
                           argument, argument, argument, argument, argument) const
-    { assert(false); }
+    { assert(false); return variant::empty_variant; }
 
 private:
     static constexpr const char* signature_imp(index_sequence<>)

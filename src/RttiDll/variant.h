@@ -25,7 +25,10 @@ using is_inplace = std::integral_constant<bool, Small && Safe>;
 union DLL_PUBLIC variant_type_storage
 {
     alignas(STORAGE_SIZE) std::uint8_t buffer[STORAGE_SIZE];
-    void *ptr;
+    struct {
+        void *ptr;
+        mutable void *temp;
+    };
 };
 
 struct DLL_PUBLIC variant_function_table
@@ -428,24 +431,6 @@ private:
     template<typename T>
     struct metafunc_cast
     {
-        struct helper
-        {
-            helper(void *result) noexcept
-                : m_result(result), m_resultptr(&m_result)
-            {}
-            T* result_selector(std::false_type) const noexcept
-            {
-                return static_cast<T*>(m_result);
-            }
-            T* result_selector(std::true_type) const noexcept
-            {
-                return static_cast<T*>(m_resultptr);
-            }
-        private:
-            void* m_result;
-            void* m_resultptr;
-        };
-
         static const T& invoke(const variant &self)
         {
             if (self.empty())
@@ -458,8 +443,8 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               const auto &tmp = invoke_for_class(self, is_class_t(), is_class_ptr_t());
-               result = tmp.result_selector(is_class_ptr_t());
+               auto ptr = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               result = static_cast<T*>(ptr);
             }
 
             assert(result);
@@ -478,8 +463,8 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               const auto &tmp = invoke_for_class(self, is_class_t(), is_class_ptr_t());
-               result = tmp.result_selector(is_class_ptr_t());
+               auto ptr = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               result = static_cast<T*>(ptr);
             }
 
             assert(result);
@@ -498,8 +483,8 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               const auto &tmp = invoke_for_class(self, is_class_t(), is_class_ptr_t());
-               result = tmp.result_selector(is_class_ptr_t());
+               auto ptr = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               result = static_cast<T*>(ptr);
             }
 
             assert(result);
@@ -511,10 +496,10 @@ private:
         using class_t = typename std::remove_pointer<T>::type;
 
         // nope
-        static helper invoke_for_class(const variant&, std::false_type, std::false_type)
+        static void* invoke_for_class(const variant&, std::false_type, std::false_type)
         { return nullptr; }
         // class
-        static helper invoke_for_class(const variant &self, std::true_type, std::false_type)
+        static void* invoke_for_class(const variant &self, std::true_type, std::false_type)
         {
             auto type = MetaType{self.typeId()};
             if (type.typeFlags() & MetaType::Class)
@@ -522,11 +507,15 @@ private:
             return nullptr;
         }
         // class ptr
-        static helper invoke_for_class(const variant &self, std::false_type, std::true_type)
+        static void* invoke_for_class(const variant &self, std::false_type, std::true_type)
         {
             auto type = MetaType{self.typeId()};
             if (type.typeFlags() & MetaType::ClassPtr)
-                return invoke_imp(self);
+            {
+                auto ptr = invoke_imp(self);
+                self.storage.temp = ptr;
+                return &self.storage.temp;
+            }
             return nullptr;
         }
         // implementaion
@@ -536,7 +525,7 @@ private:
 
             auto fromType = MetaType{info.typeId};
             if (!fromType.valid())
-                return false;
+                return nullptr;
 
             auto fromClass = MetaClass::findByTypeId(info.typeId);
             auto toClass = MetaClass::findByTypeId(metaTypeId<class_t>());
