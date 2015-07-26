@@ -80,7 +80,7 @@ struct method_invoker<F, void_static_func>
     static std::vector<MetaType_ID> parametersTypeId() noexcept
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
-    { return ::rtti::signature<Args>::get(name); }
+    { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
                           const argument &arg0, const argument &arg1,
@@ -145,7 +145,7 @@ struct method_invoker<F, return_static_func>
     static std::vector<MetaType_ID> parametersTypeId() noexcept
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
-    { return ::rtti::signature<Args>::get(name); }
+    { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
                           const argument &arg0, const argument &arg1,
@@ -209,12 +209,7 @@ struct method_invoker<F, void_member_func>
     static std::vector<MetaType_ID> parametersTypeId() noexcept
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
-    {
-        using UniformArgs = typename function_traits<
-            typename function_traits<F>::uniform_signature
-        >::args;
-        return ::rtti::signature<UniformArgs>::get(name);
-    }
+    { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
                           const variant &instance,
@@ -289,12 +284,7 @@ struct method_invoker<F, return_member_func>
     static std::vector<MetaType_ID> parametersTypeId() noexcept
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
-    {
-        using UniformArgs = typename function_traits<
-            typename function_traits<F>::uniform_signature
-        >::args;
-        return ::rtti::signature<UniformArgs>::get(name);
-    }
+    { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
                           const variant &instance,

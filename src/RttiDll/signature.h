@@ -1,6 +1,7 @@
 ﻿#ifndef SIGNATURE_H
 #define SIGNATURE_H
 
+#include <function_traits.h>
 #include <typelist.h>
 #include <typename.h>
 
@@ -37,6 +38,10 @@ private:
 
 template<typename ...Args>
 struct signature<type_list<Args...>>: signature<Args...>
+{};
+
+template<typename F>
+struct f_signature: signature<typename function_traits<typename function_traits<F>::uniform_signature>::args>
 {};
 
 } //namespace rtti

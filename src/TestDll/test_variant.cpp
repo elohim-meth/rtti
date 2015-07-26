@@ -149,9 +149,35 @@ public:
         a = -1;
     }
 
-    virtual void print() const
+    virtual void print() const noexcept
     {
+        PRINT_PRETTY_FUNC
         std::printf("a = %d\n", a);
+    }
+
+    int getA() const
+    {
+        PRINT_PRETTY_FUNC
+        return a;
+    }
+
+    void setA(int value)
+    {
+        PRINT_PRETTY_FUNC
+        a = value;
+    }
+
+    std::string overload_on_const(int value) const
+    {
+        PRINT_PRETTY_FUNC
+        return std::to_string(value);
+    }
+
+    std::string overload_on_const(int value)
+    {
+        PRINT_PRETTY_FUNC
+        a = value;
+        return std::to_string(value);
     }
 
 private:
@@ -213,8 +239,9 @@ public:
         b = -1;
     }
 
-    void print() const override
+    void print() const noexcept override
     {
+        PRINT_PRETTY_FUNC
         A::print();
         std::printf("b = %d\n", b);
     }
@@ -231,6 +258,10 @@ void register_classes()
         ._namespace("anonimous_2")
             ._class<A>("A")
                 ._method("print", &A::print)
+                ._method("getA", &A::getA)
+                ._method("setA", &A::setA)
+                ._method<std::string(A::*)(int) const>("overload_on_const", &A::overload_on_const)
+                ._method<std::string(A::*)(int)>("overload_on_const", &A::overload_on_const)
             ._end()
             ._class<B>("B")._base<A>()._end()
             ._class<TestQPointer>("TestQPointer")
@@ -331,6 +362,7 @@ void test_variant_1()
         auto m = c->getMethod("print");
         if (m)
             m->invoke(v);
+        m = c->getMethod(rtti::f_signature<std::string(A::*)(int)>::get("overload_on_const"));
         delete a;
     }
 
