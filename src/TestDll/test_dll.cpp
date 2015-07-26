@@ -9,10 +9,6 @@ int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
-//        using ttt = const void *;
-//        std::cout << type_name<ttt>() << rtti::MetaType(rtti::metaTypeId<ttt>()).typeName();
-//        return 0;
-
         test_variant_1();
         test_cast_1();
 
@@ -45,7 +41,7 @@ int main(int argc, char* argv[])
         auto m = gn->getMethod("test_method");
         if (m)
             m->invoke("Hello, World");
-        m = gn->getMethod<int>("test_method");
+        m = gn->getMethod(rtti::signature<int>::get("test_method"));
         if (m)
             m->invoke(256);
 

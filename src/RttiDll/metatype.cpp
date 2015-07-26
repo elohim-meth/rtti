@@ -141,6 +141,13 @@ MetaType_ID MetaType::typeId() const noexcept
     return MetaType_ID{};
 }
 
+MetaType_ID MetaType::decayId() const noexcept
+{
+    if (m_typeInfo)
+        return m_typeInfo->decay;
+    return MetaType_ID{};
+}
+
 void MetaType::setTypeId(MetaType_ID typeId)
 {
     *this = MetaType{typeId};

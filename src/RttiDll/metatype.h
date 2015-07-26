@@ -183,7 +183,6 @@ class ConvertFunctionBase;
 class TypeInfo;
 class MetaClass;
 class variant;
-template <typename T> MetaType_ID metaTypeId();
 // end forward
 
 
@@ -234,6 +233,7 @@ public:
         return m_typeInfo != nullptr;
     }
     MetaType_ID typeId() const noexcept;
+    MetaType_ID decayId() const noexcept;
     void setTypeId(MetaType_ID typeId);
     const char* typeName() const noexcept;
     std::size_t typeSize() const noexcept;
@@ -242,10 +242,7 @@ public:
 
     static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
     template<typename From, typename To>
-    static bool hasConverter()
-    {
-        return hasConverter(metaTypeId<From>(), metaTypeId<To>());
-    }
+    static bool hasConverter();
 
     template<typename From, typename To, typename Func>
     static bool registerConverter(Func &&func);
@@ -260,10 +257,7 @@ public:
 
     static void unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
     template<typename From, typename To>
-    static void unregisterConverter()
-    {
-        unregisterConverter(metaTypeId<From>(), metaTypeId<To>());
-    }
+    static void unregisterConverter();
 private:
     static MetaType_ID registerMetaType(const char *name, unsigned int size,
                                         MetaType_ID decay,
@@ -274,15 +268,14 @@ private:
     template<typename From, typename To>
     static bool registerConverter_imp(To(From::*func)() const);
     template<typename From, typename To>
-    bool registerConverter_imp(To(From::*func)(bool*) const);
+    static bool registerConverter_imp(To(From::*func)(bool*) const);
     static bool registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
                                   const internal::ConvertFunctionBase &converter);
     static bool convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId);
 
     const TypeInfo *m_typeInfo = nullptr;
 
-    template<typename T>
-    friend struct internal::meta_type;
+    template<typename> friend class internal::meta_type;
     friend class rtti::MetaClass;
     friend class rtti::variant;
 };
@@ -290,53 +283,51 @@ private:
 template <typename T>
 struct type_flags {
     using Flags = MetaType::TypeFlags;
+    using type = typename std::remove_reference<T>::type;
     static const Flags value = static_cast<Flags>(
-        (std::is_const<T>::value ? Flags::Const : Flags::None) |
-        (std::is_volatile<T>::value ? Flags::Volatile : Flags::None) |
-        (std::is_pointer<T>::value ? Flags::Pointer : Flags::None) |
-        (std::is_member_pointer<T>::value ? Flags::MemberPointer : Flags::None) |
+        (std::is_const<type>::value ? Flags::Const : Flags::None) |
+        (std::is_volatile<type>::value ? Flags::Volatile : Flags::None) |
+        (std::is_pointer<type>::value ? Flags::Pointer : Flags::None) |
+        (std::is_member_pointer<type>::value ? Flags::MemberPointer : Flags::None) |
         (std::is_lvalue_reference<T>::value ? Flags::LvalueReference : Flags::None) |
         (std::is_rvalue_reference<T>::value ? Flags::RvalueReference : Flags::None) |
-        (std::is_array<T>::value ? Flags::Array : Flags::None) |
-        (std::is_void<T>::value ? Flags::Void : Flags::None) |
-        (std::is_integral<T>::value ? Flags::Integral : Flags::None) |
-        (std::is_floating_point<T>::value ? Flags::FloatPoint : Flags::None) |
-        (std::is_enum<T>::value ? Flags::Enum : Flags::None) |
-        (std::is_function<T>::value ? Flags::Function : Flags::None) |
-        (std::is_union<T>::value ? Flags::Union : Flags::None) |
-        (std::is_class<T>::value ? Flags::Class : Flags::None) |
-        (std::is_pod<T>::value ? Flags::Pod : Flags::None) |
-        (std::is_abstract<T>::value ? Flags::Abstract : Flags::None) |
-        (std::is_polymorphic<T>::value ? Flags::Polymorphic : Flags::None) |
-        (std::is_default_constructible<T>::value ? Flags::DefaultConstructible : Flags::None) |
-        (std::is_copy_constructible<T>::value ? Flags::CopyConstructible : Flags::None) |
-        (std::is_copy_assignable<T>::value ? Flags::CopyAssignable : Flags::None) |
-        (std::is_move_constructible<T>::value ? Flags::MoveConstructible : Flags::None) |
-        (std::is_move_assignable<T>::value ? Flags::MoveAssignable : Flags::None) |
-        (std::is_destructible<T>::value ? Flags::Destructible : Flags::None) |
-        (internal::is_class_ptr<T>::value ? Flags::ClassPtr : Flags::None)
+        (std::is_array<type>::value ? Flags::Array : Flags::None) |
+        (std::is_void<type>::value ? Flags::Void : Flags::None) |
+        (std::is_integral<type>::value ? Flags::Integral : Flags::None) |
+        (std::is_floating_point<type>::value ? Flags::FloatPoint : Flags::None) |
+        (std::is_enum<type>::value ? Flags::Enum : Flags::None) |
+        (std::is_function<type>::value ? Flags::Function : Flags::None) |
+        (std::is_union<type>::value ? Flags::Union : Flags::None) |
+        (std::is_class<type>::value ? Flags::Class : Flags::None) |
+        (std::is_pod<type>::value ? Flags::Pod : Flags::None) |
+        (std::is_abstract<type>::value ? Flags::Abstract : Flags::None) |
+        (std::is_polymorphic<type>::value ? Flags::Polymorphic : Flags::None) |
+        (std::is_default_constructible<type>::value ? Flags::DefaultConstructible : Flags::None) |
+        (std::is_copy_constructible<type>::value ? Flags::CopyConstructible : Flags::None) |
+        (std::is_copy_assignable<type>::value ? Flags::CopyAssignable : Flags::None) |
+        (std::is_move_constructible<type>::value ? Flags::MoveConstructible : Flags::None) |
+        (std::is_move_assignable<type>::value ? Flags::MoveAssignable : Flags::None) |
+        (std::is_destructible<type>::value ? Flags::Destructible : Flags::None) |
+        (internal::is_class_ptr<type>::value ? Flags::ClassPtr : Flags::None)
     );
 };
+
+//forward
+template <typename T> MetaType_ID metaTypeId();
 
 namespace internal {
 
 template <typename T>
-struct meta_type
+class meta_type final
 {
     using decayed_t = full_decay_t<T>;
 
-    static MetaType_ID get()
+    meta_type()
     {
-        if (const auto id = meta_id.load())
-            return MetaType_ID{id};
-
         auto decay = decay_selector(std::is_same<T, decayed_t>{});
-
         auto &name = type_name<T>();
         const auto flags = type_flags<T>::value;
-        const auto id = MetaType::registerMetaType(name.c_str(), sizeof(T), decay, flags);
-        meta_id.store(id.value());
-        return id;
+        meta_id = MetaType::registerMetaType(name.c_str(), sizeof(T), decay, flags);
     }
 
     static MetaType_ID decay_selector(std::false_type)
@@ -350,19 +341,18 @@ struct meta_type
     }
 
     // declaration
-    static std::atomic<MetaType_ID::type> meta_id;
-};
+    MetaType_ID meta_id;
 
-// definition
-template<typename T>
-std::atomic<MetaType_ID::type> meta_type<T>::meta_id = {0};
+    template <typename> friend MetaType_ID rtti::metaTypeId();
+};
 
 } // namespace internal
 
 template <typename T>
 inline MetaType_ID metaTypeId()
 {
-    return internal::meta_type<T>::get();
+    static internal::meta_type<T> holder{};
+    return holder.meta_id;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -491,6 +481,12 @@ private:
 } // namespace internal
 
 
+template<typename From, typename To>
+inline bool MetaType::hasConverter()
+{
+    return hasConverter(metaTypeId<From>(), metaTypeId<To>());
+}
+
 template<typename From, typename To, typename Func>
 inline bool MetaType::registerConverter_imp(Func &&func)
 {
@@ -550,6 +546,11 @@ inline bool MetaType::registerConverter(To(From::*func)(bool*) const)
     return registerConverter_imp<F, T>(func);
 }
 
+template<typename From, typename To>
+inline void MetaType::unregisterConverter()
+{
+    unregisterConverter(metaTypeId<From>(), metaTypeId<To>());
+}
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // FUNDAMENTALS

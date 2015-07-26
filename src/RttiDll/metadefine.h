@@ -108,8 +108,11 @@ struct method_invoker<F, void_static_func>
     }
 
     static variant invoke(F, const variant&,
-                          argument, argument, argument, argument, argument,
-                          argument, argument, argument, argument, argument)
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&)
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
@@ -173,8 +176,11 @@ struct method_invoker<F, return_static_func>
     }
 
     static variant invoke(F, const variant&,
-                          argument, argument, argument, argument, argument,
-                          argument, argument, argument, argument, argument)
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&)
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
@@ -238,8 +244,11 @@ struct method_invoker<F, void_member_func>
     }
 
     static variant invoke(F,
-                          argument, argument, argument, argument, argument,
-                          argument, argument, argument, argument, argument)
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&)
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
@@ -313,8 +322,11 @@ struct method_invoker<F, return_member_func>
     }
 
     static variant invoke(F,
-                          argument, argument, argument, argument, argument,
-                          argument, argument, argument, argument, argument)
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&,
+                          const argument&, const argument&)
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>

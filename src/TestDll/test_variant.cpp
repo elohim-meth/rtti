@@ -354,6 +354,7 @@ void test_variant_1()
         assert(!v.is<B>() && !v.is<const B>());
         assert(!v.is<A>() && !v.is<const A>());
         assert(!v.is<int*>() && !v.is<const int*>());
+        delete a;
     }
 
     auto lambda = [] (const rtti::variant &v)
@@ -403,8 +404,7 @@ void test_variant_1()
 
     {
         B b{100};
-        const A &a = b;
-        rtti::variant v = std::ref(a);
+        rtti::variant v = std::ref(b);
         lambda(v);
     }
 
