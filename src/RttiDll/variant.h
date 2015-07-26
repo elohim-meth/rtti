@@ -48,7 +48,7 @@ using unwrap_reference_t = typename unwrap_reference<T>::type;
 
 union DLL_PUBLIC variant_type_storage
 {
-    alignas(STORAGE_SIZE) std::uint8_t buffer[STORAGE_SIZE];
+    alignas(void*) std::uint8_t buffer[STORAGE_SIZE];
     struct {
         void *ptr;
         mutable void *temp;
