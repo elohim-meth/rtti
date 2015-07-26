@@ -271,9 +271,6 @@ static inline MetaTypeFunctionList<internal::ConvertFunctionBase>* customConvert
 
 bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
 {
-    if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
-        return false;
-
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
@@ -289,9 +286,6 @@ bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
 bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
                                  const internal::ConvertFunctionBase &converter)
 {
-    if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
-        return false;
-
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
@@ -307,9 +301,6 @@ bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
 
 bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId)
 {
-    if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
-        return false;
-
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
@@ -323,15 +314,11 @@ bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaT
                 return converter->invoke(from, to);
         }
     }
-
     return false;
 }
 
 void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
 {
-    if (fromTypeId.value() == InvalidTypeId || toTypeId.value() == InvalidTypeId)
-        return;
-
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
