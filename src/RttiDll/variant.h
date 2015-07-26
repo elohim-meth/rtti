@@ -22,6 +22,30 @@ template<typename T,
          bool Safe = std::is_move_constructible<T>::value>
 using is_inplace = std::integral_constant<bool, Small && Safe>;
 
+template<typename T>
+struct is_reference_wrapper: std::false_type
+{};
+
+template<typename T>
+struct is_reference_wrapper<std::reference_wrapper<T>>: std::true_type
+{};
+
+template<typename T>
+using is_reference_wrapper_t = typename is_reference_wrapper<T>::type;
+
+template<typename T, bool = is_reference_wrapper<T>::value> struct unwrap_reference;
+
+template<typename T>
+struct unwrap_reference<T, false>: identity<T>
+{};
+
+template<typename T>
+struct unwrap_reference<T, true>: identity<typename T::type>
+{};
+
+template<typename T>
+using unwrap_reference_t = typename unwrap_reference<T>::type;
+
 union DLL_PUBLIC variant_type_storage
 {
     alignas(STORAGE_SIZE) std::uint8_t buffer[STORAGE_SIZE];
@@ -56,11 +80,13 @@ struct DLL_PUBLIC variant_function_table
     {}
 };
 
-template<typename T, bool = is_inplace<T>::value>
+template<typename T,
+         bool = is_inplace<T>::value,
+         bool = is_reference_wrapper<T>::value>
 struct function_table_selector;
 
 template<typename T>
-struct function_table_selector<T, true>
+struct function_table_selector<T, true, false>
 {
     static MetaType_ID type() noexcept
     {
@@ -95,7 +121,45 @@ struct function_table_selector<T, true>
 };
 
 template<typename T>
-struct function_table_selector<T, false>
+struct function_table_selector<T, true, true>
+{
+    static MetaType_ID type() noexcept
+    {
+        return metaTypeId<unwrap_t>();
+    }
+
+    static void* access(const variant_type_storage &value) noexcept
+    {
+        auto ptr = reinterpret_cast<const T*>(&value.buffer);
+        return const_cast<unwrap_t*>(&ptr->get());
+    }
+
+    static void clone(const variant_type_storage &src, variant_type_storage &dst)
+        noexcept(std::is_nothrow_copy_constructible<T>::value)
+    {
+        auto ptr = reinterpret_cast<const T*>(&src.buffer);
+        new (&dst.buffer) T(*ptr);
+    }
+
+    static void move(variant_type_storage &src, variant_type_storage &dst)
+        noexcept(std::is_nothrow_move_constructible<T>::value)
+    {
+        auto ptr = reinterpret_cast<T*>(&src.buffer);
+        new (&dst.buffer) T(std::move(*ptr));
+    }
+
+    static void destroy(variant_type_storage &value) noexcept
+    {
+        auto ptr = reinterpret_cast<const T*>(&value.buffer);
+        ptr->~T();
+    }
+private:
+    using unwrap_t = full_decay_t<unwrap_reference_t<T>>;
+};
+
+
+template<typename T>
+struct function_table_selector<T, false, false>
 {
     static MetaType_ID type() noexcept
     {
@@ -135,10 +199,11 @@ struct class_info_get
         return info_selector(value, is_class_t(), is_class_ptr_t());
     }
 private:
+    using unwrap = full_decay_t<unwrap_reference_t<T>>;
     using selector_t = function_table_selector<T>;
-    using is_class_t = typename std::is_class<T>::type;
-    using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
-    using class_t = typename std::remove_pointer<T>::type;
+    using is_class_t = typename std::is_class<unwrap>::type;
+    using is_class_ptr_t = typename internal::is_class_ptr<unwrap>::type;
+    using class_t = typename std::remove_pointer<unwrap>::type;
 
     static ClassInfo info_selector(const variant_type_storage&, std::false_type, std::false_type)
     {
@@ -280,8 +345,13 @@ public:
         return manager->f_type();
     }
 
+    ClassInfo classInfo() const noexcept
+    {
+        return manager->f_info(storage);
+    }
+
     template<typename T>
-    bool is() const noexcept
+    bool is() const
     {
         return metafunc_is<internal::full_decay_t<T>>::invoke(*this);
     }
@@ -332,7 +402,7 @@ public:
     }
 
     template<typename T>
-    bool as() const
+    bool convert()
     {
         if (is<T>())
             return true;

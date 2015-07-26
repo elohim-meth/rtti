@@ -329,7 +329,6 @@ void test_variant_1()
         assert(v.is<A>() && v.is<const A>());
         assert(!v.is<B*>() && !v.is<const B*>());
         assert(!v.is<A*>() && !v.is<const A*>());
-        v.value<A>().print();
         assert(!v.is<int>());
     }
 
@@ -341,7 +340,6 @@ void test_variant_1()
         assert(v.is<A*>() && v.is<const A*>());
         assert(!v.is<B>() && !v.is<const B>());
         assert(!v.is<A>() && !v.is<const A>());
-        v.value<A*>()->print();
         assert(!v.is<int*>() && !v.is<const int*>());
         delete v.value<B*>();
     }
@@ -355,15 +353,59 @@ void test_variant_1()
         assert(v.is<A*>() && v.is<const A*>());
         assert(!v.is<B>() && !v.is<const B>());
         assert(!v.is<A>() && !v.is<const A>());
-        v.value<B*>()->print();
         assert(!v.is<int*>() && !v.is<const int*>());
+    }
 
-        auto c = rtti::MetaClass::findByTypeId(rtti::metaTypeId<B>());
-        auto m = c->getMethod("print");
-        if (m)
-            m->invoke(v);
-        m = c->getMethod(rtti::f_signature<std::string(A::*)(int)>::get("overload_on_const"));
-        delete a;
+    auto lambda = [] (const rtti::variant &v)
+    {
+        auto c = rtti::MetaClass::findByTypeId(v.classInfo().typeId); assert(c);
+        auto getA = c->getMethod("getA"); assert(getA);
+        auto r = getA->invoke(v); assert(r.to<int>() == 100);
+
+        r = 256;
+        auto setA = c->getMethod("setA"); assert(setA);
+        setA->invoke(v, r);
+        r = getA->invoke(v); assert(r.value<int>() == 256);
+
+        auto print = c->getMethod("print"); assert(print);
+        print->invoke(v);
+
+        {
+            auto m = c->getMethod(rtti::f_signature<std::string(A::*)(int)>::get("overload_on_const")); assert(m);
+            auto r = m->invoke(v, 200); assert(r.value<std::string>() == "200");
+        }
+
+        {
+            auto m = c->getMethod(rtti::f_signature<std::string(A::*)(int) const>::get("overload_on_const")); assert(m);
+            auto r = m->invoke(v, 300); assert(r.value<std::string>() == "300");
+        }
+
+        r = getA->invoke(v); assert(r.value<int>() == 200);
+        print->invoke(v);
+
+    };
+
+    std::printf("\n");
+
+    {
+        rtti::variant v = A{100};
+        lambda(v);
+    }
+
+    std::printf("\n");
+
+    {
+        rtti::variant v = B{100};
+        lambda(v);
+    }
+
+    std::printf("\n");
+
+    {
+        B b{100};
+        const A &a = b;
+        rtti::variant v = std::ref(a);
+        lambda(v);
     }
 
     std::printf("\n");
