@@ -138,13 +138,14 @@ template<typename F>
 struct method_invoker<F, return_static_func>
 {
     using Args = typename function_traits<F>::args;
+    using Result = typename function_traits<F>::result_type;
     static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic() noexcept
     { return true; }
     static MetaType_ID returnTypeId() noexcept
-    { return metaTypeId<typename function_traits<F>::result_type>(); }
+    { return metaTypeId<Result>(); }
     static std::vector<MetaType_ID> parametersTypeId() noexcept
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
@@ -172,7 +173,7 @@ struct method_invoker<F, return_static_func>
         if (count != 0)
             throw invoke_error{"Invalid number of arguments"};
 
-        return invoke_imp(func, args, argument_indexes_t{});
+        return invoke_imp(func, args, argument_indexes_t{}, result_is_reference{});
     }
 
     static variant invoke(F, const variant&,
@@ -186,6 +187,7 @@ private:
     template<std::size_t I>
     using argument_get_t = typelist_get_t<Args, I>;
     using argument_indexes_t = index_sequence_for_t<Args>;
+    using result_is_reference = typename std::is_reference<Result>::type;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
 
     template<std::size_t ...I>
@@ -195,9 +197,14 @@ private:
     }
 
     template<std::size_t ...I>
-    static variant invoke_imp(F func, const argument_array_t &args, index_sequence<I...>)
+    static variant invoke_imp(F func, const argument_array_t &args, index_sequence<I...>, std::false_type)
     {
         return func(args[I]->value<argument_get_t<I>>()...);
+    }
+    template<std::size_t ...I>
+    static variant invoke_imp(F func, const argument_array_t &args, index_sequence<I...>, std::true_type)
+    {
+        return std::ref(func(args[I]->value<argument_get_t<I>>()...));
     }
 };
 
@@ -500,6 +507,23 @@ private:
     {
         return C(args[I]->value<argument_get_t<I>>()...);
     }
+};
+
+struct static_pointer{};
+struct member_pointer{};
+
+template<typename P, typename G, typename S, typename Tag> struct property_invoker;
+
+template<typename P>
+struct property_invoker<P, void, void, static_pointer>
+{
+
+};
+
+template<typename P>
+struct property_invoker<P, const P& (*)(), void, static_pointer>
+{
+
 };
 
 } // namespace internal
