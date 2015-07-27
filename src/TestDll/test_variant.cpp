@@ -372,12 +372,12 @@ void test_variant_1()
         print->invoke(v);
 
         {
-            auto m = c->getMethod(rtti::f_signature<std::string(A::*)(int)>::get("overload_on_const")); assert(m);
+            auto m = c->getMethod<A&, int>("overload_on_const"); assert(m);
             auto r = m->invoke(v, 200); assert(r.value<std::string>() == "200");
         }
 
         {
-            auto m = c->getMethod(rtti::f_signature<std::string(A::*)(int) const>::get("overload_on_const")); assert(m);
+            auto m = c->getMethod<const A&, int>("overload_on_const"); assert(m);
             auto r = m->invoke(v, 300); assert(r.value<std::string>() == "300");
         }
 

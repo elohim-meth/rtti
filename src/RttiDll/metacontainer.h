@@ -2,6 +2,7 @@
 #define METACONTAINER_H
 
 #include "metaitem.h"
+#include "signature.h"
 
 #include <functional>
 
@@ -38,6 +39,13 @@ public:
 
     const MetaMethod* getMethod(const char *name) const;
     const MetaMethod* getMethod(const std::string &name) const;
+
+    template<typename ...Args>
+    const MetaMethod* getMethod(const char *name) const
+    { return getMethod(signature<Args...>::get(name)); }
+    template<typename ...Args>
+    const MetaMethod* getMethod(const std::string &name) const
+    { return getMethod(signature<Args...>::get(name.c_str())); }
 
     std::size_t methodCount() const noexcept;
     const MetaMethod* getMethod(std::size_t index) const noexcept;

@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
         auto m = gn->getMethod("test_method");
         if (m)
             m->invoke("Hello, World");
-        m = gn->getMethod(rtti::signature<int>::get("test_method"));
+        m = gn->getMethod<int>("test_method");
         if (m)
             m->invoke(256);
 
