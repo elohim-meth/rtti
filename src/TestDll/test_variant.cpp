@@ -90,6 +90,20 @@ public:
             assert(this == m_pImpl->m_qImpl);
     }
 
+    const std::string& value() const
+    {
+        PRINT_PRETTY_FUNC
+        assert(m_pImpl);
+        return m_pImpl->m_value;
+    }
+
+    std::string& value()
+    {
+        PRINT_PRETTY_FUNC
+        assert(m_pImpl);
+        return m_pImpl->m_value;
+    }
+
 private:
     PrivatePimpl *m_pImpl = nullptr;
 
@@ -266,6 +280,8 @@ void register_classes()
             ._class<B>("B")._base<A>()._end()
             ._class<TestQPointer>("TestQPointer")
                 ._constructor<const char*>()
+                ._method<std::string&(TestQPointer::*)()>("value", &TestQPointer::value)
+                ._method<const std::string&(TestQPointer::*)() const>("value", &TestQPointer::value)
             ._end()
         ._end()
     ;
@@ -305,7 +321,6 @@ void test_variant_1()
 
     std::printf("\n");
 
-
     {
         auto lambda = []() { return rtti::variant{TestQPointer{"123456"}}; };
         auto q1 = lambda().value<TestQPointer>();
@@ -319,6 +334,18 @@ void test_variant_1()
     {
         rtti::variant v3 = "Hello, World";
         auto q3 = v3.to<TestQPointer>();
+    }
+
+    std::printf("\n");
+
+    {
+        using namespace rtti;
+        auto q = new TestQPointer{"111"};
+        variant v = std::ref(q);
+        auto c = MetaClass::findByTypeId(metaTypeId<TestQPointer>()); assert(c);
+        auto m = c->getMethod<const TestQPointer&>("value"); assert(m);
+        auto s = m->invoke(v);
+        s.value<std::string>() = "222";
     }
 
     std::printf("\n");

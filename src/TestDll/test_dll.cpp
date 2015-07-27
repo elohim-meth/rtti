@@ -9,8 +9,8 @@ int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
-        test_variant_1();
         test_cast_1();
+        test_variant_1();
 
         register_rtti();
 

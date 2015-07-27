@@ -135,8 +135,6 @@ void test_cast_1()
         }
         catch(const bad_meta_cast &e)
         {
-            printf(e.what());
-            printf("\n\n");
         }
     }
 
