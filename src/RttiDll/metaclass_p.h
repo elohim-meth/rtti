@@ -15,17 +15,21 @@ class DLL_LOCAL DerivedClassList
 public:
     void add(MetaType_ID value) noexcept
     {
-        if (!find(value))
+        std::lock_guard<std::mutex> lock{m_lock};
+        auto search = std::find(std::begin(m_items), std::end(m_items), value);
+        if (search == std::end(m_items))
             m_items.push_back(value);
     }
 
     std::size_t count() const noexcept
     {
+        std::lock_guard<std::mutex> lock{m_lock};
         return m_items.size();
     }
 
     MetaType_ID get(std::size_t index) const noexcept
     {
+        std::lock_guard<std::mutex> lock{m_lock};
         if (index < m_items.size())
             return m_items[index];
         return MetaType_ID{};
@@ -33,20 +37,12 @@ public:
 
     bool find(MetaType_ID value) const
     {
+        std::lock_guard<std::mutex> lock{m_lock};
         auto search = std::find(std::begin(m_items), std::end(m_items), value);
         return (search != std::end(m_items));
     }
-
-    auto begin() const noexcept -> std::vector<MetaType_ID>::const_iterator
-    {
-        return m_items.begin();
-    }
-
-    auto end() const noexcept -> std::vector<MetaType_ID>::const_iterator
-    {
-        return m_items.end();
-    }
 private:
+    mutable std::mutex m_lock;
     std::vector<MetaType_ID> m_items;
 };
 
@@ -58,23 +54,34 @@ public:
 
     void add(MetaType_ID value, MetaClass::cast_func_t func) noexcept
     {
-        if (!find(value))
+        std::lock_guard<std::mutex> lock{m_lock};
+        if (!find_imp(value))
             m_items.emplace_back(value, func);
     }
 
     std::size_t count() const noexcept
     {
+        std::lock_guard<std::mutex> lock{m_lock};
         return m_items.size();
     }
 
     MetaType_ID get(std::size_t index) const noexcept
     {
+        std::lock_guard<std::mutex> lock{m_lock};
         if (index < m_items.size())
             return m_items[index].first;
         return MetaType_ID{};
     }
 
     bool find(MetaType_ID value) const
+    {
+        std::lock_guard<std::mutex> lock{m_lock};
+        return find_imp(value);
+    }
+
+    template<typename F> void for_each(F &&func) const;
+private:
+    bool find_imp(MetaType_ID value) const
     {
         auto search = std::find_if(std::begin(m_items), std::end(m_items),
                                    [value](const item_t &item) {
@@ -83,18 +90,20 @@ public:
         return (search != std::end(m_items));
     }
 
-    auto begin() const noexcept -> container_t::const_iterator
-    {
-        return m_items.begin();
-    }
-
-    auto end() const noexcept -> container_t::const_iterator
-    {
-        return m_items.end();
-    }
-private:
+    mutable std::mutex m_lock;
     container_t m_items;
 };
+
+template<typename F>
+inline void BaseClassList::for_each(F &&func) const
+{
+    std::lock_guard<std::mutex> lock{m_lock};
+    for(const auto &item: m_items)
+    {
+        if (!func(item))
+            break;
+    }
+}
 
 } // namespace internal
 

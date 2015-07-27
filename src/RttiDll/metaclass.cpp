@@ -134,14 +134,19 @@ bool MetaClass::inheritedFrom(const MetaClass *base) const noexcept
 
     checkDeferredDefine();
     auto d = d_func();
-    for (const auto &item: d->m_baseClasses)
+    auto result = false;
+    d->m_baseClasses.for_each([&result, base](const internal::BaseClassList::item_t &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
         if (directBase->inheritedFrom(base))
-            return true;
-    }
-    return false;
+        {
+            result = true;
+            return false;
+        }
+        return true;
+    });
+    return result;
 }
 
 void* MetaClass::cast(const MetaClass *base, const void *instance) const
@@ -155,18 +160,22 @@ void* MetaClass::cast(const MetaClass *base, const void *instance) const
 
     checkDeferredDefine();
     auto d = d_func();
-    for (const auto &item: d->m_baseClasses)
+    auto found = false;
+    d->m_baseClasses.for_each([&result, base, &found](const internal::BaseClassList::item_t &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
         if (directBase->inheritedFrom(base))
         {
             // cast to direct base
-            result = item.second(result);
-            return directBase->cast(base, result);
+            result = directBase->cast(base, item.second(result));
+            found = true;
+            return false;
         }
-    }
-    return nullptr;
+        return true;
+    });
+
+    return (found ? result : nullptr);
 }
 
 const MetaMethod* MetaClass::getMethodInternal(const char *name) const
@@ -178,15 +187,20 @@ const MetaMethod* MetaClass::getMethodInternal(const char *name) const
         return result;
 
     auto d = d_func();
-    for (const auto &item: d->m_baseClasses)
+    auto found = false;
+    d->m_baseClasses.for_each([&result, name, &found](const internal::BaseClassList::item_t &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
         result = directBase->getMethodInternal(name);
         if (result)
-            return result;
-    }
-    return nullptr;
+        {
+            found = true;
+            return false;
+        }
+        return true;
+    });
+    return (found ? result : nullptr);
 }
 
 MetaCategory MetaClass::category() const noexcept
