@@ -229,7 +229,7 @@ const MetaMethod *MetaContainer::getMethodInternal(const char *name) const
         auto method = static_cast<const MetaMethod*>(item);
         const auto &methodName = method->name();
 
-        auto pos = methodName.find('(');
+        auto pos = methodName.rfind('(');
         if (pos != std::string::npos)
         {
             auto length = std::min(pos, tmp.length());
