@@ -125,13 +125,13 @@ struct function_table_selector<T, true, true>
 {
     static MetaType_ID type() noexcept
     {
-        return metaTypeId<unwrap_t>();
+        return metaTypeId<Unwrap>();
     }
 
     static void* access(const variant_type_storage &value) noexcept
     {
         auto ptr = reinterpret_cast<const T*>(&value.buffer);
-        return const_cast<unwrap_t*>(&ptr->get());
+        return const_cast<Unwrap*>(&ptr->get());
     }
 
     static void clone(const variant_type_storage &src, variant_type_storage &dst)
@@ -154,7 +154,7 @@ struct function_table_selector<T, true, true>
         ptr->~T();
     }
 private:
-    using unwrap_t = full_decay_t<unwrap_reference_t<T>>;
+    using Unwrap = full_decay_t<unwrap_reference_t<T>>;
 };
 
 
@@ -196,18 +196,18 @@ struct class_info_get
 {
     static ClassInfo info(const variant_type_storage &value)
     {
-        return info_selector(value, IsClass(), IsClassPtr());
+        return info_selector(value, IsClass{}, IsClassPtr{});
     }
 private:
     using Unwrap = full_decay_t<unwrap_reference_t<T>>;
     using Selector = function_table_selector<T>;
     using IsClass = is_class_t<Unwrap>;
     using IsClassPtr = is_class_ptr_t<Unwrap>;
-    using C = typename std::remove_pointer<Unwrap>::type;
+    using C = remove_pointer_t<Unwrap>;
 
     static ClassInfo info_selector(const variant_type_storage&, std::false_type, std::false_type)
     {
-        return ClassInfo();
+        return ClassInfo{};
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::true_type, std::false_type)
     {
@@ -215,12 +215,12 @@ private:
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
     {
-        using registered_t = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
-        return info_selector_registered(value, registered_t());
+        using IsRegistered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
+        return info_selector_registered(value, IsRegistered{});
     }
     static ClassInfo info_selector_registered(const variant_type_storage&, std::false_type)
     {
-        return ClassInfo();
+        return ClassInfo{};
     }
     static ClassInfo info_selector_registered(const variant_type_storage &value, std::true_type)
     {
@@ -518,7 +518,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, IsClass(), IsClassPtr());
+               auto ptr = invoke_for_class(self, IsClass{}, IsClassPtr{});
                result = static_cast<T*>(ptr);
             }
 
@@ -538,7 +538,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, IsClass(), IsClassPtr());
+               auto ptr = invoke_for_class(self, IsClass{}, IsClassPtr{});
                result = static_cast<T*>(ptr);
             }
 
@@ -558,7 +558,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, IsClass(), IsClassPtr());
+               auto ptr = invoke_for_class(self, IsClass{}, IsClassPtr{});
                result = static_cast<T*>(ptr);
             }
 
