@@ -6,16 +6,21 @@
 #include <vector>
 #include <array>
 #include <unordered_map>
+#include <bitset>
 
 namespace rtti {
 
 namespace {
 
 #define DEFINE_STATIC_TYPE_INFO(NAME, TYPEID) \
-TypeInfo{CString{#NAME}, sizeof(NAME), MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, type_flags<NAME>::value},
+TypeInfo{CString{#NAME}, sizeof(NAME), \
+         MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, \
+         PointerArity{pointer_arity<NAME>::value}, \
+         const_bitset<NAME>::value, \
+         internal::type_flags<NAME>::value},
 
 static constexpr std::array<TypeInfo, 41> fundamentalTypes = {
-    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, type_flags<void>::value},
+    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, PointerArity{0}, 0, internal::type_flags<void>::value},
     FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
     };
 
@@ -32,8 +37,9 @@ public:
 
     const TypeInfo* getTypeInfo(MetaType_ID typeId) const;
     const TypeInfo* getTypeInfo(const char *name) const;
-    MetaType_ID addTypeInfo(const char *name, unsigned int size,
-                            MetaType_ID decay, MetaType::TypeFlags flags);
+    MetaType_ID addTypeInfo(const char *name, std::size_t size,
+                            MetaType_ID decay, PointerArity arity,
+                            std::uint8_t const_mask, MetaType::TypeFlags flags);
 private:
     mutable std::mutex m_lock;
     std::vector<TypeInfo> m_items;
@@ -98,8 +104,9 @@ const TypeInfo* CustomTypes::getTypeInfo(const char *name) const
     return nullptr;
 }
 
-inline MetaType_ID CustomTypes::addTypeInfo(const char *name, unsigned int size,
-                                            MetaType_ID decay, MetaType::TypeFlags flags)
+inline MetaType_ID CustomTypes::addTypeInfo(const char *name, std::size_t size,
+                                            MetaType_ID decay, PointerArity arity,
+                                            std::uint8_t const_mask, MetaType::TypeFlags flags)
 {
     std::lock_guard<std::mutex> lock{m_lock};
     MetaType_ID::type result = fundamentalTypes.size() + m_items.size();
@@ -109,7 +116,7 @@ inline MetaType_ID CustomTypes::addTypeInfo(const char *name, unsigned int size,
         decay = MetaType_ID{result};
 
     auto temp = CString{name};
-    m_items.emplace_back(temp, size, MetaType_ID{result}, decay, flags);
+    m_items.emplace_back(temp, size, MetaType_ID{result}, decay, arity, const_mask, flags);
     m_names.emplace(std::move(temp), result);
     return MetaType_ID{result};
 }
@@ -175,11 +182,52 @@ MetaType::TypeFlags MetaType::typeFlags() const noexcept
     return result;
 }
 
-MetaType_ID MetaType::registerMetaType(const char *name, unsigned int size,
-                                       MetaType_ID decay,
+PointerArity MetaType::pointerArity() const noexcept
+{
+    if (m_typeInfo)
+        return m_typeInfo->arity;
+    return PointerArity{};
+}
+
+bool MetaType::constCompatible(MetaType fromType, MetaType toType) noexcept
+{
+    if (!fromType.valid() || !toType.valid())
+        return false;
+
+    auto arity = fromType.m_typeInfo->arity;
+    if (arity != toType.m_typeInfo->arity)
+        return false;
+
+    const auto from = std::bitset<8>{fromType.m_typeInfo->const_mask};
+    const auto to = std::bitset<8>{toType.m_typeInfo->const_mask};
+    if (from == to)
+        return true;
+
+    for (auto i = 0; i <= arity.value(); ++i)
+    {
+        auto f = from.test(i);
+        auto t = to.test(i);
+
+        if (f && !t)
+            return false;
+
+        if (!f & t)
+        {
+            for (auto j = i + 1; j <= arity.value(); ++j)
+                if (!to.test(j))
+                    return false;
+            break;
+        }
+    }
+    return true;
+}
+
+MetaType_ID MetaType::registerMetaType(const char *name, std::size_t size,
+                                       MetaType_ID decay, PointerArity arity,
+                                       std::uint8_t const_mask,
                                        MetaType::TypeFlags flags)
 {
-    return customTypes().addTypeInfo(name, size, decay, flags);
+    return customTypes().addTypeInfo(name, size, decay, arity, const_mask, flags);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------

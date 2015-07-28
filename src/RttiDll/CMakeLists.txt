@@ -36,6 +36,7 @@ set(HEADERS
     ./metaenum_p.h
     ./metadefine.h
     ./metaerror.h
+    ./misc_traits.h
     ./rtti.h
 )
 

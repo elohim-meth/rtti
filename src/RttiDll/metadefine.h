@@ -60,9 +60,9 @@ struct return_member_func {};
 
 template<typename F>
 using method_invoker_tag =
-typename std::conditional<std::is_same<typename function_traits<F>::result_type, void>::value,
-    typename std::conditional<std::is_same<typename function_traits<F>::class_type, void>::value, void_static_func, void_member_func>::type,
-    typename std::conditional<std::is_same<typename function_traits<F>::class_type, void>::value, return_static_func, return_member_func>::type>::type;
+conditional_t<std::is_same<typename function_traits<F>::result_type, void>::value,
+    conditional_t<std::is_same<typename function_traits<F>::class_type, void>::value, void_static_func, void_member_func>,
+    conditional_t<std::is_same<typename function_traits<F>::class_type, void>::value, return_static_func, return_member_func>>;
 
 template<typename F, typename Tag> struct method_invoker;
 
@@ -189,7 +189,7 @@ private:
     template<std::size_t I>
     using argument_get_t = typelist_get_t<Args, I>;
     using argument_indexes_t = index_sequence_for_t<Args>;
-    using result_is_reference = typename std::is_reference<Result>::type;
+    using result_is_reference = is_reference_t<Result>;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
 
     template<std::size_t ...I>
@@ -269,8 +269,8 @@ private:
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
     using C = typename function_traits<F>::class_type;
     using is_const = typename function_traits<F>::is_const;
-    using class_t = typename std::conditional<is_const::value, const C, C>::type;
-    using class_ptr_t = typename std::conditional<is_const::value, const C*, C*>::type;
+    using class_t = conditional_t<is_const::value, const C, C>;
+    using class_ptr_t = conditional_t<is_const::value, const C*, C*>;
 
     template<std::size_t ...I>
     static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
@@ -283,9 +283,9 @@ private:
                               const argument_array_t &args, index_sequence<I...>)
     {
         auto type = MetaType{instance.typeId()};
-        if (type.typeFlags() & MetaType::Class)
+        if (type.isClass())
             (instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
-        else if (type.typeFlags() & MetaType::ClassPtr)
+        else if (type.isClassPtr())
             (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
     }
@@ -347,13 +347,13 @@ private:
     template<std::size_t I>
     using argument_get_t = typelist_get_t<Args, I>;
     using argument_indexes_t = index_sequence_for_t<Args>;
-    using result_is_reference = typename std::is_reference<Result>::type;
+    using result_is_reference = is_reference_t<Result>;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
     //
     using C = typename function_traits<F>::class_type;
     using is_const = typename function_traits<F>::is_const;
-    using class_t = typename std::conditional<is_const::value, const C, C>::type;
-    using class_ptr_t = typename std::conditional<is_const::value, const C*, C*>::type;
+    using class_t = conditional_t<is_const::value, const C, C>;
+    using class_ptr_t = conditional_t<is_const::value, const C*, C*>;
 
     template<std::size_t ...I>
     static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
@@ -366,9 +366,9 @@ private:
                               index_sequence<I...>, std::false_type)
     {
         auto type = MetaType{instance.typeId()};
-        if (type.typeFlags() & MetaType::Class)
+        if (type.isClass())
             return (instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
-        else if (type.typeFlags() & MetaType::ClassPtr)
+        else if (type.isClassPtr())
             return (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
     }
@@ -378,9 +378,9 @@ private:
                               index_sequence<I...>, std::true_type)
     {
         auto type = MetaType{instance.typeId()};
-        if (type.typeFlags() & MetaType::Class)
+        if (type.isClass())
             return std::ref((instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
-        else if (type.typeFlags() & MetaType::ClassPtr)
+        else if (type.isClassPtr())
             return std::ref((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...));
         return variant::empty_variant;
     }
@@ -508,7 +508,7 @@ private:
     static std::string signature_imp(index_sequence<0>)
     {
         using Arg = argument_get_t<0>;
-        if (std::is_same<internal::decay_t<Arg>, C>::value)
+        if (std::is_same<decay_t<Arg>, C>::value)
         {
             if (std::is_rvalue_reference<Arg>::value)
                 return "move constructor";
@@ -554,10 +554,10 @@ template<typename T, typename MB = void>
 class meta_define
 {
 public:
-    using self_t = meta_define<T, MB>;
+    using this_t = meta_define<T, MB>;
 
     template<typename V>
-    self_t _attribute(const char *name, V &&value)
+    this_t _attribute(const char *name, V &&value)
     {
         assert(m_currentItem);
         if (m_currentItem)
@@ -566,12 +566,12 @@ public:
     }
 
     template<typename V>
-    self_t _attribute(const std::string &name, V &&value)
+    this_t _attribute(const std::string &name, V &&value)
     {
         return _attribute(name.c_str(), std::forward<V>(value));
     }
 
-    meta_define<void, self_t> _namespace(const char *name)
+    meta_define<void, this_t> _namespace(const char *name)
     {
         static_assert(std::is_same<T, void>::value, "Namespace can be defined only in another namespace");
         assert(m_currentContainer && m_currentContainer->category() == mcatNamespace && m_containerStack);
@@ -579,16 +579,16 @@ public:
         m_containerStack->push(m_currentContainer);
         m_currentContainer = MetaNamespace::create(name, *m_currentContainer);
         m_currentItem = m_currentContainer;
-        return meta_define<void, self_t>{m_currentItem, m_currentContainer, m_containerStack};
+        return meta_define<void, this_t>{m_currentItem, m_currentContainer, m_containerStack};
     }
 
-    meta_define<void, self_t> _namespace(const std::string &name)
+    meta_define<void, this_t> _namespace(const std::string &name)
     {
         return _namespace(name.c_str());
     }
 
     template<typename C>
-    meta_define<C, self_t> _class(const char *name)
+    meta_define<C, this_t> _class(const char *name)
     {
         static_assert(std::is_class<C>::value, "Template argument <C> must be class");
         static_assert(!std::is_same<T, C>::value, "Recursive class definition");
@@ -600,7 +600,7 @@ public:
         m_currentContainer = MetaClass::create(name, *m_currentContainer, metaTypeId<C>());
         m_currentItem = m_currentContainer;
 
-        meta_define<C, self_t> result {m_currentItem, m_currentContainer, m_containerStack};
+        meta_define<C, this_t> result {m_currentItem, m_currentContainer, m_containerStack};
         result.default_constructor_selector(std::is_default_constructible<C>{});
         result.copy_constructor_selector(std::is_copy_constructible<C>{});
         result.move_constructor_selector(std::is_move_constructible<C>{});
@@ -608,32 +608,32 @@ public:
     }
 
     template<typename C>
-    meta_define<C, self_t> _class(const std::string &name)
+    meta_define<C, this_t> _class(const std::string &name)
     {
         return _class<C>(name.c_str());
     }
 
     template<typename C>
-    meta_define<C, self_t> _class()
+    meta_define<C, this_t> _class()
     {
         return _class<C>(type_name<C>());
     }
 
     template<typename F>
-    self_t _lazy(F &&func)
+    this_t _lazy(F &&func)
     {
         static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
                       "Deferred definition supported only for namespaces and class types");
 
         assert(m_currentContainer);
-        using holder_t = internal::DefinitionCallbackHolder<T, typename std::decay<F>::type>;
+        using holder_t = internal::DefinitionCallbackHolder<T, decay_t<F>>;
         m_currentContainer->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
                                                   new holder_t{std::forward<F>(func)}});
         return std::move(*this);
     }
 
     template<typename ...B>
-    self_t _base()
+    this_t _base()
     {
         static_assert(std::is_class<T>::value, "Base classes can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
@@ -645,7 +645,7 @@ public:
     }
 
     template<typename E>
-    self_t _enum(const char *name)
+    this_t _enum(const char *name)
     {
         assert(m_currentContainer);
         m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>());
@@ -653,13 +653,13 @@ public:
     }
 
     template<typename E>
-    self_t _enum(const std::string &name)
+    this_t _enum(const std::string &name)
     {
         return _enum<E>(name.c_str());
     }
 
     template<typename V>
-    self_t _element(const char *name, V &&value)
+    this_t _element(const char *name, V &&value)
     {
         assert(m_currentItem);
         auto category = m_currentItem->category();
@@ -673,44 +673,43 @@ public:
     }
 
     template<typename V>
-    self_t _element(const std::string &name, V &&value)
+    this_t _element(const std::string &name, V &&value)
     {
         return _element(name.c_str(), std::forward<V>(value));
     }
 
     template<typename ...Args>
-    self_t _constructor(const char *name = nullptr)
+    this_t _constructor(const char *name = nullptr)
     {
         static_assert(std::is_class<T>::value, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
         MetaConstructor::create(name, *m_currentContainer,
                                 std::unique_ptr<IConstructorInvoker>{
                                     new internal::ConstructorInvoker<T, Args...>{}});
-        register_converting_constructor<type_list<Args...>>(
-                    typename internal::is_converting_constructor<T, Args...>::type());
+        register_converting_constructor<type_list<Args...>>(is_converting_constructor_t<T, Args...>{});
         return std::move(*this);
     }
 
     template<typename ...Args>
-    self_t _constructor(const std::string &name)
+    this_t _constructor(const std::string &name)
     {
         return _constructor<Args...>(name.c_str());
     }
 
     template<typename F>
-    self_t _method(const char *name, F &&func)
+    this_t _method(const char *name, F &&func)
     {
         static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
                       "Method can be defined in namespace or class");
         assert(m_currentContainer);
         MetaMethod::create(name, *m_currentContainer,
                            std::unique_ptr<IMethodInvoker>{
-                                new internal::MethodInvoker<internal::decay_t<F>>{std::forward<F>(func)}});
+                                new internal::MethodInvoker<decay_t<F>>{std::forward<F>(func)}});
         return std::move(*this);
     }
 
     template<typename F>
-    self_t _method(const std::string &name, F &&func)
+    this_t _method(const std::string &name, F &&func)
     {
         return _method(name.c_str(), std::forward<F>(func));
     }

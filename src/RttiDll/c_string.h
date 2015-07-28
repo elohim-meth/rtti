@@ -3,7 +3,6 @@
 
 #include <string>
 #include <bits/functional_hash.h>
-#include <type_traits>
 
 template<typename CharT>
 class cstring_base

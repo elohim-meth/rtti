@@ -20,7 +20,7 @@ struct signature
 private:
     template<std::size_t I>
     using argument_get_t = typelist_get_t<type_list<Args...>, I>;
-    using argument_indexes_t = typename index_sequence_for<Args...>::type;
+    using argument_indexes_t = index_sequence_for_t<Args...>;
 
     template<std::size_t ...I>
     static std::string signature_imp(const char *name, index_sequence<I...>)

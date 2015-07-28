@@ -10,17 +10,22 @@ namespace rtti {
 
 struct DLL_LOCAL TypeInfo {
     const CString name;
-    const unsigned int size;
+    const std::size_t size;
     const MetaType_ID type;
     const MetaType_ID decay;
+    const PointerArity arity;
+    const std::uint8_t const_mask;
     const MetaType::TypeFlags flags;
     MetaClass *metaClass = nullptr;
 
-    constexpr TypeInfo(CString name, unsigned int size, MetaType_ID type, MetaType_ID decay, MetaType::TypeFlags flags)
+    constexpr TypeInfo(CString name, std::size_t size,
+                       MetaType_ID type, MetaType_ID decay,
+                       PointerArity arity, std::uint8_t const_mask,
+                       MetaType::TypeFlags flags)
         : name{std::move(name)},
-          size{size},
-          type{type},
-          decay{decay},
+          size{size}, type{type},
+          decay{decay}, arity{arity},
+          const_mask{const_mask},
           flags{flags}
     {}
 };
