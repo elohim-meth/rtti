@@ -5,7 +5,7 @@
 #include <typelist.h>
 #include <tagged_id.h>
 
-#include <atomic>
+#include <bitset>
 #include <type_traits>
 #include <limits>
 
@@ -87,7 +87,13 @@ struct remove_member_pointer<R (C::*)(Args...) const volatile &&>
 };
 
 template<typename T>
+using remove_cv_t = typename std::remove_cv<T>::type;
+
+template<typename T>
 using decay_t = typename std::decay<T>::type;
+
+template<typename T>
+using remove_pointer_t = typename std::remove_pointer<T>::type;
 
 template<typename T, bool = std::is_pointer<T>::value>
 struct pointer_count;
@@ -98,22 +104,18 @@ struct pointer_count<T, false>: std::integral_constant<std::size_t, 0>
 
 template<typename T>
 struct pointer_count<T, true>: std::integral_constant<std::size_t,
-                                                      pointer_count<typename std::remove_pointer<T>::type>::value + 1>
+                                                      pointer_count<remove_pointer_t<T>>::value + 1>
 {};
 
 template<typename T, bool = std::is_pointer<T>::value>
 struct remove_all_pointers;
 
 template<typename T>
-struct remove_all_pointers<T, false>: identity<typename std::remove_cv<T>::type>
+struct remove_all_pointers<T, false>: identity<remove_cv_t<T>>
 {};
 
 template<typename T>
-struct remove_all_pointers<T, true>:
-    remove_all_pointers<
-        typename std::remove_cv<
-            typename std::remove_pointer<T>::type>
-        ::type>
+struct remove_all_pointers<T, true>: remove_all_pointers<remove_pointer_t<T>>
 {};
 
 template<typename T>
@@ -136,6 +138,29 @@ struct full_decay: add_pointers<remove_all_pointers_t<decay_t<T>>, pointer_count
 
 template<typename T>
 using full_decay_t = typename full_decay<T>::type;
+
+template<typename T,
+         std::size_t I,
+         bool = std::is_const<T>::value,
+         bool = std::is_pointer<T>::value>
+struct bitset_for_const;
+
+template<typename T, std::size_t I>
+struct bitset_for_const<T, I, false, false>: std::integral_constant<std::size_t, 0>
+{};
+
+template<typename T, std::size_t I>
+struct bitset_for_const<T, I, true, false>: std::integral_constant<std::size_t, 1 << I>
+{};
+
+template<typename T, std::size_t I>
+struct bitset_for_const<T, I, false, true>: std::integral_constant<std::size_t, bitset_for_const<typename std::remove_pointer<T>::type, I + 1>::value>
+{};
+
+template<typename T, std::size_t I>
+struct bitset_for_const<T, I, true, true>: std::integral_constant<std::size_t, (1 << I) + bitset_for_const<typename std::remove_pointer<T>::type, I + 1>::value>
+{};
+
 
 template<typename T>
 using is_polymorphic_ptr =

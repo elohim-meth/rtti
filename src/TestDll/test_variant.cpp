@@ -346,6 +346,7 @@ void test_variant_1()
         auto m = c->getMethod<const TestQPointer&>("value"); assert(m);
         auto s = m->invoke(v);
         s.value<std::string>() = "222";
+        delete q;
     }
 
     std::printf("\n");

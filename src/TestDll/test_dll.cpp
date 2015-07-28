@@ -9,6 +9,22 @@ int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
+        using t = int  ****const*const;
+        int **i1 = 0;
+        int ** const i2 = 0;
+        int * const * i3 = 0;
+        int const * * i4 = 0;
+        int * const * const i5 = 0;
+        int const * const * i6 = 0;
+        int const * * const i7 = 0;
+        int const * const * const i8 = 0;
+
+        i4 = i2;
+
+//        using t = const int*const;
+        std::cout << std::bitset<8>(rtti::internal::bitset_for_const<t, 0>::value);
+        return 0;
+
         test_cast_1();
         test_variant_1();
 
