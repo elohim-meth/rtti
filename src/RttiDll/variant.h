@@ -196,14 +196,14 @@ struct class_info_get
 {
     static ClassInfo info(const variant_type_storage &value)
     {
-        return info_selector(value, is_class_t(), is_class_ptr_t());
+        return info_selector(value, IsClass(), IsClassPtr());
     }
 private:
-    using unwrap = full_decay_t<unwrap_reference_t<T>>;
-    using selector_t = function_table_selector<T>;
-    using is_class_t = typename std::is_class<unwrap>::type;
-    using is_class_ptr_t = typename internal::is_class_ptr<unwrap>::type;
-    using class_t = typename std::remove_pointer<unwrap>::type;
+    using Unwrap = full_decay_t<unwrap_reference_t<T>>;
+    using Selector = function_table_selector<T>;
+    using IsClass = is_class_t<Unwrap>;
+    using IsClassPtr = is_class_ptr_t<Unwrap>;
+    using C = typename std::remove_pointer<Unwrap>::type;
 
     static ClassInfo info_selector(const variant_type_storage&, std::false_type, std::false_type)
     {
@@ -211,11 +211,11 @@ private:
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::true_type, std::false_type)
     {
-        return ClassInfo(selector_t::type(), selector_t::access(value));
+        return ClassInfo(Selector::type(), Selector::access(value));
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
     {
-        using registered_t = typename has_method_classInfo<ClassInfo(class_t::*)() const>::type;
+        using registered_t = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
         return info_selector_registered(value, registered_t());
     }
     static ClassInfo info_selector_registered(const variant_type_storage&, std::false_type)
@@ -224,10 +224,11 @@ private:
     }
     static ClassInfo info_selector_registered(const variant_type_storage &value, std::true_type)
     {
-        auto ptr = reinterpret_cast<class_t**>(selector_t::access(value));
+        auto ptr = reinterpret_cast<C**>(Selector::access(value));
         return (*ptr)->classInfo();
     }
 };
+
 template<typename T>
 inline const variant_function_table* function_table_for()
 {
@@ -289,7 +290,7 @@ public:
 
     template<typename T,
              typename = typename std::enable_if<
-                 !std::is_same<variant, internal::decay_t<T>>::value>
+                 !std::is_same<variant, decay_t<T>>::value>
              ::type>
     variant(T &&value)
         : variant{std::forward<T>(value), internal::is_inplace<T>{}}
@@ -300,7 +301,7 @@ public:
 
     template<typename T,
              typename = typename std::enable_if<
-                 !std::is_same<variant, internal::decay_t<T>>::value>
+                 !std::is_same<variant, decay_t<T>>::value>
              ::type>
     variant& operator=(T &&value)
     {
@@ -353,27 +354,27 @@ public:
     template<typename T>
     bool is() const
     {
-        return metafunc_is<internal::full_decay_t<T>>::invoke(*this);
+        return metafunc_is<full_decay_t<T>>::invoke(*this);
     }
 
     template<typename T>
     const T& value() const &
     {
-        auto &result = metafunc_cast<internal::full_decay_t<T>>::invoke(*this);
+        auto &result = metafunc_cast<full_decay_t<T>>::invoke(*this);
         return const_cast<const T&>(result);
     }
 
     template<typename T>
     T& value() &
     {
-        auto &result = metafunc_cast<internal::full_decay_t<T>>::invoke(*this);
+        auto &result = metafunc_cast<full_decay_t<T>>::invoke(*this);
         return const_cast<T&>(result);
     }
 
     template<typename T>
     T&& value() &&
     {
-        auto &&result = metafunc_cast<internal::full_decay_t<T>>::invoke(std::move(*this));
+        auto &&result = metafunc_cast<full_decay_t<T>>::invoke(std::move(*this));
         return const_cast<T&&>(result);
     }
 
@@ -427,16 +428,16 @@ public:
 private:
     template<typename T>
     variant(T &&value, std::true_type)
-        : manager{internal::function_table_for<internal::full_decay_t<T>>()}
+        : manager{internal::function_table_for<full_decay_t<T>>()}
     {
-        new (&storage.buffer) internal::decay_t<T>(std::forward<T>(value));
+        new (&storage.buffer) decay_t<T>(std::forward<T>(value));
     }
 
     template<typename T>
     variant(T &&value, std::false_type)
-        : manager{internal::function_table_for<internal::full_decay_t<T>>()}
+        : manager{internal::function_table_for<full_decay_t<T>>()}
     {
-        storage.ptr = new internal::full_decay_t<T>(std::forward<T>(value));
+        storage.ptr = new decay_t<T>(std::forward<T>(value));
         storage.temp = nullptr;
     }
 
@@ -457,13 +458,13 @@ private:
                 return false;
             if (self.typeId() == metaTypeId<T>())
                 return true;
-            return invoke_for_class(self, is_class_t(), is_class_ptr_t());
+            return invoke_for_class(self, IsClass{}, IsClassPtr{});
         }
 
     private:
-        using is_class_t = typename std::is_class<T>::type;
-        using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
-        using class_t = typename std::remove_pointer<T>::type;
+        using IsClass = is_class_t<T>;
+        using IsClassPtr = is_class_ptr_t<T>;
+        using C = remove_pointer_t<T>;
 
         // nope
         static bool invoke_for_class(const variant&, std::false_type, std::false_type)
@@ -472,7 +473,7 @@ private:
         static bool invoke_for_class(const variant &self, std::true_type, std::false_type)
         {
             auto type = MetaType{self.typeId()};
-            if (type.typeFlags() & MetaType::Class)
+            if (type.isClass())
                 return invoke_imp(self);
             return false;
         }
@@ -480,7 +481,7 @@ private:
         static bool invoke_for_class(const variant &self, std::false_type, std::true_type)
         {
             auto type = MetaType{self.typeId()};
-            if (type.typeFlags() & MetaType::ClassPtr)
+            if (type.isClassPtr())
                 return invoke_imp(self);
             return false;
         }
@@ -494,7 +495,7 @@ private:
                 return false;
 
             auto fromClass = MetaClass::findByTypeId(info.typeId);
-            auto toClass = MetaClass::findByTypeId(metaTypeId<class_t>());
+            auto toClass = MetaClass::findByTypeId(metaTypeId<C>());
             if (!fromClass && !toClass)
                 return false;
             return fromClass->inheritedFrom(toClass);
@@ -517,7 +518,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               auto ptr = invoke_for_class(self, IsClass(), IsClassPtr());
                result = static_cast<T*>(ptr);
             }
 
@@ -537,7 +538,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               auto ptr = invoke_for_class(self, IsClass(), IsClassPtr());
                result = static_cast<T*>(ptr);
             }
 
@@ -557,7 +558,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, is_class_t(), is_class_ptr_t());
+               auto ptr = invoke_for_class(self, IsClass(), IsClassPtr());
                result = static_cast<T*>(ptr);
             }
 
@@ -565,9 +566,9 @@ private:
             return std::move(*result);
         }
     private:
-        using is_class_t = typename std::is_class<T>::type;
-        using is_class_ptr_t = typename internal::is_class_ptr<T>::type;
-        using class_t = typename std::remove_pointer<T>::type;
+        using IsClass = is_class_t<T>;
+        using IsClassPtr = is_class_ptr_t<T>;
+        using C = remove_pointer_t<T>;
 
         // nope
         static void* invoke_for_class(const variant&, std::false_type, std::false_type)
@@ -576,7 +577,7 @@ private:
         static void* invoke_for_class(const variant &self, std::true_type, std::false_type)
         {
             auto type = MetaType{self.typeId()};
-            if (type.typeFlags() & MetaType::Class)
+            if (type.isClass())
                 return invoke_imp(self);
             return nullptr;
         }
@@ -584,7 +585,7 @@ private:
         static void* invoke_for_class(const variant &self, std::false_type, std::true_type)
         {
             auto type = MetaType{self.typeId()};
-            if (type.typeFlags() & MetaType::ClassPtr)
+            if (type.isClassPtr())
             {
                 auto ptr = invoke_imp(self);
                 self.storage.temp = ptr;
@@ -602,7 +603,7 @@ private:
                 return nullptr;
 
             auto fromClass = MetaClass::findByTypeId(info.typeId);
-            auto toClass = MetaClass::findByTypeId(metaTypeId<class_t>());
+            auto toClass = MetaClass::findByTypeId(metaTypeId<C>());
             if (!fromClass && !toClass)
                 return nullptr;
 
