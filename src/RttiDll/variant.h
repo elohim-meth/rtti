@@ -220,7 +220,7 @@ private:
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::true_type, std::false_type)
     {
-        return ClassInfo(Selector::type(), Selector::access(value));
+        return ClassInfo(metaTypeId<Unwrap>(), Selector::access(value));
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
     {
@@ -368,7 +368,7 @@ public:
     template<typename T>
     bool is() const
     {
-        return metafunc_is<T>::invoke(*this);
+        return metafunc_is<T>::invoke(*this, false);
     }
 
     template<typename T>
@@ -400,26 +400,28 @@ public:
         static_assert(std::is_move_constructible<T>::value,
                       "Type should be MoveConstructible");
 
-        if (is<T>())
+        if (metafunc_is<T>::invoke(*this, true))
             return value<T>();
 
-        auto fromId = typeId();
-        auto toId = metaTypeId<T>();
-        if (MetaType::hasConverter(fromId, toId))
+        auto from = MetaType{typeId()};
+        auto to = MetaType{metaTypeId<T>()};
+        if (MetaType::hasConverter(from, to))
         {
             alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
-            if (MetaType::convert(raw_data_ptr(), fromId, &buffer, toId))
+            if (MetaType::convert(raw_data_ptr(), from, &buffer, to))
                 return std::move(*reinterpret_cast<T*>(&buffer));
-            throw bad_variant_convert{"Conversion failed"};
+            throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                      from.typeName() + " -> " + to.typeName()};
 
         }
-        throw bad_variant_convert{"Converter function not found"};
+        throw bad_variant_convert{std::string{"Converter not found: "} +
+                                  from.typeName() + " -> " + to.typeName()};
     }
 
     template<typename T>
     bool convert()
     {
-        if (is<T>())
+        if (metafunc_is<T>::invoke(*this, false))
             return true;
 
         auto fromId = typeId();
@@ -463,20 +465,35 @@ private:
     template<typename T>
     struct metafunc_is
     {
-        static_assert(!std::is_reference<T>::value,
-                      "Type cannot be reference");
-
-        static bool invoke(const variant &self)
+        static bool invoke(const variant &self, bool raise)
         {
             if (self.empty())
+            {
+                if (raise)
+                    throw bad_variant_cast{"Variant is empty"};
                 return false;
+            }
+
             auto from = MetaType{self.typeId()};
             auto to = MetaType{metaTypeId<T>()};
-            if (from.decayId() == to.decayId())
-                return MetaType::constCompatible(from, to);
 
-            if (invoke_for_class(self, from, IsClass{}, IsClassPtr{}))
-                return MetaType::constCompatible(from, to);
+            auto constCompatible = [raise](MetaType from, MetaType to)
+            {
+                if (!MetaType::constCompatible(from, to))
+                {
+                    if (raise)
+                        throw bad_variant_cast{std::string{"Const incompatible types: "} +
+                                               from.typeName() + " -> " + to.typeName()};
+                    return false;
+                }
+                return true;
+            };
+
+            if (from.decayId() == to.decayId())
+                return constCompatible(from, to);
+
+            if (invoke_selector(self, from, IsClass{}, IsClassPtr{}))
+                return constCompatible(from, to);
 
             return false;
         }
@@ -488,11 +505,11 @@ private:
         using C = remove_pointer_t<Decay>;
 
         // nope
-        static bool invoke_for_class(const variant&, MetaType,
+        static bool invoke_selector(const variant&, MetaType,
                                      std::false_type, std::false_type)
         { return false; }
         // class
-        static bool invoke_for_class(const variant &self, MetaType type,
+        static bool invoke_selector(const variant &self, MetaType type,
                                      std::true_type, std::false_type)
         {
             if (type.isClass())
@@ -500,7 +517,7 @@ private:
             return false;
         }
         // class ptr
-        static bool invoke_for_class(const variant &self, MetaType type,
+        static bool invoke_selector(const variant &self, MetaType type,
                                      std::false_type, std::true_type)
         {
             if (type.isClassPtr())
@@ -522,7 +539,6 @@ private:
                 return false;
             return fromClass->inheritedFrom(toClass);
         }
-
     };
 
     template<typename T>
@@ -530,7 +546,7 @@ private:
     {
         using Decay = full_decay_t<T>;
 
-        static const Decay& invoke(const variant &self)
+        static T invoke(const variant &self)
         {
             if (self.empty())
                 throw bad_variant_cast{"Variant is empty"};
@@ -547,7 +563,7 @@ private:
             }
             else
             {
-               auto ptr = invoke_for_class(self, from, IsClass{}, IsClassPtr{});
+               auto ptr = invoke_selector(self, from, IsClass{}, IsClassPtr{});
                if (ptr && !MetaType::constCompatible(from, to))
                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
                                           from.typeName() + " -> " + to.typeName()};
@@ -557,79 +573,25 @@ private:
             if (!result)
                 throw bad_variant_cast{std::string{"Incompatible types: "} +
                                        from.typeName() + " -> " + to.typeName()};
-            return *result;
+            return result_selector(result, is_rvalue_reference_t<T>{});
         }
 
-        static Decay& invoke(variant &self)
-        {
-            if (self.empty())
-                throw bad_variant_cast{"Variant is empty"};
-
-            Decay* result = nullptr;
-            auto from = MetaType{self.typeId()};
-            auto to = MetaType{metaTypeId<T>()};
-            if (from.decayId() == to.decayId())
-            {
-                if (!MetaType::constCompatible(from, to))
-                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                           from.typeName() + " -> " + to.typeName()};
-                result = static_cast<Decay*>(self.raw_data_ptr());
-            }
-            else
-            {
-               auto ptr = invoke_for_class(self, from, IsClass{}, IsClassPtr{});
-               if (ptr && !MetaType::constCompatible(from, to))
-                   throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                          from.typeName() + " -> " + to.typeName()};
-               result = static_cast<Decay*>(ptr);
-            }
-
-            if (!result)
-                throw bad_variant_cast{std::string{"Incompatible types: "} +
-                                       from.typeName() + " -> " + to.typeName()};
-            return *result;
-        }
-
-        static Decay&& invoke(variant &&self)
-        {
-            if (self.empty())
-                throw bad_variant_cast{"Variant is empty"};
-
-            Decay* result = nullptr;
-            auto from = MetaType{self.typeId()};
-            auto to = MetaType{metaTypeId<T>()};
-            if (from.decayId() == to.decayId())
-            {
-                if (!MetaType::constCompatible(from, to))
-                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                           from.typeName() + " -> " + to.typeName()};
-                result = static_cast<Decay*>(self.raw_data_ptr());
-            }
-            else
-            {
-               auto ptr = invoke_for_class(self, from, IsClass{}, IsClassPtr{});
-               if (ptr && !MetaType::constCompatible(from, to))
-                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                           from.typeName() + " -> " + to.typeName()};
-               result = static_cast<Decay*>(ptr);
-            }
-
-            if (!result)
-                throw bad_variant_cast{std::string{"Incompatible types: "} +
-                                       from.typeName() + " -> " + to.typeName()};
-            return std::move(*result);
-        }
     private:
         using IsClass = is_class_t<Decay>;
         using IsClassPtr = is_class_ptr_t<Decay>;
         using C = remove_pointer_t<Decay>;
 
+        static T result_selector(Decay *value, std::false_type)
+        { return const_cast<T>(*value); }
+        static T result_selector(Decay *value, std::true_type)
+        { return std::move(*value); }
+
         // nope
-        static void* invoke_for_class(const variant&, MetaType,
+        static void* invoke_selector(const variant&, MetaType,
                                       std::false_type, std::false_type)
         { return nullptr; }
         // class
-        static void* invoke_for_class(const variant &self, MetaType type,
+        static void* invoke_selector(const variant &self, MetaType type,
                                       std::true_type, std::false_type)
         {
             if (type.isClass())
@@ -637,7 +599,7 @@ private:
             return nullptr;
         }
         // class ptr
-        static void* invoke_for_class(const variant &self, MetaType type,
+        static void* invoke_selector(const variant &self, MetaType type,
                                       std::false_type, std::true_type)
         {
             if (type.isClassPtr())

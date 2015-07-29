@@ -51,15 +51,19 @@ private:
         using Decay = decay_t<T>;
 
         auto fromType = MetaType{m_typeId};
-        if (fromType.typeFlags() & MetaType::LvalueReference)
+        if (fromType.isLvalueReference())
             throw bad_argument_cast{"Try to bind lvalue reference to rvalue reference"};
 
-        auto toTypeId = metaTypeId<full_decay_t<T>>();
+        auto toType = MetaType{metaTypeId<T>()};
 
-        if (fromType.decayId() == toTypeId)
+        if (fromType.decayId() == toType.decayId())
         {
+            if (!MetaType::constCompatible(fromType, toType))
+                throw bad_argument_cast{std::string{"Const incompatible types: "} +
+                                        fromType.typeName() + " -> " + toType.typeName()};
+
             Decay *ptr = nullptr;
-            if (fromType.typeFlags() & MetaType::Array)
+            if (fromType.isArray())
                 ptr = static_cast<Decay*>(m_dataptr);
             else
                 ptr = static_cast<Decay*>(m_data);
@@ -69,9 +73,11 @@ private:
         else if (fromType.decayId() == metaTypeId<variant>())
         {
             auto *ptr = static_cast<variant*>(m_data);
-            return std::move(*ptr).value<Decay>();
+            return std::move(*ptr).value<T>();
         }
-        throw bad_argument_cast{"Types doesn't match"};
+
+        throw bad_argument_cast{std::string{"Incompatible types: "} +
+                               fromType.typeName() + " -> " + toType.typeName()};
     }
 
     template<typename T>
@@ -80,12 +86,15 @@ private:
         using Decay = decay_t<T>;
 
         auto fromType = MetaType{m_typeId};
-        auto toTypeId = metaTypeId<full_decay_t<T>>();
+        auto toType = MetaType{metaTypeId<T>()};
 
-        if (fromType.decayId() == toTypeId)
+        if (fromType.decayId() == toType.decayId())
         {
+            if (!MetaType::constCompatible(fromType, toType))
+                throw bad_argument_cast{std::string{"Const incompatible types: "} +
+                                        fromType.typeName() + " -> " + toType.typeName()};
             Decay *ptr = nullptr;
-            if (fromType.typeFlags() & MetaType::Array)
+            if (fromType.isArray())
                 ptr = static_cast<Decay*>(m_dataptr);
             else
                 ptr = static_cast<Decay*>(m_data);
@@ -95,9 +104,11 @@ private:
         else if (fromType.decayId() == metaTypeId<variant>())
         {
             auto *ptr = static_cast<variant*>(m_data);
-            return ptr->value<Decay>();
+            return ptr->value<T>();
         }
-        throw bad_argument_cast{"Types doesn't match"};
+
+        throw bad_argument_cast{std::string{"Incompatible types: "} +
+                               fromType.typeName() + " -> " + toType.typeName()};
     }
 
     void *m_data = nullptr;

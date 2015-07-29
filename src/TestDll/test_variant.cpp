@@ -361,7 +361,7 @@ void test_variant_1()
         try {
             s = m->invoke(v1); //should throw
             assert(false);
-        } catch (const bad_variant_convert &e) { std::printf("%s\n", e.what()); }
+        } catch (const bad_variant_cast &e) { std::printf("%s\n", e.what()); }
 
         delete q;
     }

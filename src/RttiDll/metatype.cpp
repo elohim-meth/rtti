@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <bitset>
 #include <memory>
+#include <cassert>
 
 namespace rtti {
 
@@ -328,10 +329,8 @@ static inline MetaTypeFunctionList<internal::ConvertFunctionBase>* customConvert
 
 } //namespace
 
-bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
+bool MetaType::hasConverter(MetaType fromType, MetaType toType)
 {
-    auto fromType = MetaType{fromTypeId};
-    auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
     {
         auto list = customConverters();
@@ -339,7 +338,14 @@ bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
             return list->find({fromType.m_typeInfo->decay,
                                toType.m_typeInfo->decay});
     }
-     return false;
+    return false;
+}
+
+bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
+{
+    auto fromType = MetaType{fromTypeId};
+    auto toType = MetaType{toTypeId};
+    return hasConverter(fromType, toType);
 }
 
 bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
@@ -358,10 +364,8 @@ bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
     return false;
 }
 
-bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId)
+bool MetaType::convert(const void *from, MetaType fromType, void *to, MetaType toType)
 {
-    auto fromType = MetaType{fromTypeId};
-    auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
     {
         auto list = customConverters();
@@ -369,11 +373,18 @@ bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaT
         {
             auto converter = list->get({fromType.m_typeInfo->decay,
                                         toType.m_typeInfo->decay});
-            if (converter)
-                return converter->invoke(from, to);
+            assert(converter);
+            return converter->invoke(from, to);
         }
     }
     return false;
+}
+
+bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId)
+{
+    auto fromType = MetaType{fromTypeId};
+    auto toType = MetaType{toTypeId};
+    return convert(from, fromType, to, toType);
 }
 
 void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)

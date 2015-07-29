@@ -78,11 +78,15 @@ public:
     MetaType::TypeFlags typeFlags() const noexcept;
 
     bool isReference() const noexcept;
+    bool isLvalueReference() const noexcept;
+    bool isRvalueReference() const noexcept;
     bool isClass() const noexcept;
     bool isClassPtr() const noexcept;
+    bool isArray() const noexcept;
     std::uint8_t pointerArity() const noexcept;
     static bool constCompatible(MetaType fromType, MetaType toType) noexcept;
 
+    static bool hasConverter(MetaType fromType, MetaType toType);
     static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
     template<typename From, typename To>
     static bool hasConverter();
@@ -114,6 +118,7 @@ private:
     static bool registerConverter_imp(To(From::*func)(bool*) const);
     static bool registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
                                   const internal::ConvertFunctionBase &converter);
+    static bool convert(const void *from, MetaType fromType, void *to, MetaType toType);
     static bool convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId);
 
     const TypeInfo *m_typeInfo = nullptr;
@@ -202,11 +207,19 @@ inline MetaType_ID metaTypeId()
 // Traits
 //--------------------------------------------------------------------------------------------------------------------------------
 
+inline bool MetaType::isLvalueReference() const noexcept
+{
+    return ((typeFlags() & LvalueReference) == LvalueReference);
+}
+
+inline bool MetaType::isRvalueReference() const noexcept
+{
+    return ((typeFlags() & RvalueReference) == RvalueReference);
+}
+
 inline bool MetaType::isReference() const noexcept
 {
-    auto flags = typeFlags();
-    return ((flags & LvalueReference) == LvalueReference) ||
-           ((flags & RvalueReference) == RvalueReference);
+    return (isLvalueReference() || isRvalueReference());
 }
 
 inline bool MetaType::isClass() const noexcept
@@ -222,6 +235,11 @@ inline bool MetaType::isClassPtr() const noexcept
     return (pointerArity() == 1) &&
            ((flags & Class) == Class) &&
             ((flags & Pointer) == Pointer);
+}
+
+inline bool MetaType::isArray() const noexcept
+{
+    return ((typeFlags() & Array) == Array);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------

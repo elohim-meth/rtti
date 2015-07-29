@@ -11,6 +11,7 @@
 #include <string>
 
 namespace rtti {
+
 namespace internal {
 
 struct DLL_LOCAL NamedVariant
