@@ -26,19 +26,6 @@ void define_test_namespace(rtti::meta_define<void> define)
             ._attribute("Polymorphic", true)
             ._constructor<std::int8_t>()
         ._end()
-
-        ._class<test::TestBase1>("TestBase1")
-            ._enum<test::TestBase1::TestEnum>("TestEnum")
-                ._element("te1", test::TestBase1::te1)
-                ._element("te2", test::TestBase1::te2)
-        ._end()
-
-        ._class<test::TestBase2>("TestBase2")
-        ._end()
-
-        ._class<test::TestDerived>("TestDerived")
-            ._base<test::TestBase1, test::TestBase2>()
-        ._end()
     ;
 }
 

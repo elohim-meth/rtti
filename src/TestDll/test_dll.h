@@ -54,13 +54,13 @@ public:
     Small(Small&&v) noexcept : i{v.i}
     {
         PRINT_PRETTY_FUNC
-        v.i = 0;
+        v.i = -1;
     }
     Small& operator=(Small &&v) noexcept
     {
         PRINT_PRETTY_FUNC
         i = v.i;
-        v.i = 0;
+        v.i = -1;
         return *this;
     }
     virtual ~Small() noexcept
@@ -70,65 +70,5 @@ public:
 
     std::int8_t i;
 };
-
-//struct Big
-//{
-//    Big(std::size_t v1 = 0, std::size_t v2 = 0)
-//        : i1{v1}, i2{v2}
-//    {
-//        PRINT_PRETTY_FUNC
-//    }
-//    Big(const Big &v): i1{v.i1}, i2{v.i2}
-//    {
-//        PRINT_PRETTY_FUNC
-//    }
-//    Big& operator=(const Big &v)
-//    {
-//        PRINT_PRETTY_FUNC
-//        i1 = v.i1;
-//        i2 = v.i2;
-//        return *this;
-//    }
-//    Big(Big &&v) noexcept : i1{v.i1}, i2{v.i2}
-//    {
-//        std::cout << __PRETTY_FUNCTION__ << std::endl;
-//        v.i1 = v.i2 = 0;
-//    }
-//    Big& operator=(Big &&v) noexcept
-//    {
-//        PRINT_PRETTY_FUNC
-//        i1 = v.i1;
-//        i2 = v.i2;
-//        v.i1 = v.i2 = 0;
-//        return *this;
-//    }
-//    ~Big()
-//    {
-//        PRINT_PRETTY_FUNC
-//    }
-
-//    std::size_t i1;
-//    std::size_t i2;
-//};
-
-class TestBase1 {
-    DECLARE_CLASSINFO
-public:
-    enum TestEnum {
-        te1 = 10,
-        te2 = 20
-    };
-
-    TestBase1() { PRINT_PRETTY_FUNC }
-    TestBase1(const TestBase1&) { PRINT_PRETTY_FUNC }
-    TestBase1(TestBase1&&) { PRINT_PRETTY_FUNC }
-    TestBase1(int, const std::string&){ PRINT_PRETTY_FUNC }
-    virtual ~TestBase1(){ PRINT_PRETTY_FUNC }
-};
-
-class TestBase2
-{ DECLARE_CLASSINFO };
-class TestDerived: public TestBase1, public TestBase2
-{ DECLARE_CLASSINFO };
 
 } // namespace test

@@ -183,6 +183,11 @@ const MetaConstructor* MetaContainer::getConstructor(const char *name) const
     return static_cast<const MetaConstructor*>(item(mcatConstructor, name));
 }
 
+const MetaConstructor* MetaContainer::getConstructor(const std::string &name) const
+{
+    return getConstructor(name.c_str());
+}
+
 std::size_t MetaContainer::constructorCount() const noexcept
 {
     return count(mcatConstructor);
@@ -266,6 +271,11 @@ const MetaMethod* MetaContainer::getMethod(const char *name) const
 const MetaMethod *MetaContainer::getMethod(const std::string &name) const
 {
     return getMethod(name.c_str());
+}
+
+const MetaMethod *MetaContainer::getMethod(const char *name, const std::vector<MetaType_ID> &params) const
+{
+    // TODO
 }
 
 std::size_t MetaContainer::methodCount() const noexcept

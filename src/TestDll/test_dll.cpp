@@ -9,16 +9,10 @@ int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
-//        using t1 = std::uint8_t*;
-//        using t2 = std::uint8_t*&;
-        //std::cout << sizeof(t1) << " " << sizeof(t2);
-        //std::cout << rtti::pointer_arity<t1>::value << " " << rtti::pointer_arity<t2>::value;
-//        return 0;
+        register_rtti();
 
         test_cast_1();
         test_variant_1();
-
-        register_rtti();
 
         auto lambda = [](const std::string &name, const rtti::variant &value)
         {
@@ -62,52 +56,6 @@ int main(int argc, char* argv[])
             {
                 int a[] = {1,2,3,4,5};
                 auto v = construct->invoke(std::begin(a), std::end(a));
-            }
-        }
-
-        vec = tn->getClass("TestBase1");
-        if (vec)
-        {
-//            auto e = c->getEnum("TestEnum");
-//            if (e)
-//            {
-//                std::cout << e->qualifiedName() << std::endl;
-//                e->for_each_element([](const std::string &name, const rtti::variant &value)
-//                {
-//                    std::cout << name << " = " << rtti::variant_cast<TestBase1::TestEnum>(value) << std::endl;
-//                });
-//            }
-
-//            std::cout << std::endl;
-
-//            e = c->getEnum("Color");
-//            if (e)
-//            {
-//                std::cout << e->qualifiedName() << std::endl;
-//                e->for_each_element([](const std::string &name, const rtti::variant &value)
-//                {
-//                    std::cout << name << " = " << static_cast<typename std::underlying_type<TestBase1::Color>::type>(
-//                                     rtti::variant_cast<TestBase1::Color>(value)) << std::endl;
-//                });
-//            }
-
-            auto dc = vec->defaultConstructor();
-            if (dc)
-            {
-                std::cout << "\ndefault\n";
-                auto v = dc->invoke();
-                auto cc = vec->copyConstructor();
-                if (cc)
-                {
-                    std::cout << "copy \n";
-                    const auto vc = cc->invoke(v);
-                    auto mc = vec->moveConstructor();
-                    if (mc)
-                    {
-                        std::cout << "move \n";
-                        auto vm = mc->invoke(std::move(vc));
-                    }
-                }
             }
         }
 

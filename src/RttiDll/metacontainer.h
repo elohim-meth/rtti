@@ -1,10 +1,12 @@
 ﻿#ifndef METACONTAINER_H
 #define METACONTAINER_H
 
+#include "metatype.h"
 #include "metaitem.h"
 #include "signature.h"
 
 #include <functional>
+#include <vector>
 
 namespace rtti {
 
@@ -46,12 +48,18 @@ public:
     template<typename ...Args>
     const MetaMethod* getMethod(const std::string &name) const
     { return getMethod(signature<Args...>::get(name.c_str())); }
+    const MetaMethod* getMethod(const char *name, const std::vector<MetaType_ID> &params) const;
 
     std::size_t methodCount() const noexcept;
     const MetaMethod* getMethod(std::size_t index) const noexcept;
     void for_each_method(const enum_method_t &func) const;
 
     const MetaConstructor* getConstructor(const char *name) const;
+    const MetaConstructor* getConstructor(const std::string &name) const;
+    template<typename ...Args>
+    const MetaConstructor* getConstructor() const
+    { return getConstructor(signature<Args...>::get("constructor")); }
+
     std::size_t constructorCount() const noexcept;
     const MetaConstructor* defaultConstructor() const;
     const MetaConstructor* copyConstructor() const;
