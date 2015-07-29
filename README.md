@@ -1,8 +1,8 @@
 ﻿# rtti
 A try to add runtime reflection to C++ language.
 
-For now implemented meta namespaces, classes, constructors and enums.
-Support for meta methods and properties is coming  soon.
+For now implemented meta namespaces, classes, methods, constructors and enums.
+Support for meta properties is coming  soon.
 
 Library contains generic variant type, it supports user defined conversion, provided by metatype system.
 
