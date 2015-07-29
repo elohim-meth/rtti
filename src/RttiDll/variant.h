@@ -23,6 +23,10 @@ template<typename T,
 using is_inplace = std::integral_constant<bool, Small && Safe>;
 
 template<typename T>
+using is_inplace_t = typename is_inplace<T>::type;
+
+
+template<typename T>
 struct is_reference_wrapper: std::false_type
 {};
 
@@ -212,7 +216,7 @@ private:
 
     static ClassInfo info_selector(const variant_type_storage&, std::false_type, std::false_type)
     {
-        return ClassInfo();
+        return ClassInfo{};
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::true_type, std::false_type)
     {
@@ -220,12 +224,12 @@ private:
     }
     static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
     {
-        using registered_t = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
-        return info_selector_registered(value, registered_t());
+        using IsRegistered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
+        return info_selector_registered(value, IsRegistered{});
     }
     static ClassInfo info_selector_registered(const variant_type_storage&, std::false_type)
     {
-        return ClassInfo();
+        return ClassInfo{};
     }
     static ClassInfo info_selector_registered(const variant_type_storage &value, std::true_type)
     {
@@ -233,6 +237,7 @@ private:
         return (*ptr)->classInfo();
     }
 };
+
 template<typename T>
 inline const variant_function_table* function_table_for()
 {
@@ -297,11 +302,16 @@ public:
                  !std::is_same<variant, decay_t<T>>::value>
              ::type>
     variant(T &&value)
-        : variant{std::forward<T>(value), internal::is_inplace<T>{}}
+        : variant{std::forward<T>(value), internal::is_inplace_t<T>{}}
     {
         static constexpr bool valid = std::is_copy_constructible<T>::value;
         static_assert(valid, "The contained object must be CopyConstructible");
     }
+
+    template<typename T, std::size_t N>
+    variant(T (&value)[N])
+        : variant{std::forward<T*>(value), std::true_type{}}
+    {}
 
     template<typename T,
              typename = typename std::enable_if<
@@ -463,7 +473,7 @@ private:
             auto type = MetaType{self.typeId()};
             if (type.decayId() == metaTypeId<T>())
                 return true;
-            return invoke_for_class(self, IsClass{}, IsClassPtr{});
+            return invoke_for_class(self, type, IsClass{}, IsClassPtr{});
         }
 
     private:
@@ -472,20 +482,21 @@ private:
         using C = remove_pointer_t<T>;
 
         // nope
-        static bool invoke_for_class(const variant&, std::false_type, std::false_type)
+        static bool invoke_for_class(const variant&, MetaType,
+                                     std::false_type, std::false_type)
         { return false; }
         // class
-        static bool invoke_for_class(const variant &self, std::true_type, std::false_type)
+        static bool invoke_for_class(const variant &self, MetaType type,
+                                     std::true_type, std::false_type)
         {
-            auto type = MetaType{self.typeId()};
             if (type.isClass())
                 return invoke_imp(self);
             return false;
         }
         // class ptr
-        static bool invoke_for_class(const variant &self, std::false_type, std::true_type)
+        static bool invoke_for_class(const variant &self, MetaType type,
+                                     std::false_type, std::true_type)
         {
-            auto type = MetaType{self.typeId()};
             if (type.isClassPtr())
                 return invoke_imp(self);
             return false;
@@ -524,7 +535,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, IsClass{}, IsClassPtr{});
+               auto ptr = invoke_for_class(self, type, IsClass{}, IsClassPtr{});
                result = static_cast<T*>(ptr);
             }
 
@@ -545,7 +556,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, IsClass{}, IsClassPtr{});
+               auto ptr = invoke_for_class(self, type, IsClass{}, IsClassPtr{});
                result = static_cast<T*>(ptr);
             }
 
@@ -566,7 +577,7 @@ private:
                result = static_cast<T*>(self.raw_data_ptr());
             else
             {
-               auto ptr = invoke_for_class(self, IsClass{}, IsClassPtr{});
+               auto ptr = invoke_for_class(self, type, IsClass{}, IsClassPtr{});
                result = static_cast<T*>(ptr);
             }
 
@@ -579,20 +590,21 @@ private:
         using C = remove_pointer_t<T>;
 
         // nope
-        static void* invoke_for_class(const variant&, std::false_type, std::false_type)
+        static void* invoke_for_class(const variant&, MetaType,
+                                      std::false_type, std::false_type)
         { return nullptr; }
         // class
-        static void* invoke_for_class(const variant &self, std::true_type, std::false_type)
+        static void* invoke_for_class(const variant &self, MetaType type,
+                                      std::true_type, std::false_type)
         {
-            auto type = MetaType{self.typeId()};
             if (type.isClass())
                 return invoke_imp(self);
             return nullptr;
         }
         // class ptr
-        static void* invoke_for_class(const variant &self, std::false_type, std::true_type)
+        static void* invoke_for_class(const variant &self, MetaType type,
+                                      std::false_type, std::true_type)
         {
-            auto type = MetaType{self.typeId()};
             if (type.isClassPtr())
             {
                 auto ptr = invoke_imp(self);
