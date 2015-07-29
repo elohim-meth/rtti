@@ -56,16 +56,16 @@ public:
     using bad_cast::bad_cast;
 };
 
-class DLL_PUBLIC bad_variant_cast final: public bad_cast
+class DLL_PUBLIC bad_variant_cast: public bad_cast
 {
 public:
     using bad_cast::bad_cast;
 };
 
-class DLL_PUBLIC bad_variant_convert final: public bad_cast
+class DLL_PUBLIC bad_variant_convert final: public bad_variant_cast
 {
 public:
-    using bad_cast::bad_cast;
+    using bad_variant_cast::bad_variant_cast;
 };
 
 class DLL_PUBLIC bad_meta_cast final: public bad_cast

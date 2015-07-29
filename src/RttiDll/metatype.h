@@ -16,10 +16,6 @@ struct meta_type_tag {};
 using MetaType_ID = ID<meta_type_tag, std::uint32_t,
                        std::numeric_limits<std::uint32_t>::max()>;
 
-struct pointer_arity_tag {};
-using PointerArity = ID<pointer_arity_tag, std::uint8_t,
-                       std::numeric_limits<std::uint8_t>::max()>;
-
 // begin forward
 namespace internal {
 template<typename T> struct meta_type;
@@ -82,11 +78,15 @@ public:
     MetaType::TypeFlags typeFlags() const noexcept;
 
     bool isReference() const noexcept;
+    bool isLvalueReference() const noexcept;
+    bool isRvalueReference() const noexcept;
     bool isClass() const noexcept;
     bool isClassPtr() const noexcept;
-    PointerArity pointerArity() const noexcept;
+    bool isArray() const noexcept;
+    std::uint8_t pointerArity() const noexcept;
     static bool constCompatible(MetaType fromType, MetaType toType) noexcept;
 
+    static bool hasConverter(MetaType fromType, MetaType toType);
     static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
     template<typename From, typename To>
     static bool hasConverter();
@@ -107,7 +107,7 @@ public:
     static void unregisterConverter();
 private:
     static MetaType_ID registerMetaType(const char *name, std::size_t size,
-                                        MetaType_ID decay, PointerArity arity, uint8_t const_mask,
+                                        MetaType_ID decay, std::uint8_t arity, uint8_t const_mask,
                                         MetaType::TypeFlags flags);
 
     template<typename From, typename To, typename Func>
@@ -118,6 +118,7 @@ private:
     static bool registerConverter_imp(To(From::*func)(bool*) const);
     static bool registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
                                   const internal::ConvertFunctionBase &converter);
+    static bool convert(const void *from, MetaType fromType, void *to, MetaType toType);
     static bool convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId);
 
     const TypeInfo *m_typeInfo = nullptr;
@@ -176,7 +177,7 @@ class meta_type final
         const auto &name = type_name<T>();
         const auto flags = type_flags<T>::value;
         const auto size = sizeof(T);
-        const auto arity = PointerArity{pointer_arity<NoRef>::value};
+        const std::uint8_t arity = pointer_arity<Decay>::value;
         const std::uint8_t const_mask = const_bitset<NoRef>::value;
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags);
@@ -206,11 +207,19 @@ inline MetaType_ID metaTypeId()
 // Traits
 //--------------------------------------------------------------------------------------------------------------------------------
 
+inline bool MetaType::isLvalueReference() const noexcept
+{
+    return ((typeFlags() & LvalueReference) == LvalueReference);
+}
+
+inline bool MetaType::isRvalueReference() const noexcept
+{
+    return ((typeFlags() & RvalueReference) == RvalueReference);
+}
+
 inline bool MetaType::isReference() const noexcept
 {
-    auto flags = typeFlags();
-    return ((flags & LvalueReference) == LvalueReference) ||
-           ((flags & RvalueReference) == RvalueReference);
+    return (isLvalueReference() || isRvalueReference());
 }
 
 inline bool MetaType::isClass() const noexcept
@@ -223,9 +232,14 @@ inline bool MetaType::isClass() const noexcept
 inline bool MetaType::isClassPtr() const noexcept
 {
     auto flags = typeFlags();
-    return (pointerArity().value() == 1) &&
+    return (pointerArity() == 1) &&
            ((flags & Class) == Class) &&
             ((flags & Pointer) == Pointer);
+}
+
+inline bool MetaType::isArray() const noexcept
+{
+    return ((typeFlags() & Array) == Array);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------

@@ -342,10 +342,27 @@ void test_variant_1()
         using namespace rtti;
         auto q = new TestQPointer{"111"};
         variant v = std::ref(q);
+
         auto c = MetaClass::findByTypeId(metaTypeId<TestQPointer>()); assert(c);
         auto m = c->getMethod<const TestQPointer&>("value"); assert(m);
         auto s = m->invoke(v);
+        try {
+            s.value<std::string>() = "222"; // shoud throw
+            assert(false);
+        } catch (const bad_variant_cast &e) { std::printf("%s\n", e.what()); }
+
+        m = c->getMethod<TestQPointer&>("value"); assert(m);
+        s = m->invoke(v);
         s.value<std::string>() = "222";
+        assert(q->value() == "222");
+
+        const auto *q1 = q;
+        variant v1 = std::ref(q1);
+        try {
+            s = m->invoke(v1); //should throw
+            assert(false);
+        } catch (const bad_variant_cast &e) { std::printf("%s\n", e.what()); }
+
         delete q;
     }
 
@@ -377,8 +394,8 @@ void test_variant_1()
     {
         const A *a = new B{100};
         rtti::variant v = a;
-        assert(v.is<B*>() && v.is<const B*>());
-        assert(v.is<A*>() && v.is<const A*>());
+        assert(!v.is<B*>() && v.is<const B*>());
+        assert(!v.is<A*>() && v.is<const A*>());
         assert(!v.is<B>() && !v.is<const B>());
         assert(!v.is<A>() && !v.is<const A>());
         assert(!v.is<int*>() && !v.is<const int*>());

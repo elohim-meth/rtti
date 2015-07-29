@@ -635,7 +635,7 @@ public:
     template<typename ...B>
     this_t _base()
     {
-        static_assert(std::is_class<T>::value, "Base classes can be defined only for class types");
+        static_assert(std::is_class<T>::value, "Base class can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
 
         addBaseTypeList<type_list<B...>>(
@@ -748,6 +748,7 @@ private:
     struct check_is_class
     {
         static_assert(std::is_class<C>::value, "Type <C> is not a class");
+        static_assert(std::is_same<C, full_decay_t<C>>::value, "Type <C> is not a class");
         using type = C;
     };
 

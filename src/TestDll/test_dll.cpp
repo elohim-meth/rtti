@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
                 if (cc)
                 {
                     std::cout << "copy \n";
-                    auto vc = cc->invoke(v);
+                    const auto vc = cc->invoke(v);
                     auto mc = vec->moveConstructor();
                     if (mc)
                     {

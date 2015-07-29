@@ -134,8 +134,7 @@ void test_cast_1()
             assert(false);
         }
         catch(const bad_meta_cast &e)
-        {
-        }
+        {}
     }
 
     {
