@@ -332,8 +332,8 @@ void test_variant_1()
     std::printf("\n");
 
     {
-//        rtti::variant v3 = "Hello, World";
-//        auto q3 = v3.to<TestQPointer>();
+        rtti::variant v3 = "Hello, World";
+        auto q3 = v3.to<TestQPointer>();
     }
 
     std::printf("\n");

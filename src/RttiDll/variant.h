@@ -23,6 +23,10 @@ template<typename T,
 using is_inplace = std::integral_constant<bool, Small && Safe>;
 
 template<typename T>
+using is_inplace_t = typename is_inplace<T>::type;
+
+
+template<typename T>
 struct is_reference_wrapper: std::false_type
 {};
 
@@ -293,7 +297,7 @@ public:
                  !std::is_same<variant, decay_t<T>>::value>
              ::type>
     variant(T &&value)
-        : variant{std::forward<T>(value), internal::is_inplace<T>{}}
+        : variant{std::forward<T>(value), internal::is_inplace_t<T>{}}
     {
         static constexpr bool valid = std::is_copy_constructible<T>::value;
         static_assert(valid, "The contained object must be CopyConstructible");

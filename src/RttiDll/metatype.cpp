@@ -7,6 +7,7 @@
 #include <array>
 #include <unordered_map>
 #include <bitset>
+#include <memory>
 
 namespace rtti {
 
@@ -19,7 +20,7 @@ TypeInfo{CString{#NAME}, sizeof(NAME), \
          const_bitset<NAME>::value, \
          internal::type_flags<NAME>::value},
 
-static constexpr std::array<TypeInfo, 41> fundamentalTypes = {
+static constexpr std::array<TypeInfo, 38> fundamentalTypes = {
     TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, PointerArity{0}, 0, internal::type_flags<void>::value},
     FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
     };
@@ -42,7 +43,7 @@ public:
                             std::uint8_t const_mask, MetaType::TypeFlags flags);
 private:
     mutable std::mutex m_lock;
-    std::vector<TypeInfo> m_items;
+    std::vector<std::unique_ptr<TypeInfo>> m_items;
     std::unordered_map<CString, std::size_t> m_names;
 };
 
@@ -78,7 +79,7 @@ const TypeInfo* CustomTypes::getTypeInfo(MetaType_ID typeId) const
 
     std::lock_guard<std::mutex> lock{m_lock};
     if (type < m_items.size())
-        return &m_items[type];
+        return m_items[type].get();
 
     return nullptr;
 }
@@ -99,7 +100,7 @@ const TypeInfo* CustomTypes::getTypeInfo(const char *name) const
 
         index -= fundamentalTypes.size();
         if (index < m_items.size())
-            return &m_items[index];
+            return m_items[index].get();
     }
     return nullptr;
 }
@@ -116,7 +117,7 @@ inline MetaType_ID CustomTypes::addTypeInfo(const char *name, std::size_t size,
         decay = MetaType_ID{result};
 
     auto temp = CString{name};
-    m_items.emplace_back(temp, size, MetaType_ID{result}, decay, arity, const_mask, flags);
+    m_items.emplace_back(new TypeInfo{temp, size, MetaType_ID{result}, decay, arity, const_mask, flags});
     m_names.emplace(std::move(temp), result);
     return MetaType_ID{result};
 }
@@ -134,7 +135,7 @@ static inline CustomTypes& customTypes()
 //--------------------------------------------------------------------------------------------------------------------------------
 
 MetaType::MetaType(MetaType_ID typeId)
-    : m_typeInfo(customTypes().getTypeInfo(typeId))
+    : m_typeInfo{customTypes().getTypeInfo(typeId)}
 {}
 
 rtti::MetaType::MetaType(const char *name)
