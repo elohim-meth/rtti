@@ -60,10 +60,9 @@ int main(int argc, char* argv[])
         }
 
     } catch(const std::exception& e) {
-        std::cout << e.what() << std::endl;
+        LOG_RED(e.what());
     } catch (...) {
-        auto e = std::current_exception();
-        std::cout << "e.what()" << std::endl;
+        LOG_RED("Unknown exception!");
     }
 
     return 0;

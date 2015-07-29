@@ -49,6 +49,29 @@ private:
     std::map<CString, std::size_t> m_names;
 };
 
+template<typename T>
+inline void NamedVariantList::set(const char *name, T &&value)
+{
+    if (!name)
+        return;
+
+    std::lock_guard<std::mutex> lock{m_lock};
+    auto temp = CString{name};
+    auto search = m_names.find(temp);
+
+    if (search == std::end(m_names))
+    {
+        auto index = m_items.size();
+        m_items.emplace_back(temp, std::forward<T>(value));
+        m_names.emplace(std::move(temp), index);
+    }
+    else
+    {
+        auto index = search->second;
+        m_items.at(index).value = std::forward<T>(value);
+    }
+}
+
 template<typename F>
 inline void NamedVariantList::for_each(F &&func) const
 {

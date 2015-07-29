@@ -9,34 +9,7 @@ const std::string empty_string = {};
 
 namespace internal {
 
-//--------------------------------------------------------------------------------------------------------------------------------
-// NamedVariantList
-//--------------------------------------------------------------------------------------------------------------------------------
-
-template<typename T>
-inline void NamedVariantList::set(const char *name, T &&value)
-{
-    if (!name)
-        return;
-
-    std::lock_guard<std::mutex> lock{m_lock};
-    auto temp = CString{name};
-    auto search = m_names.find(temp);
-
-    if (search == std::end(m_names))
-    {
-        auto index = m_items.size();
-        m_items.emplace_back(temp, std::forward<T>(value));
-        m_names.emplace(std::move(temp), index);
-    }
-    else
-    {
-        auto index = search->second;
-        m_items.at(index).value = std::forward<T>(value);
-    }
-}
-
-inline const variant& NamedVariantList::get(std::size_t index) const noexcept
+const variant& NamedVariantList::get(std::size_t index) const noexcept
 {
     std::lock_guard<std::mutex> lock{m_lock};
     if (index < m_items.size())
@@ -44,7 +17,7 @@ inline const variant& NamedVariantList::get(std::size_t index) const noexcept
     return variant::empty_variant;
 }
 
-inline const variant& NamedVariantList::get(const char *name) const
+const variant& NamedVariantList::get(const char *name) const
 {
     if (name)
     {
@@ -61,7 +34,7 @@ inline const variant& NamedVariantList::get(const char *name) const
     return variant::empty_variant;
 }
 
-inline const std::string& NamedVariantList::name(std::size_t index) const noexcept
+const std::string& NamedVariantList::name(std::size_t index) const noexcept
 {
     std::lock_guard<std::mutex> lock{m_lock};
     if (index < m_items.size())

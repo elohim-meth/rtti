@@ -354,7 +354,7 @@ void test_variant_1()
         try {
             s.value<std::string>() = "222"; // shoud throw
             assert(false);
-        } catch (const bad_variant_cast &e) { std::printf("%s\n", e.what()); }
+        } catch (const bad_variant_cast &e) { LOG_RED(e.what()); }
 
         m = c->getMethod<TestQPointer&>("value"); assert(m);
         s = m->invoke(v);
@@ -366,7 +366,7 @@ void test_variant_1()
         try {
             s = m->invoke(v1); //should throw
             assert(false);
-        } catch (const bad_variant_cast &e) { std::printf("%s\n", e.what()); }
+        } catch (const bad_variant_cast &e) { LOG_RED(e.what()); }
 
         delete q;
     }
@@ -470,7 +470,7 @@ void test_variant_1()
         auto defC = mc->defaultConstructor(); assert(defC);
         try {
             auto obj = defC->invoke(0); assert(false);
-        } catch (const invoke_error &e) { std::printf("%s\n", e.what()); };
+        } catch (const invoke_error &e) { LOG_RED(e.what()); };
         auto obj = defC->invoke(); assert(obj);
         chkM->invoke(obj);
         assert(empM->invoke(obj).to<bool>());
@@ -484,7 +484,7 @@ void test_variant_1()
         auto copyC = mc->copyConstructor(); assert(copyC);
         try {
             auto copy = copyC->invoke("1234"); assert(false);
-        } catch (const bad_cast &e) { std::printf("%s\n", e.what()); };
+        } catch (const bad_cast &e) { LOG_RED(e.what()); };
         auto copy = copyC->invoke(obj); assert(copy);
         chkM->invoke(obj); chkM->invoke(copy);
         assert(!empM->invoke(copy).to<bool>());
@@ -493,7 +493,7 @@ void test_variant_1()
         auto moveC = mc->moveConstructor(); assert(moveC);
         try {
             auto move = moveC->invoke(copy); assert(false);
-        } catch (const bad_cast &e) { std::printf("%s\n", e.what()); };
+        } catch (const bad_cast &e) { LOG_RED(e.what()); };
         auto move = moveC->invoke(std::move(copy));
         chkM->invoke(move);
         assert(empM->invoke(copy).to<bool>());
