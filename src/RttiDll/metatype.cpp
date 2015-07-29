@@ -16,12 +16,12 @@ namespace {
 #define DEFINE_STATIC_TYPE_INFO(NAME, TYPEID) \
 TypeInfo{CString{#NAME}, sizeof(NAME), \
          MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, \
-         PointerArity{pointer_arity<NAME>::value}, \
+         pointer_arity<NAME>::value, \
          const_bitset<NAME>::value, \
          internal::type_flags<NAME>::value},
 
 static constexpr std::array<TypeInfo, 38> fundamentalTypes = {
-    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, PointerArity{0}, 0, internal::type_flags<void>::value},
+    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, std::uint8_t{0}, 0, internal::type_flags<void>::value},
     FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
     };
 
@@ -38,9 +38,9 @@ public:
 
     const TypeInfo* getTypeInfo(MetaType_ID typeId) const;
     const TypeInfo* getTypeInfo(const char *name) const;
-    MetaType_ID addTypeInfo(const char *name, std::size_t size,
-                            MetaType_ID decay, PointerArity arity,
-                            std::uint8_t const_mask, MetaType::TypeFlags flags);
+    const TypeInfo* addTypeInfo(const char *name, std::size_t size,
+                                MetaType_ID decay, std::uint8_t arity,
+                                std::uint8_t const_mask, MetaType::TypeFlags flags);
 private:
     mutable std::mutex m_lock;
     std::vector<std::unique_ptr<TypeInfo>> m_items;
@@ -105,21 +105,23 @@ const TypeInfo* CustomTypes::getTypeInfo(const char *name) const
     return nullptr;
 }
 
-inline MetaType_ID CustomTypes::addTypeInfo(const char *name, std::size_t size,
-                                            MetaType_ID decay, PointerArity arity,
+inline const TypeInfo* CustomTypes::addTypeInfo(const char *name, std::size_t size,
+                                            MetaType_ID decay, std::uint8_t arity,
                                             std::uint8_t const_mask, MetaType::TypeFlags flags)
 {
     std::lock_guard<std::mutex> lock{m_lock};
-    MetaType_ID::type result = fundamentalTypes.size() + m_items.size();
+    MetaType_ID::type type = fundamentalTypes.size() + m_items.size();
 
     // this means that decay_t<type> = type
     if (decay.value() == MetaType::InvalidTypeId)
-        decay = MetaType_ID{result};
+        decay = MetaType_ID{type};
 
     auto temp = CString{name};
-    m_items.emplace_back(new TypeInfo{temp, size, MetaType_ID{result}, decay, arity, const_mask, flags});
-    m_names.emplace(std::move(temp), result);
-    return MetaType_ID{result};
+    auto result = new TypeInfo{temp, size, MetaType_ID{type},
+                               decay, arity, const_mask, flags};
+    m_items.emplace_back(result);
+    m_names.emplace(std::move(temp), type);
+    return result;
 }
 
 static inline CustomTypes& customTypes()
@@ -183,11 +185,11 @@ MetaType::TypeFlags MetaType::typeFlags() const noexcept
     return result;
 }
 
-PointerArity MetaType::pointerArity() const noexcept
+std::uint8_t MetaType::pointerArity() const noexcept
 {
     if (m_typeInfo)
         return m_typeInfo->arity;
-    return PointerArity{};
+    return 0;
 }
 
 bool MetaType::constCompatible(MetaType fromType, MetaType toType) noexcept
@@ -199,12 +201,19 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType) noexcept
     if (arity != toType.m_typeInfo->arity)
         return false;
 
+    if (!toType.isReference())
+    {
+        if (!arity)
+            return true;
+        --arity;
+    }
+
     const auto from = std::bitset<8>{fromType.m_typeInfo->const_mask};
     const auto to = std::bitset<8>{toType.m_typeInfo->const_mask};
     if (from == to)
         return true;
 
-    for (auto i = 0; i <= arity.value(); ++i)
+    for (auto i = 0; i <= arity; ++i)
     {
         auto f = from.test(i);
         auto t = to.test(i);
@@ -214,7 +223,7 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType) noexcept
 
         if (!f & t)
         {
-            for (auto j = i + 1; j <= arity.value(); ++j)
+            for (auto j = i + 1; j <= arity; ++j)
                 if (!to.test(j))
                     return false;
             break;
@@ -224,11 +233,12 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType) noexcept
 }
 
 MetaType_ID MetaType::registerMetaType(const char *name, std::size_t size,
-                                       MetaType_ID decay, PointerArity arity,
+                                       MetaType_ID decay, std::uint8_t arity,
                                        std::uint8_t const_mask,
                                        MetaType::TypeFlags flags)
 {
-    return customTypes().addTypeInfo(name, size, decay, arity, const_mask, flags);
+    auto result = customTypes().addTypeInfo(name, size, decay, arity, const_mask, flags);
+    return result->type;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------

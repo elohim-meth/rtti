@@ -16,10 +16,6 @@ struct meta_type_tag {};
 using MetaType_ID = ID<meta_type_tag, std::uint32_t,
                        std::numeric_limits<std::uint32_t>::max()>;
 
-struct pointer_arity_tag {};
-using PointerArity = ID<pointer_arity_tag, std::uint8_t,
-                       std::numeric_limits<std::uint8_t>::max()>;
-
 // begin forward
 namespace internal {
 template<typename T> struct meta_type;
@@ -84,7 +80,7 @@ public:
     bool isReference() const noexcept;
     bool isClass() const noexcept;
     bool isClassPtr() const noexcept;
-    PointerArity pointerArity() const noexcept;
+    std::uint8_t pointerArity() const noexcept;
     static bool constCompatible(MetaType fromType, MetaType toType) noexcept;
 
     static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
@@ -107,7 +103,7 @@ public:
     static void unregisterConverter();
 private:
     static MetaType_ID registerMetaType(const char *name, std::size_t size,
-                                        MetaType_ID decay, PointerArity arity, uint8_t const_mask,
+                                        MetaType_ID decay, std::uint8_t arity, uint8_t const_mask,
                                         MetaType::TypeFlags flags);
 
     template<typename From, typename To, typename Func>
@@ -176,7 +172,7 @@ class meta_type final
         const auto &name = type_name<T>();
         const auto flags = type_flags<T>::value;
         const auto size = sizeof(T);
-        const auto arity = PointerArity{pointer_arity<Decay>::value};
+        const std::uint8_t arity = pointer_arity<Decay>::value;
         const std::uint8_t const_mask = const_bitset<NoRef>::value;
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags);
@@ -223,7 +219,7 @@ inline bool MetaType::isClass() const noexcept
 inline bool MetaType::isClassPtr() const noexcept
 {
     auto flags = typeFlags();
-    return (pointerArity().value() == 1) &&
+    return (pointerArity() == 1) &&
            ((flags & Class) == Class) &&
             ((flags & Pointer) == Pointer);
 }
