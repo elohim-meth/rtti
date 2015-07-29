@@ -176,7 +176,7 @@ class meta_type final
         const auto &name = type_name<T>();
         const auto flags = type_flags<T>::value;
         const auto size = sizeof(T);
-        const auto arity = PointerArity{pointer_arity<NoRef>::value};
+        const auto arity = PointerArity{pointer_arity<Decay>::value};
         const std::uint8_t const_mask = const_bitset<NoRef>::value;
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags);
