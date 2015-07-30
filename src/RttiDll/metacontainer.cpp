@@ -273,11 +273,6 @@ const MetaMethod *MetaContainer::getMethod(const std::string &name) const
     return getMethod(name.c_str());
 }
 
-const MetaMethod *MetaContainer::getMethod(const char *name, const std::vector<MetaType_ID> &params) const
-{
-    // TODO
-}
-
 std::size_t MetaContainer::methodCount() const noexcept
 {
     return count(mcatMethod);

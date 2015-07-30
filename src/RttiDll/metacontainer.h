@@ -48,7 +48,6 @@ public:
     template<typename ...Args>
     const MetaMethod* getMethod(const std::string &name) const
     { return getMethod(signature<Args...>::get(name.c_str())); }
-    const MetaMethod* getMethod(const char *name, const std::vector<MetaType_ID> &params) const;
 
     std::size_t methodCount() const noexcept;
     const MetaMethod* getMethod(std::size_t index) const noexcept;
