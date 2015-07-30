@@ -14,7 +14,6 @@ namespace rtti {
 // forward
 class variant;
 
-
 class DLL_PUBLIC argument final
 {
 public:

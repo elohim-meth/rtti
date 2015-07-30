@@ -5,10 +5,32 @@
 
 #include <debug.h>
 
+struct temp
+{
+//    temp() = default;
+//    temp(const temp&) = default;
+//    temp(temp&&) = default;
+//    temp(const temp&) = delete;
+//    temp(temp&&) = delete;
+//    ~temp() = default;
+//    ~temp() {}
+
+    std::size_t v = 256;
+};
+
 int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
+//        std::cout << std::boolalpha << rtti::has_move_constructor<temp>::value;
+//        std::cout << sizeof(rtti::variant);
+//        temp t1;
+//        temp t2 = std::move(t1);
+//        return 0;
+
+        rtti::variant v = std::ref("Hello, World");
+        std::cout << v.value<const char*>();
+
         register_rtti();
 
         test_cast_1();

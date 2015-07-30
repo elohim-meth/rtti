@@ -60,9 +60,9 @@ struct return_member_func {};
 
 template<typename F>
 using method_invoker_tag =
-conditional_t<std::is_same<typename function_traits<F>::result_type, void>::value,
-    conditional_t<std::is_same<typename function_traits<F>::class_type, void>::value, void_static_func, void_member_func>,
-    conditional_t<std::is_same<typename function_traits<F>::class_type, void>::value, return_static_func, return_member_func>>;
+conditional_t<std::is_void<typename function_traits<F>::result_type>::value,
+    conditional_t<std::is_void<typename function_traits<F>::class_type>::value, void_static_func, void_member_func>,
+    conditional_t<std::is_void<typename function_traits<F>::class_type>::value, return_static_func, return_member_func>>;
 
 template<typename F, typename Tag> struct method_invoker;
 
@@ -573,7 +573,7 @@ public:
 
     meta_define<void, this_t> _namespace(const char *name)
     {
-        static_assert(std::is_same<T, void>::value, "Namespace can be defined only in another namespace");
+        static_assert(std::is_void<T>::value, "Namespace can be defined only in another namespace");
         assert(m_currentContainer && m_currentContainer->category() == mcatNamespace && m_containerStack);
 
         m_containerStack->push(m_currentContainer);
@@ -592,7 +592,7 @@ public:
     {
         static_assert(std::is_class<C>::value, "Template argument <C> must be class");
         static_assert(!std::is_same<T, C>::value, "Recursive class definition");
-        static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
+        static_assert(std::is_void<T>::value || std::is_class<T>::value,
                       "Class can be defined in namespace or anther class");
         assert(m_currentContainer && m_containerStack);
 
@@ -622,7 +622,7 @@ public:
     template<typename F>
     this_t _lazy(F &&func)
     {
-        static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
+        static_assert(std::is_void<T>::value || std::is_class<T>::value,
                       "Deferred definition supported only for namespaces and class types");
 
         assert(m_currentContainer);
@@ -699,7 +699,7 @@ public:
     template<typename F>
     this_t _method(const char *name, F &&func)
     {
-        static_assert(std::is_same<T, void>::value || std::is_class<T>::value,
+        static_assert(std::is_void<T>::value || std::is_class<T>::value,
                       "Method can be defined in namespace or class");
         assert(m_currentContainer);
         MetaMethod::create(name, *m_currentContainer,
@@ -716,7 +716,7 @@ public:
 
     MB _end()
     {
-        static_assert(!std::is_same<MB, void>::value, "Container stack is EMPTY");
+        static_assert(!std::is_void<MB>::value, "Container stack is EMPTY");
         assert(m_containerStack && !m_containerStack->empty());
 
         m_currentContainer = m_containerStack->top();

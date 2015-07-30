@@ -2,6 +2,7 @@
 #define MISC_TRAITS_H
 
 #include <typelist.h>
+#include <sfinae.h>
 
 namespace rtti {
 
@@ -19,6 +20,9 @@ using decay_t = typename std::decay<T>::type;
 
 template<bool B, typename T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
+
+template<typename T>
+using is_array_t = typename std::is_array<T>::type;
 
 template<typename T>
 using is_class_t = typename std::is_class<T>::type;
@@ -166,6 +170,47 @@ conditional_t<
 
 template<typename T>
 using is_class_ptr_t = typename is_class_ptr<T>::type;
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+template<typename T, bool = std::is_class<T>::value>
+struct has_move_constructor;
+
+template<typename T>
+struct has_move_constructor<T, false>: std::is_move_constructible<T>
+{};
+
+template<typename T>
+struct only_copy_available
+{
+    template<typename U>
+    struct convert
+    {
+        convert() = default;
+        operator U&& ();
+        operator const U& ();
+    };
+
+    template<typename U>
+    static auto check(decltype(new U(convert<U>{}))) -> std::true_type;
+
+    template<typename U>
+    static auto check (const volatile U*) -> std::false_type;
+
+    using type = decltype(check<T>((T*)nullptr));
+    static constexpr bool value = type::value;
+};
+
+template<typename T>
+struct has_move_constructor<T, true>:
+    conditional_t<
+        std::is_trivially_move_constructible<T>::value ||
+        std::is_move_constructible<T>::value && !only_copy_available<T>::value,
+    std::true_type, std::false_type>
+{};
+
+template<typename T>
+using has_move_constructor_t = typename has_move_constructor<T>::type;
 
 } // namespace rtti
 
