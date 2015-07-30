@@ -200,6 +200,44 @@ struct function_table_selector<T, false, false>
     }
 };
 
+template<typename T, std::size_t N>
+struct function_table_selector<T[N], true, false>
+{
+    static MetaType_ID type() noexcept
+    {
+        return metaTypeId<T[N]>();
+    }
+};
+
+template<typename T, std::size_t N>
+struct function_table_selector<T[N], false, false>
+{
+    static MetaType_ID type() noexcept
+    {
+        return metaTypeId<T[N]>();
+    }
+
+    static void* access(const variant_type_storage &value) noexcept
+    {
+        auto ptr = static_cast<const T*>(value.ptr);
+        return const_cast<T*>(ptr);
+    }
+
+    static void clone(const variant_type_storage &src, variant_type_storage &dst)
+        noexcept(std::is_nothrow_copy_constructible<T>::value)
+    {
+        auto ptr = static_cast<const T*>(src.ptr);
+        dst.ptr = new T[N];
+        std::copy(ptr, ptr + N, dst.ptr);
+    }
+
+    static void destroy(variant_type_storage &value) noexcept
+    {
+        auto ptr = static_cast<const T*>(value.ptr);
+        delete[] ptr;
+    }
+};
+
 template<typename T>
 struct class_info_get
 {

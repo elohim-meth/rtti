@@ -36,6 +36,12 @@ template<typename T>
 using remove_cv_t = typename std::remove_cv<T>::type;
 
 template<typename T>
+using remove_extent_t = typename std::remove_extent<T>::type;
+
+template<typename T>
+using remove_all_extents_t = typename std::remove_all_extents<T>::type;
+
+template<typename T>
 using remove_pointer_t = typename std::remove_pointer<T>::type;
 
 template<typename T>
