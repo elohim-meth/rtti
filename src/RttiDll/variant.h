@@ -287,7 +287,8 @@ struct function_table_selector<T[N], false, false>
 // Since two pointer indirections when casting array<T> -> T*
 // we need to use temp storage and have no room for inplace
 template<typename T, std::size_t N>
-struct function_table_selector<T[N], true, false>: function_table_selector<T[N], false, false>
+struct function_table_selector<T[N], true, false>:
+       function_table_selector<T[N], false, false>
 {};
 
 //template<typename T, std::size_t N>

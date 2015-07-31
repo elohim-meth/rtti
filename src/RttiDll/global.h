@@ -1,5 +1,13 @@
-#ifndef GLOBAL_H
+﻿#ifndef GLOBAL_H
 #define GLOBAL_H
+
+#ifndef __GNUC__
+static_assert(false, "GCC is the only supported compiler");
+#else
+  #if __GNUC__ < 4 && __GNUC_MINOR__ < 9 && __GNUC_PATCHLEVEL__ < 2
+    static_assert(false, "GCC 4.9.2 is minimum compiler version");
+  #endif
+#endif
 
 #if defined(BUILD_SHARED)
   #if defined (_WIN32) || defined (__CYGWIN__)
