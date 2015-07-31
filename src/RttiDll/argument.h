@@ -92,6 +92,9 @@ private:
         auto fromType = MetaType{m_typeId};
         auto toType = MetaType{metaTypeId<T>()};
 
+        if (!fromType.isLvalueReference() && std::is_lvalue_reference<T>::value && !std::is_const<remove_reference_t<T>>::value)
+            throw bad_argument_cast{"Try to bind rvalue reference to non const lvalue reference"};
+
         if (fromType.decayId() == toType.decayId())
         {
             if (!MetaType::constCompatible(fromType, toType))
