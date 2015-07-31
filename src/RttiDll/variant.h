@@ -98,7 +98,7 @@ struct function_table_selector<T, true, false>
 
     static MetaType_ID type() noexcept
     {
-        return metaTypeId<T>();
+        return metaTypeId<remove_cv_t<T>>();
     }
 
     static void construct(variant_type_storage &storage, const void *value)
@@ -197,7 +197,7 @@ struct function_table_selector<T, false, false>
 
     static MetaType_ID type() noexcept
     {
-        return metaTypeId<T>();
+        return metaTypeId<remove_cv_t<T>>();
     }
 
     static void* access(const variant_type_storage &value) noexcept
@@ -241,7 +241,7 @@ struct function_table_selector<T[N], false, false>
 
     static MetaType_ID type() noexcept
     {
-        return metaTypeId<T[N]>();
+        return metaTypeId<remove_cv_t<T>[N]>();
     }
 
     static void* access(const variant_type_storage &value) noexcept

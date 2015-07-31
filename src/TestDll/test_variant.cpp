@@ -370,6 +370,14 @@ void test_variant_1()
             assert(false);
         } catch (const bad_variant_cast &e) { LOG_RED(e.what()); }
 
+        variant v2 = q;
+        s = m->invoke(v2); //shouldn't throw
+
+        variant v3 = q1;
+        try {
+            s = m->invoke(v3); //should throw
+            assert(false);
+        } catch (const bad_variant_cast &e) { LOG_RED(e.what()); }
         delete q;
     }
 
@@ -407,6 +415,26 @@ void test_variant_1()
         assert(!v.is<A>() && !v.is<const A>());
         assert(!v.is<int*>() && !v.is<const int*>());
         delete a;
+    }
+
+    {
+        const B b{100};
+        rtti::variant v = b;
+        assert(!v.is<B*>() && !v.is<const B*>());
+        assert(!v.is<A*>() && !v.is<const A*>());
+        assert(v.is<B>() && v.is<const B>());
+        assert(v.is<A>() && v.is<const A>());
+        assert(!v.is<int*>() && !v.is<const int*>());
+    }
+
+    {
+        const B b{100};
+        rtti::variant v = std::ref(b);
+        assert(!v.is<B*>() && !v.is<const B*>());
+        assert(!v.is<A*>() && !v.is<const A*>());
+        assert(v.is<B>() && !v.is<B&>() && v.is<const B>() && v.is<const B&>());
+        assert(v.is<A>() && !v.is<A&>() && v.is<const A>() && v.is<const A&>());
+        assert(!v.is<int*>() && !v.is<int&>() && !v.is<const int*>() && !v.is<const int&>());
     }
 
     auto lambda = [] (const rtti::variant &v)

@@ -36,25 +36,25 @@ int main(int argc, char* argv[])
         testNS->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto m = gNS->getMethod("test_method");
-        if (m)
-            m->invoke("Hello, World");
-        m = gNS->getMethod<int>("test_method");
-        if (m)
-            m->invoke(256);
-
-
-        auto mt = rtti::MetaType{type_name<std::vector<int>>().c_str()};
-        auto vec = rtti::MetaClass::findByTypeId(mt.typeId());
-        if (vec)
         {
-            std::cout << vec->qualifiedName() << std::endl;
-            auto construct = vec->getConstructor("range1");
-            if (construct)
-            {
-                int a[] = {1,2,3,4,5};
-                auto v = construct->invoke(std::begin(a), std::end(a));
-            }
+            auto prop = gNS->getProperty("global_string"); assert(prop);
+            std::cout << prop->qualifiedName() << std::endl;
+            prop->set(std::string{"Qwerty"});
+            assert(prop->get().value<const std::string>() == "Qwerty");
+
+            const auto v = prop->get();
+            assert(v.value<std::string>() == "Qwerty");
+            prop->set(std::string{"YouTube"});
+            assert(v.value<std::string>() == "YouTube");
+        }
+
+        {
+            auto prop = gNS->getProperty("global_readonly_string"); assert(prop);
+            std::cout << prop->qualifiedName() << std::endl;
+            const auto v = prop->get();
+            assert(v.value<std::string>() == "Hello, World");
+            try { prop->set(std::string{"Qwerty"}); assert(false);
+            } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
         }
 
         test_cast_1();

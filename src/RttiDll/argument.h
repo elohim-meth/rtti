@@ -35,6 +35,11 @@ public:
         return m_data == nullptr;
     }
 
+    MetaType_ID typeId() const noexcept
+    {
+        return m_typeId;
+    }
+
     template<typename T>
     T value() const
     {

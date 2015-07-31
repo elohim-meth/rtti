@@ -571,7 +571,7 @@ struct property_invoker<P, static_pointer>
     { return metaTypeId<T>(); }
 
     static variant get_static(P property)
-    { return *property; }
+    { return std::ref(*const_cast<const T*>(property)); }
 
     static void set_static(P property, const argument &arg)
     {
@@ -595,7 +595,11 @@ private:
 
     static void set_static_selector(P property, const argument &arg, std::false_type)
     {
-        *property = arg.value<T>();
+        auto argType = MetaType{arg.typeId()};
+        if (argType.isLvalueReference())
+            *property = arg.value<T&>();
+        else
+            *property = arg.value<T&&>();
     }
 };
 
@@ -620,7 +624,7 @@ struct property_invoker<P, member_pointer>
         if (type.isClass())
             return std::ref(instance.value<const C>().*property);
         else if (type.isClassPtr())
-            return std::ref(instance.value<const C*>()->*property);
+            return std::ref(instance.to<const C*>()->*property);
         return variant::empty_variant;
     }
 
@@ -642,10 +646,21 @@ private:
     static void set_field_selector(P property, variant &instance, const argument &arg, std::false_type)
     {
         auto type = MetaType{instance.typeId()};
+        auto argType = MetaType{arg.typeId()};
         if (type.isClass())
-            instance.value<C>().*property = arg.value<property_type_t<P>>();
+        {
+            if (argType.isLvalueReference())
+                instance.value<C>().*property = arg.value<T&>();
+            else
+                instance.value<C>().*property = arg.value<T&&>();
+        }
         else if (type.isClassPtr())
-            instance.value<C*>()->*property = arg.value<property_type_t<P>>();
+        {
+            if (argType.isLvalueReference())
+                instance.to<C*>()->*property = arg.value<T&>();
+            else
+                instance.to<C*>()->*property = arg.value<T&&>();
+        }
     }
 };
 
