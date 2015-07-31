@@ -137,7 +137,9 @@ template <typename T>
 struct type_flags {
     using Flags = MetaType::TypeFlags;
     using no_ref = remove_reference_t<T>;
-    using no_ptr = remove_all_pointers_t<T>;
+    using no_ptr = conditional_t<std::is_array<T>::value,
+                                 remove_all_extents_t<T>,
+                                 remove_all_pointers_t<T>>;
     static const Flags value = static_cast<Flags>(
         (std::is_pointer<no_ref>::value ? Flags::Pointer : Flags::None) |
         (std::is_member_pointer<no_ref>::value ? Flags::MemberPointer : Flags::None) |

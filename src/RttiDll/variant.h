@@ -237,6 +237,7 @@ template<typename T, std::size_t N>
 struct function_table_selector<T[N], false, false>
 {
     using Decay = full_decay_t<T>;
+    using Allocator = std::allocator<Decay>;
 
     static MetaType_ID type() noexcept
     {
@@ -252,8 +253,9 @@ struct function_table_selector<T[N], false, false>
 
     static void construct(variant_type_storage &storage, const void *value)
     {
+        auto alloc = Allocator{};
         auto from = static_cast<const Decay*>(value);
-        auto to = static_cast<Decay*>(::operator new(N * sizeof(T)));
+        auto to = alloc.allocate(N);
         std::copy(from, from + N, to);
         storage.ptr = to;
         storage.temp = nullptr;
@@ -275,8 +277,10 @@ struct function_table_selector<T[N], false, false>
 
     static void destroy(variant_type_storage &value) noexcept
     {
+        auto alloc = Allocator{};
         auto ptr = static_cast<const Decay*>(value.ptr);
-        delete[] ptr;
+        std::_Destroy(ptr, ptr + N);
+        alloc.deallocate(const_cast<Decay*>(ptr), N);
     }
 };
 
