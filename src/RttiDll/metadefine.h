@@ -53,7 +53,6 @@ private:
     F m_func;
 };
 
-
 struct void_static_func{};
 struct return_static_func{};
 struct void_member_func {};
@@ -532,21 +531,153 @@ private:
     }
 };
 
+template<typename P> struct property_type;
+
+template<typename P>
+struct property_type<P*>: identity<P>
+{};
+
+template<typename C, typename T>
+struct property_type<T (C::*)>: identity<T>
+{};
+
+template<typename P>
+using property_type_t = typename property_type<P>::type;
+
+template<typename P> struct property_class;
+
+template<typename C, typename T>
+struct property_class<T (C::*)>: identity<C>
+{};
+
+template<typename P>
+using property_class_t = typename property_class<P>::type;
+
 struct static_pointer{};
 struct member_pointer{};
 
-template<typename P, typename G, typename S, typename Tag> struct property_invoker;
+template<typename P>
+using property_invoker_tag = conditional_t<std::is_member_pointer<P>::value, member_pointer, static_pointer>;
+
+template<typename P, typename Tag> struct property_invoker;
 
 template<typename P>
-struct property_invoker<P, void, void, static_pointer>
+struct property_invoker<P, static_pointer>
 {
+    static bool isStatic() noexcept
+    { return true; }
 
+    static MetaType_ID typeId()
+    { return metaTypeId<T>(); }
+
+    static variant get_static(P property)
+    { return *property; }
+
+    static void set_static(P property, const argument &arg)
+    {
+        set_static_selector(property, arg, IsReadOnly{});
+    }
+
+    static variant get_field(P, const variant&)
+    { assert(false); return variant::empty_variant; }
+
+    static void set_field(P, variant&, const argument&)
+    { assert(false); }
+
+private:
+    using T = property_type_t<P>;
+    using IsReadOnly = is_const_t<T>;
+
+    static void set_static_selector(P, const argument&, std::true_type)
+    {
+        throw invoke_error{"Write to readonly property"};
+    }
+
+    static void set_static_selector(P property, const argument &arg, std::false_type)
+    {
+        *property = arg.value<T>();
+    }
 };
 
 template<typename P>
-struct property_invoker<P, const P& (*)(), void, static_pointer>
+struct property_invoker<P, member_pointer>
 {
+    static bool isStatic() noexcept
+    { return false; }
 
+    static MetaType_ID typeId()
+    { return metaTypeId<T>(); }
+
+    static variant get_static(P)
+    { assert(false); return variant::empty_variant; }
+
+    static void set_static(P, const argument&)
+    { assert(false); }
+
+    static variant get_field(P property, const variant &instance)
+    {
+        auto type = MetaType{instance.typeId()};
+        if (type.isClass())
+            return std::ref(instance.value<const C>().*property);
+        else if (type.isClassPtr())
+            return std::ref(instance.value<const C*>()->*property);
+        return variant::empty_variant;
+    }
+
+    static void set_field(P property, variant &instance, const argument &arg)
+    {
+        set_field_selector(property, instance, arg, IsReadOnly{});
+    }
+
+private:
+    using C = property_class_t<P>;
+    using T = property_type_t<P>;
+    using IsReadOnly = is_const_t<T>;
+
+    static void set_field_selector(P, variant&, const argument&, std::true_type)
+    {
+        throw invoke_error{"Write to readonly property"};
+    }
+
+    static void set_field_selector(P property, variant &instance, const argument &arg, std::false_type)
+    {
+        auto type = MetaType{instance.typeId()};
+        if (type.isClass())
+            instance.value<C>().*property = arg.value<property_type_t<P>>();
+        else if (type.isClassPtr())
+            instance.value<C*>()->*property = arg.value<property_type_t<P>>();
+    }
+};
+
+template<typename P>
+struct PropertyInvoker: IPropertyInvoker
+{
+    using invoker_t = property_invoker<P, property_invoker_tag<P>>;
+
+    PropertyInvoker(P prop) noexcept
+        : m_prop(prop)
+    {}
+
+    bool isStatic() const override
+    { return invoker_t::isStatic(); }
+
+    MetaType_ID typeId() const override
+    { return invoker_t::typeId(); }
+
+    variant get_static() const override
+    { return invoker_t::get_static(m_prop); }
+
+    void set_static(const argument &arg) const override
+    { invoker_t::set_static(m_prop, arg); }
+
+    variant get_field(const variant &instance) const override
+    { return invoker_t::get_field(m_prop, const_cast<variant&>(instance)); }
+
+    void set_field(const variant &instance, const argument &arg) const override
+    { invoker_t::set_field(m_prop, const_cast<variant&>(instance), arg); }
+
+private:
+    P m_prop;
 };
 
 } // namespace internal
@@ -715,6 +846,18 @@ public:
         return _method(name.c_str(), std::forward<F>(func));
     }
 
+    template<typename P>
+    this_t _property(const char *name, P &&prop)
+    {
+        static_assert(std::is_void<T>::value || std::is_class<T>::value,
+                      "Propery can be defined in namespace or class");
+        assert(m_currentContainer);
+        MetaProperty::create(name, *m_currentContainer,
+                           std::unique_ptr<IPropertyInvoker>{
+                                new internal::PropertyInvoker<decay_t<P>>{std::forward<P>(prop)}});
+        return std::move(*this);
+    }
+
     MB _end()
     {
         static_assert(!std::is_void<MB>::value, "Container stack is EMPTY");
@@ -789,7 +932,8 @@ private:
     template<typename L>
     void register_converting_constructor(std::true_type)
     {
-        MetaType::registerConverter(&internal::constructor_convert<typename typelist_get<L, 0>::type, T>);
+        using Arg = full_decay_t<typelist_get_t<L, 0>>;
+        MetaType::registerConverter(&internal::constructor_convert<Arg, T>);
     }
 
     template<typename> friend class internal::DefinitionCallbackHolder;

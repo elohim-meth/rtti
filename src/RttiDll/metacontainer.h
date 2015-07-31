@@ -28,6 +28,12 @@ struct DLL_PUBLIC IDefinitionCallbackHolder
 class DLL_PUBLIC MetaContainer: public MetaItem
 {
 public:
+    enum class ForceDeferred
+    {
+        SelfOnly = 0,
+        Recursive = 1
+    };
+
     using enum_class_t = std::function<bool(const MetaClass*)>;
     using enum_method_t = std::function<bool(const MetaMethod*)>;
 
@@ -74,6 +80,7 @@ public:
     std::size_t enumCount() const noexcept;
     const MetaEnum* getEnum(std::size_t index) const noexcept;
 
+    void forceDeferredDefine(ForceDeferred type) const;
 protected:
     explicit MetaContainer(const char *name, const MetaContainer &owner);
     explicit MetaContainer(MetaContainerPrivate &value);
@@ -87,6 +94,7 @@ protected:
     void checkDeferredDefine() const override;
 
     virtual const MetaMethod* getMethodInternal(const char *name) const;
+    virtual const MetaProperty* getPropertyInternal(const char *name) const;
 
 private:
     DECLARE_PRIVATE(MetaContainer)

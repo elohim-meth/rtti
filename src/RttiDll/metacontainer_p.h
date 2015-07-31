@@ -47,7 +47,7 @@ template<typename F>
 inline void MetaItemList::for_each(F &&func) const
 {
     std::lock_guard<std::mutex> lock{m_lock};
-    for(const auto &item: m_items)
+    for(auto &item: m_items)
     {
         if (!func(item.get()))
             break;

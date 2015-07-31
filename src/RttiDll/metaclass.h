@@ -39,6 +39,7 @@ protected:
     void* cast(const MetaClass *base, const void *instance) const;
 
     const MetaMethod* getMethodInternal(const char *name) const override;
+    const MetaProperty* getPropertyInternal(const char *name) const override;
 private:
     DECLARE_PRIVATE(MetaClass)
     template<typename, typename> friend class rtti::meta_define;

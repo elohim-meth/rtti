@@ -29,16 +29,16 @@ void define_test_namespace(rtti::meta_define<void> define)
     ;
 }
 
-void define_std_string(rtti::meta_define<std::string> define)
-{
-    define
-        ._constructor<const char*>()
-        ._constructor<const char*, std::size_t>()
-    ;
-}
-
 struct define_std_namespace
 {
+    static void define_std_string(rtti::meta_define<std::string> define)
+    {
+        define
+            ._constructor<const char*>()
+            ._constructor<const char*, std::size_t>()
+        ;
+    }
+
     void operator()(rtti::meta_define<void> define)
     {
         define
@@ -84,18 +84,10 @@ bool register_fromString_converter()
     return rtti::MetaType::registerConverter<std::string, To>(lambda);
 }
 
-void test_method(const char *)
-{ PRINT_PRETTY_FUNC }
+std::string global_string = "";
+const std::string global_readonly_string = "Hello, World";
 
-void test_method(int)
-{ PRINT_PRETTY_FUNC }
-
-test::Small test_return(std::int8_t value)
-{
-    return test::Small(value);
-}
-
-}
+} // namespace
 
 void register_rtti()
 {
@@ -104,9 +96,8 @@ void register_rtti()
         ._attribute("Attribute 1", std::string{"standard string object"})
         ._attribute("Attribute 2", true)
         ._attribute("Attribute 3", 3.14)
-        ._method<void(const char*)>("test_method", &test_method)
-        ._method<void(int)>("test_method", &test_method)
-        ._method("test_return", &test_return)
+        ._property("global_string", &global_string)
+        ._property("global_readonly_string", &global_readonly_string)
 
         ._namespace("test")
             ._lazy(define_test_namespace)
@@ -123,6 +114,15 @@ void register_rtti()
 
     // default
     rtti::MetaType::registerConverter<char*, std::string>();
+    rtti::MetaType::registerConverter<bool, char>();
+    rtti::MetaType::registerConverter<int, unsigned int>();
+    rtti::MetaType::registerConverter<unsigned int, int>();
+    rtti::MetaType::registerConverter<int, long int>();
+    rtti::MetaType::registerConverter<long int, int>();
+    rtti::MetaType::registerConverter<int, long long int>();
+    rtti::MetaType::registerConverter<float, double>();
+    rtti::MetaType::registerConverter<float, long double>();
+    rtti::MetaType::registerConverter<double, long double>();
 
     // std::to_string
     register_toString_converter<int>();
@@ -143,7 +143,43 @@ void register_rtti()
                 {
                     return std::stoi(value);
                 });
+    rtti::MetaType::registerConverter<std::string, long>(
+                [] (const std::string &value)
+                {
+                    return std::stol(value);
+                });
+    rtti::MetaType::registerConverter<std::string, unsigned long>(
+                [] (const std::string &value)
+                {
+                    return std::stoul(value);
+                });
+    rtti::MetaType::registerConverter<std::string, long long>(
+                [] (const std::string &value)
+                {
+                    return std::stoll(value);
+                });
+    rtti::MetaType::registerConverter<std::string, unsigned long long>(
+                [] (const std::string &value)
+                {
+                    return std::stoull(value);
+                });
+    rtti::MetaType::registerConverter<std::string, float>(
+                [] (const std::string &value)
+                {
+                    return std::stof(value);
+                });
+    rtti::MetaType::registerConverter<std::string, double>(
+                [] (const std::string &value)
+                {
+                    return std::stod(value);
+                });
+    rtti::MetaType::registerConverter<std::string, long double>(
+                [] (const std::string &value)
+                {
+                    return std::stold(value);
+                });
 
+    // std::ostringstream
     register_fromString_converter<bool>();
 
 }

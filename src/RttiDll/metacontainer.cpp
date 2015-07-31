@@ -106,9 +106,9 @@ MetaContainer::MetaContainer(MetaContainerPrivate &value)
 void MetaContainer::setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback)
 {
     auto d = d_func();
-    assert(!d->m_deferredDefine);
     if (d->m_deferredDefine)
-        return;
+        throw definition_error{"Metacontainer " + qualifiedName() +
+                               " already has deferred definition"};
     d->m_deferredDefine = std::move(callback);
 }
 
@@ -125,6 +125,28 @@ void MetaContainer::checkDeferredDefine() const
     };
 
     d->m_deferredDefine->invoke(*const_cast<MetaContainer*>(this));
+}
+
+void MetaContainer::forceDeferredDefine(ForceDeferred type) const
+{
+    if (type == ForceDeferred::SelfOnly)
+        checkDeferredDefine();
+    else if (type == ForceDeferred::Recursive)
+    {
+        checkDeferredDefine();
+        auto d = d_func();
+        d->m_classes.for_each([](MetaItem *item)
+        {
+            static_cast<const MetaClass*>(item)->forceDeferredDefine(ForceDeferred::Recursive);
+            return true;
+        });
+
+        d->m_namespaces.for_each([](const MetaItem *item)
+        {
+            static_cast<const MetaContainer*>(item)->forceDeferredDefine(ForceDeferred::Recursive);
+            return true;
+        });
+    }
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -331,9 +353,14 @@ void MetaContainer::for_each_method(const enum_method_t &func) const
 // Property
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const MetaProperty* MetaContainer::getProperty(const char *name) const
+const rtti::MetaProperty* MetaContainer::getPropertyInternal(const char *name) const
 {
     return static_cast<const MetaProperty*>(item(mcatProperty, name));
+}
+
+const MetaProperty* MetaContainer::getProperty(const char *name) const
+{
+    return getPropertyInternal(name);
 }
 
 std::size_t MetaContainer::propertyCount() const noexcept

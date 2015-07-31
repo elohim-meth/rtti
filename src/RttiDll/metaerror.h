@@ -14,25 +14,25 @@ public:
     using base_t::base_t;
 };
 
-class DLL_PUBLIC unregistered_metaclass: public runtime_error
+class DLL_PUBLIC definition_error: public runtime_error
 {
 public:
     using runtime_error::runtime_error;
 };
 
-class DLL_PUBLIC duplicate_metaclass: public runtime_error
+class DLL_PUBLIC unregistered_metaclass: public definition_error
 {
 public:
-    using runtime_error::runtime_error;
+    using definition_error::definition_error;
+};
+
+class DLL_PUBLIC duplicate_metaclass: public definition_error
+{
+public:
+    using definition_error::definition_error;
 };
 
 class DLL_PUBLIC invalid_metatype_id: public runtime_error
-{
-public:
-    using runtime_error::runtime_error;
-};
-
-class DLL_PUBLIC invalid_meta_define: public runtime_error
 {
 public:
     using runtime_error::runtime_error;

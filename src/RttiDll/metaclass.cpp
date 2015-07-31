@@ -21,7 +21,7 @@ MetaClass::MetaClass(const char *name, const MetaContainer &owner, MetaType_ID t
     auto &metaClass = const_cast<TypeInfo*>(type.m_typeInfo)->metaClass;
     if (metaClass)
         throw duplicate_metaclass{std::string{"Class "} + type.typeName()
-                + " already registered with name: " + metaClass->name()};
+                + " already registered as: " + metaClass->qualifiedName()};
     metaClass = this;
 }
 
@@ -180,6 +180,8 @@ void* MetaClass::cast(const MetaClass *base, const void *instance) const
 
 const MetaMethod* MetaClass::getMethodInternal(const char *name) const
 {
+    using item_t = internal::BaseClassList::item_t;
+
     if (!name)
         return nullptr;
     auto result = MetaContainer::getMethodInternal(name);
@@ -188,11 +190,38 @@ const MetaMethod* MetaClass::getMethodInternal(const char *name) const
 
     auto d = d_func();
     auto found = false;
-    d->m_baseClasses.for_each([&result, name, &found](const internal::BaseClassList::item_t &item)
+    d->m_baseClasses.for_each([&result, name, &found](const item_t &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
         result = directBase->getMethodInternal(name);
+        if (result)
+        {
+            found = true;
+            return false;
+        }
+        return true;
+    });
+    return (found ? result : nullptr);
+}
+
+const MetaProperty* MetaClass::getPropertyInternal(const char *name) const
+{
+    using item_t = internal::BaseClassList::item_t;
+
+    if (!name)
+        return nullptr;
+    auto result = MetaContainer::getPropertyInternal(name);
+    if (result)
+        return result;
+
+    auto d = d_func();
+    auto found = false;
+    d->m_baseClasses.for_each([&result, name, &found](const item_t &item)
+    {
+        auto directBase = findByTypeId(item.first);
+        assert(directBase);
+        result = directBase->getPropertyInternal(name);
         if (result)
         {
             found = true;

@@ -9,15 +9,7 @@ int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
-//        std::cout << std::boolalpha << rtti::has_move_constructor<temp>::value;
-//        temp t1;
-//        temp t2 = std::move(t1);
-//        return 0;
-
         register_rtti();
-
-        test_cast_1();
-        test_variant_1();
 
         auto lambda = [](const std::string &name, const rtti::variant &value)
         {
@@ -25,28 +17,29 @@ int main(int argc, char* argv[])
             return true;
         };
 
-        auto gn = rtti::MetaNamespace::global();
-        std::cout << "namespace " << gn->name() << std::endl;
-        std::cout << "Attribute count: " << gn->attributeCount() << std::endl;
-        gn->for_each_attribute(lambda);
+        auto gNS = rtti::MetaNamespace::global(); assert(gNS);
+        //gNS->forceDeferredDefine(rtti::MetaContainer::ForceDeferred::Recursive);
+        std::cout << "namespace " << gNS->name() << std::endl;
+        std::cout << "Attribute count: " << gNS->attributeCount() << std::endl;
+        gNS->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto sn = gn->getNamespace("std");
-        std::cout << "namespace " << sn->qualifiedName() << std::endl;
-        std::cout << "Attribute count: " << sn->attributeCount() << std::endl;
-        sn->for_each_attribute(lambda);
+        auto stdNS = gNS->getNamespace("std"); assert(stdNS);
+        std::cout << "namespace " << stdNS->qualifiedName() << std::endl;
+        std::cout << "Attribute count: " << stdNS->attributeCount() << std::endl;
+        stdNS->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto tn = gn->getNamespace("test");
-        std::cout << "namespace " << tn->qualifiedName() << std::endl;
-        std::cout << "Attribute count: " << tn->attributeCount() << std::endl;
-        tn->for_each_attribute(lambda);
+        auto testNS = gNS->getNamespace("test"); assert(testNS);
+        std::cout << "namespace " << testNS->qualifiedName() << std::endl;
+        std::cout << "Attribute count: " << testNS->attributeCount() << std::endl;
+        testNS->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto m = gn->getMethod("test_method");
+        auto m = gNS->getMethod("test_method");
         if (m)
             m->invoke("Hello, World");
-        m = gn->getMethod<int>("test_method");
+        m = gNS->getMethod<int>("test_method");
         if (m)
             m->invoke(256);
 
@@ -63,6 +56,9 @@ int main(int argc, char* argv[])
                 auto v = construct->invoke(std::begin(a), std::end(a));
             }
         }
+
+        test_cast_1();
+        test_variant_1();
 
     } catch(const std::exception& e) {
         LOG_RED(e.what());

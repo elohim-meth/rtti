@@ -28,6 +28,9 @@ template<typename T>
 using is_class_t = typename std::is_class<T>::type;
 
 template<typename T>
+using is_const_t = typename std::is_const<T>::type;
+
+template<typename T>
 using is_reference_t = typename std::is_reference<T>::type;
 
 template<typename T>

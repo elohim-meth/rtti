@@ -197,6 +197,7 @@ public:
         return std::to_string(value);
     }
 
+    int m_prop = 256;
 private:
     int a = -1;
 };
@@ -279,6 +280,7 @@ void register_classes()
                 ._method("setA", &A::setA)
                 ._method<std::string(A::*)(int) const>("overload_on_const", &A::overload_on_const)
                 ._method<std::string(A::*)(int)>("overload_on_const", &A::overload_on_const)
+                ._property("prop", &A::m_prop)
             ._end()
             ._class<B>("B")._base<A>()._end()
             ._class<TestQPointer>("TestQPointer")
@@ -409,30 +411,36 @@ void test_variant_1()
 
     auto lambda = [] (const rtti::variant &v)
     {
-        auto c = rtti::MetaClass::findByTypeId(v.classInfo().typeId); assert(c);
-        auto getA = c->getMethod("getA"); assert(getA);
-        auto r = getA->invoke(v); assert(r.to<int>() == 100);
+        auto MC = rtti::MetaClass::findByTypeId(v.classInfo().typeId); assert(MC);
+        auto getaM = MC->getMethod("getA"); assert(getaM);
+        auto r = getaM->invoke(v); assert(r.to<int>() == 100);
 
         r = 256;
-        auto setA = c->getMethod("setA"); assert(setA);
-        setA->invoke(v, r);
-        r = getA->invoke(v); assert(r.value<int>() == 256);
+        auto setaM = MC->getMethod("setA"); assert(setaM);
+        setaM->invoke(v, r);
+        r = getaM->invoke(v); assert(r.value<int>() == 256);
 
-        auto print = c->getMethod("print"); assert(print);
+        auto print = MC->getMethod("print"); assert(print);
         print->invoke(v);
 
         {
-            auto m = c->getMethod<A&, int>("overload_on_const"); assert(m);
-            auto r = m->invoke(v, 200); assert(r.value<std::string>() == "200");
+            auto overM = MC->getMethod<A&, int>("overload_on_const"); assert(overM);
+            auto r = overM->invoke(v, 200); assert(r.value<std::string>() == "200");
         }
 
         {
-            auto m = c->getMethod<const A&, int>("overload_on_const"); assert(m);
-            auto r = m->invoke(v, 300); assert(r.value<std::string>() == "300");
+            auto overM = MC->getMethod<const A&, int>("overload_on_const"); assert(overM);
+            auto r = overM->invoke(v, 300); assert(r.value<std::string>() == "300");
         }
 
-        r = getA->invoke(v); assert(r.value<int>() == 200);
+        r = getaM->invoke(v); assert(r.value<int>() == 200);
         print->invoke(v);
+
+        {
+            auto propP = MC->getProperty("prop"); assert(propP);
+            auto r = propP->get(v);
+            propP->set(v, 100);
+        }
 
     };
 

@@ -13,10 +13,6 @@ MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
     if (!constructor)
         return nullptr;
 
-    auto category = owner.category();
-    if (category != mcatClass)
-        throw invalid_meta_define{"Constructor can be defined only for class types"};
-
     auto temp = name ? std::string{name} : constructor->signature();
     auto result = const_cast<MetaConstructor*>(owner.getConstructor(temp.c_str()));
     if (!result)
