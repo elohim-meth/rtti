@@ -16,6 +16,7 @@ class MetaNamespace;
 class MetaClass;
 class MetaConstructor;
 class MetaMethod;
+class MetaProperty;
 class MetaEnum;
 
 struct DLL_PUBLIC IDefinitionCallbackHolder
@@ -39,6 +40,18 @@ public:
     const MetaClass* getClass(std::size_t index) const noexcept;
     void for_each_class(const enum_class_t &func) const;
 
+    const MetaConstructor* getConstructor(const char *name) const;
+    const MetaConstructor* getConstructor(const std::string &name) const;
+    template<typename ...Args>
+    const MetaConstructor* getConstructor() const
+    { return getConstructor(signature<Args...>::get("constructor")); }
+
+    std::size_t constructorCount() const noexcept;
+    const MetaConstructor* getConstructor(std::size_t index) const noexcept;
+    const MetaConstructor* defaultConstructor() const;
+    const MetaConstructor* copyConstructor() const;
+    const MetaConstructor* moveConstructor() const;
+
     const MetaMethod* getMethod(const char *name) const;
     const MetaMethod* getMethod(const std::string &name) const;
 
@@ -53,19 +66,13 @@ public:
     const MetaMethod* getMethod(std::size_t index) const noexcept;
     void for_each_method(const enum_method_t &func) const;
 
-    const MetaConstructor* getConstructor(const char *name) const;
-    const MetaConstructor* getConstructor(const std::string &name) const;
-    template<typename ...Args>
-    const MetaConstructor* getConstructor() const
-    { return getConstructor(signature<Args...>::get("constructor")); }
-
-    std::size_t constructorCount() const noexcept;
-    const MetaConstructor* defaultConstructor() const;
-    const MetaConstructor* copyConstructor() const;
-    const MetaConstructor* moveConstructor() const;
+    const MetaProperty* getProperty(const char *name) const;
+    std::size_t propertyCount() const noexcept;
+    const MetaProperty* getProperty(std::size_t index) const noexcept;
 
     const MetaEnum* getEnum(const char *name) const;
     std::size_t enumCount() const noexcept;
+    const MetaEnum* getEnum(std::size_t index) const noexcept;
 
 protected:
     explicit MetaContainer(const char *name, const MetaContainer &owner);

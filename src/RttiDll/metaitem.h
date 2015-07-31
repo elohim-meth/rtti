@@ -67,13 +67,6 @@ private:
     template<typename, typename> friend class rtti::meta_define;
 };
 
-class DLL_PUBLIC MetaProperty final: public MetaItem
-{
-public:
-    MetaCategory category() const noexcept override;
-};
-
-
 } //namespace rtti
 
 #endif // METAITEM_H

@@ -150,15 +150,4 @@ void MetaItem::setAttribute(const char *name, variant &&value)
     d->m_attributes.set(name, std::move(value));
 }
 
-
-//--------------------------------------------------------------------------------------------------------------------------------
-// MetaProperty
-//--------------------------------------------------------------------------------------------------------------------------------
-
-MetaCategory MetaProperty::category() const noexcept
-{
-    return mcatProperty;
-}
-
-
 } // namespace rtti

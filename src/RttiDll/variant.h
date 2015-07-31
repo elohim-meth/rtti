@@ -291,53 +291,6 @@ struct function_table_selector<T[N], true, false>:
        function_table_selector<T[N], false, false>
 {};
 
-//template<typename T, std::size_t N>
-//struct function_table_selector<T[N], true, false>
-//{
-//    using Decay = full_decay_t<T>;
-
-//    static MetaType_ID type() noexcept
-//    {
-//        return metaTypeId<T[N]>();
-//    }
-
-//    static void* access(const variant_type_storage &value) noexcept
-//    {
-//        auto ptr = reinterpret_cast<const Decay*>(&value.buffer);
-//        return const_cast<Decay*>(ptr);
-//    }
-
-//    static void construct(variant_type_storage &storage, const void *value)
-//        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
-//    {
-//        auto from = static_cast<const Decay*>(value);
-//        auto to = reinterpret_cast<Decay*>(&storage.buffer);
-//        std::copy(from, from + N, to);
-//    }
-
-//    static void clone(const variant_type_storage &src, variant_type_storage &dst)
-//        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
-//    {
-//        auto from = reinterpret_cast<const Decay*>(&src.buffer);
-//        auto to = reinterpret_cast<Decay*>(&dst.buffer);
-//        std::copy(from, from + N, to);
-//    }
-
-//    static void move(variant_type_storage &src, variant_type_storage &dst)
-//        noexcept(std::is_nothrow_move_constructible<Decay>::value)
-//    {
-//        auto from = reinterpret_cast<const Decay*>(&src.buffer);
-//        auto to = reinterpret_cast<Decay*>(&dst.buffer);
-//        std::move(from, from + N, to);
-//    }
-
-//    static void destroy(variant_type_storage &value) noexcept
-//    {
-//        auto ptr = reinterpret_cast<Decay*>(&value.buffer);
-//        std::_Destroy(ptr, ptr + N);
-//    }
-//};
-
 template<typename T>
 struct class_info_get
 {
