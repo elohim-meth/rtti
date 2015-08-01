@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
             auto prop = gNS->getProperty("global_string"); assert(prop);
             std::cout << prop->qualifiedName() << std::endl;
             prop->set(std::string{"Qwerty"});
+            assert(prop->get().cvalue<std::string>() == "Qwerty");
             assert(prop->get().value<const std::string>() == "Qwerty");
 
             const auto v = prop->get();
