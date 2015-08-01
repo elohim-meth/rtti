@@ -57,6 +57,59 @@ int main(int argc, char* argv[])
             } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
         }
 
+        {
+            auto itosM = gNS->getMethod("intToStr"); assert(itosM);
+            {
+                bool ok = false;
+                auto r = itosM->invoke(123, ok);
+                assert(r.value<std::string>() == "123" && ok);
+            }
+
+            {
+                const bool ok = false;
+                try { auto r = itosM->invoke(123, ok); assert(false);
+                } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
+            }
+
+            {
+                try { auto r = itosM->invoke(123, false); assert(false);
+                } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
+            }
+
+            {
+                rtti::variant ok = false;
+                auto r = itosM->invoke(123, ok);
+                assert(r.value<std::string>() == "123" && ok.value<bool>());
+            }
+
+            {
+                const rtti::variant ok = false;
+                try { auto r = itosM->invoke(123, ok); assert(false);
+                } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
+            }
+
+            {
+                bool ok = false;
+                rtti::variant vok = std::ref(ok);
+                auto r = itosM->invoke(123, vok);
+                assert(r.value<std::string>() == "123" && ok && vok.value<bool>());
+            }
+
+            {
+                const bool ok = false;
+                rtti::variant vok = std::ref(ok);
+                try { auto r = itosM->invoke(123, vok); assert(false);
+                } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
+            }
+
+            {
+                rtti::variant ok = false;
+                try { auto r = itosM->invoke(123, std::move(ok)); assert(false);
+                } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
+            }
+
+        }
+
         test_cast_1();
         test_variant_1();
 

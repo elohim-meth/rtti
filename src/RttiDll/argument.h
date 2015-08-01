@@ -23,8 +23,7 @@ public:
     argument(argument&&) = default;
     argument& operator=(argument&&) = delete;
 
-    template<typename T,
-             typename = enable_if_t<!std::is_same<decay_t<T>, argument>::value>>
+    template<typename T>
     argument(T &&value) noexcept
         : m_data{const_cast<void*>(reinterpret_cast<const void*>(std::addressof(value)))},
           m_typeId{metaTypeId<T>()}
@@ -77,7 +76,7 @@ private:
         else if (fromType.decayId() == metaTypeId<variant>())
         {
             auto *ptr = static_cast<variant*>(m_data);
-            return std::move(*ptr).value<T>();
+            return std::move(*ptr).value<Decay>();
         }
 
         throw bad_argument_cast{std::string{"Incompatible types: "} +
@@ -92,7 +91,7 @@ private:
         auto fromType = MetaType{m_typeId};
         auto toType = MetaType{metaTypeId<T>()};
 
-        if (!fromType.isLvalueReference() && std::is_lvalue_reference<T>::value && !std::is_const<remove_reference_t<T>>::value)
+        if (!fromType.isLvalueReference() && toType.isLvalueReference() && !toType.isConst())
             throw bad_argument_cast{"Try to bind rvalue reference to non const lvalue reference"};
 
         if (fromType.decayId() == toType.decayId())
@@ -110,6 +109,11 @@ private:
         }
         else if (fromType.decayId() == metaTypeId<variant>())
         {
+            if (fromType.isLvalueReference() && fromType.isConst() &&
+                toType.isLvalueReference() && !toType.isConst())
+                throw bad_argument_cast{std::string{"Const incompatible types: "} +
+                                        fromType.typeName() + " -> " + toType.typeName()};
+
             auto *ptr = static_cast<variant*>(m_data);
             return ptr->value<T>();
         }

@@ -87,6 +87,12 @@ bool register_fromString_converter()
 std::string global_string = "";
 const std::string global_readonly_string = "Hello, World";
 
+std::string intToStr(int value, bool &ok)
+{
+    ok = true;
+    return std::to_string(value);
+}
+
 } // namespace
 
 void register_rtti()
@@ -98,6 +104,7 @@ void register_rtti()
         ._attribute("Attribute 3", 3.14)
         ._property("global_string", &global_string)
         ._property("global_readonly_string", &global_readonly_string)
+        ._method("intToStr", &intToStr)
 
         ._namespace("test")
             ._lazy(define_test_namespace)

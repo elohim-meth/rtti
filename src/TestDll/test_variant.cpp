@@ -467,7 +467,7 @@ void test_variant_1()
         {
             auto propP = MC->getProperty("prop"); assert(propP);
             auto r = propP->get(v);
-            propP->set(v, 100);
+            //propP->set(v, 100);
         }
 
     };

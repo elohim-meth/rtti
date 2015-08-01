@@ -37,29 +37,30 @@ public:
     enum TypeFlags: std::uint32_t {
         None                 = 0,
 
-        Pointer              = 1 << 0,
-        MemberPointer        = 1 << 1,
-        LvalueReference      = 1 << 2,
-        RvalueReference      = 1 << 3,
-        Array                = 1 << 4,
+        Const                = 1 << 0,
+        Pointer              = 1 << 1,
+        MemberPointer        = 1 << 2,
+        LvalueReference      = 1 << 3,
+        RvalueReference      = 1 << 4,
+        Array                = 1 << 5,
 
-        Void                 = 1 << 5,
-        Integral             = 1 << 6,
-        FloatPoint           = 1 << 7,
-        Enum                 = 1 << 8,
-        Function             = 1 << 9,
-        Union                = 1 << 10,
-        Class                = 1 << 11,
+        Void                 = 1 << 6,
+        Integral             = 1 << 7,
+        FloatPoint           = 1 << 8,
+        Enum                 = 1 << 9,
+        Function             = 1 << 10,
+        Union                = 1 << 11,
+        Class                = 1 << 12,
 
-        Pod                  = 1 << 12,
-        Abstract             = 1 << 13,
-        Polymorphic          = 1 << 14,
-        DefaultConstructible = 1 << 15,
-        CopyConstructible    = 1 << 16,
-        CopyAssignable       = 1 << 17,
-        MoveConstructible    = 1 << 18,
-        MoveAssignable       = 1 << 19,
-        Destructible         = 1 << 20,
+        Pod                  = 1 << 13,
+        Abstract             = 1 << 14,
+        Polymorphic          = 1 << 15,
+        DefaultConstructible = 1 << 16,
+        CopyConstructible    = 1 << 17,
+        CopyAssignable       = 1 << 18,
+        MoveConstructible    = 1 << 19,
+        MoveAssignable       = 1 << 20,
+        Destructible         = 1 << 21,
     };
 
     MetaType() noexcept = default;
@@ -77,9 +78,10 @@ public:
     std::size_t typeSize() const noexcept;
     MetaType::TypeFlags typeFlags() const noexcept;
 
-    bool isReference() const noexcept;
+    bool isConst() const noexcept;
     bool isLvalueReference() const noexcept;
     bool isRvalueReference() const noexcept;
+    bool isReference() const noexcept;
     bool isClass() const noexcept;
     bool isClassPtr() const noexcept;
     bool isArray() const noexcept;
@@ -141,6 +143,7 @@ struct type_flags {
                                  remove_all_extents_t<T>,
                                  remove_all_pointers_t<T>>;
     static const Flags value = static_cast<Flags>(
+        (std::is_const<no_ref>::value ? Flags::Const : Flags::None) |
         (std::is_pointer<no_ref>::value ? Flags::Pointer : Flags::None) |
         (std::is_member_pointer<no_ref>::value ? Flags::MemberPointer : Flags::None) |
         (std::is_lvalue_reference<T>::value ? Flags::LvalueReference : Flags::None) |
@@ -208,6 +211,11 @@ inline MetaType_ID metaTypeId()
 //--------------------------------------------------------------------------------------------------------------------------------
 // Traits
 //--------------------------------------------------------------------------------------------------------------------------------
+
+inline bool MetaType::isConst() const noexcept
+{
+    return ((typeFlags() & Const) == Const);
+}
 
 inline bool MetaType::isLvalueReference() const noexcept
 {

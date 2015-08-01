@@ -7,6 +7,7 @@
 #include "metaenum.h"
 #include "metaconstructor.h"
 #include "metamethod.h"
+#include "metaproperty.h"
 #include "metaclass.h"
 #include "metanamespace.h"
 #include "metacontainer.h"

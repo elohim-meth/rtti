@@ -460,22 +460,22 @@ public:
     template<typename T>
     const T& value() const &
     {
-        auto &result = metafunc_cast<const T&>::invoke(*this);
-        return const_cast<const T&>(result);
+        const auto &result = metafunc_cast<const T&>::invoke(*this);
+        return result;
     }
 
     template<typename T>
     T& value() &
     {
         auto &result = metafunc_cast<T&>::invoke(*this);
-        return const_cast<T&>(result);
+        return result;
     }
 
     template<typename T>
     T&& value() &&
     {
         auto &&result = metafunc_cast<T&&>::invoke(std::move(*this));
-        return const_cast<T&&>(result);
+        return std::move(result);
     }
 
     template<typename T>

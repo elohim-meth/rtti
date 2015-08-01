@@ -597,7 +597,7 @@ private:
     {
         auto argType = MetaType{arg.typeId()};
         if (argType.isLvalueReference())
-            *property = arg.value<T&>();
+            *property = arg.value<const T&>();
         else
             *property = arg.value<T&&>();
     }
@@ -650,14 +650,14 @@ private:
         if (type.isClass())
         {
             if (argType.isLvalueReference())
-                instance.value<C>().*property = arg.value<T&>();
+                instance.value<C>().*property = arg.value<const T&>();
             else
                 instance.value<C>().*property = arg.value<T&&>();
         }
         else if (type.isClassPtr())
         {
             if (argType.isLvalueReference())
-                instance.to<C*>()->*property = arg.value<T&>();
+                instance.to<C*>()->*property = arg.value<const T&>();
             else
                 instance.to<C*>()->*property = arg.value<T&&>();
         }
