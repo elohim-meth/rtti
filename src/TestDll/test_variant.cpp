@@ -197,7 +197,6 @@ public:
         return std::to_string(value);
     }
 
-    int m_prop = 256;
 private:
     int a = -1;
 };
@@ -264,6 +263,18 @@ public:
         std::printf("b = %d\n", b);
     }
 
+    int getB() const
+    {
+        PRINT_PRETTY_FUNC
+        return b;
+    }
+
+    void setB(int value)
+    {
+        PRINT_PRETTY_FUNC
+        b = value;
+    }
+
 private:
     int b = -1;
 };
@@ -280,9 +291,10 @@ void register_classes()
                 ._method("setA", &A::setA)
                 ._method<std::string(A::*)(int) const>("overload_on_const", &A::overload_on_const)
                 ._method<std::string(A::*)(int)>("overload_on_const", &A::overload_on_const)
-                ._property("prop", &A::m_prop)
             ._end()
-            ._class<B>("B")._base<A>()._end()
+            ._class<B>("B")._base<A>()
+                ._property("b", &B::getB, &B::setB)
+            ._end()
             ._class<TestQPointer>("TestQPointer")
                 ._constructor<const char*>()
                 ._method("empty", &TestQPointer::empty)
@@ -465,9 +477,13 @@ void test_variant_1()
         print->invoke(v);
 
         {
-            auto propP = MC->getProperty("prop"); assert(propP);
-            auto r = propP->get(v);
-            propP->set(v, 100);
+            auto bP = MC->getProperty("b");
+            if (bP)
+            {
+                auto r = bP->get(v);
+                bP->set(v, 1024);
+
+            }
         }
 
     };
@@ -477,6 +493,10 @@ void test_variant_1()
     {
         rtti::variant v = A{100};
         lambda(v);
+        auto a = new A{100};
+        v = a;
+        lambda(v);
+        delete a;
     }
 
     std::printf("\n");
@@ -484,6 +504,10 @@ void test_variant_1()
     {
         rtti::variant v = B{100};
         lambda(v);
+        auto b = new B{100};
+        v = b;
+        lambda(v);
+        delete b;
     }
 
     std::printf("\n");

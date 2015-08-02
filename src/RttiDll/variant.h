@@ -683,8 +683,13 @@ private:
             if (type.isClassPtr())
             {
                 auto ptr = invoke_imp(self);
-                self.storage.temp = ptr;
-                return &self.storage.temp;
+                if (ptr == self.storage.ptr)
+                    return const_cast<void**>(&self.storage.ptr);
+                else
+                {
+                    self.storage.temp = ptr;
+                    return &self.storage.temp;
+                }
             }
             return nullptr;
         }

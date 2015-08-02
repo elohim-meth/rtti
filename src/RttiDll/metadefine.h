@@ -117,7 +117,7 @@ struct method_invoker<F, void_static_func>
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<Args, I>;
+    using argument_get_t = typename function_traits<F>::template arg<I>::type;
     using argument_indexes_t = index_sequence_for_t<Args>;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
 
@@ -187,7 +187,7 @@ struct method_invoker<F, return_static_func>
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<Args, I>;
+    using argument_get_t = typename function_traits<F>::template arg<I>::type;
     using argument_indexes_t = index_sequence_for_t<Args>;
     using result_is_reference = is_reference_t<Result>;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
@@ -264,7 +264,7 @@ struct method_invoker<F, void_member_func>
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<Args, I>;
+    using argument_get_t = typename function_traits<F>::template arg<I>::type;
     using argument_indexes_t = index_sequence_for_t<Args>;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
     using C = typename function_traits<F>::class_type;
@@ -345,7 +345,7 @@ struct method_invoker<F, return_member_func>
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<Args, I>;
+    using argument_get_t = typename function_traits<F>::template arg<I>::type;
     using argument_indexes_t = index_sequence_for_t<Args>;
     using result_is_reference = is_reference_t<Result>;
     using argument_array_t = std::array<const argument*, IMethodInvoker::MaxNumberOfArguments>;
@@ -570,6 +570,9 @@ struct property_invoker<P, static_pointer>
     static MetaType_ID typeId()
     { return metaTypeId<T>(); }
 
+    static bool readOnly() noexcept
+    { return IsReadOnly::value; }
+
     static variant get_static(P property)
     { return std::ref(*const_cast<const T*>(property)); }
 
@@ -606,11 +609,17 @@ private:
 template<typename P>
 struct property_invoker<P, member_pointer>
 {
+    static_assert(std::is_member_object_pointer<P>::value,
+                  "Type should be member object pointer");
+
     static bool isStatic() noexcept
     { return false; }
 
     static MetaType_ID typeId()
     { return metaTypeId<T>(); }
+
+    static bool readOnly() noexcept
+    { return IsReadOnly::value; }
 
     static variant get_static(P)
     { assert(false); return variant::empty_variant; }
@@ -679,20 +688,77 @@ struct PropertyInvoker: IPropertyInvoker
     MetaType_ID typeId() const override
     { return invoker_t::typeId(); }
 
+    bool readOnly() const override
+    { return invoker_t::readOnly(); }
+
     variant get_static() const override
     { return invoker_t::get_static(m_prop); }
 
-    void set_static(const argument &arg) const override
+    void set_static(argument arg) const override
     { invoker_t::set_static(m_prop, arg); }
 
     variant get_field(const variant &instance) const override
     { return invoker_t::get_field(m_prop, const_cast<variant&>(instance)); }
 
-    void set_field(const variant &instance, const argument &arg) const override
+    void set_field(const variant &instance, argument arg) const override
     { invoker_t::set_field(m_prop, const_cast<variant&>(instance), arg); }
 
 private:
     P m_prop;
+};
+
+template<typename G, typename S>
+struct PropertyInvokerEx: IPropertyInvoker
+{
+    PropertyInvokerEx(G get, S set) noexcept
+        : m_get(get), m_set(set)
+    {}
+
+    bool isStatic() const override
+    { return std::is_function<G>::value; }
+
+    MetaType_ID typeId() const override
+    { return metaTypeId<T>(); }
+
+    bool readOnly() const override
+    { return false; }
+
+    variant get_static() const override
+    { return MethodInvoker<G>(m_get).invoke_static(); }
+
+    void set_static(argument arg) const override
+    { MethodInvoker<S>{m_set}.invoke_static(std::move(arg)); }
+
+    variant get_field(const variant &instance) const override
+    { return MethodInvoker<G>{m_get}.invoke_method(instance); }
+
+    void set_field(const variant &instance, argument arg) const override
+    { MethodInvoker<S>{m_set}.invoke_method(instance, std::move(arg)); }
+
+private:
+    static constexpr bool valid = conditional_t
+    <(std::is_function<G>::value && (std::is_void<S>::value || std::is_function<S>::value)) ||
+     (std::is_member_function_pointer<G>::value && (std::is_void<S>::value || std::is_member_function_pointer<S>::value))
+    ,std::true_type, std::false_type>::value;
+    static_assert(valid, "Get and Set methods should be simultaneously static method or pointer to member");
+
+    using GTraits = function_traits<G>;
+    using STraits = function_traits<S>;
+
+    using T = typename GTraits::result_type;
+    static_assert(!std::is_void<T>::value,
+                  "Get method should have non void result type");
+    static_assert(GTraits::arity::value == 0,
+                  "Get method shouldn't have any parameters");
+    static_assert(std::is_void<typename STraits::result_type>::value,
+                  "Set method should have void result type");
+    static_assert(STraits::arity::value == 1,
+                  "Set method should have one parameters");
+    using Arg = typename STraits::template arg<0>::type;
+    static_assert(std::is_same<decay_t<T>, decay_t<Arg>>::value,
+                  "Get method return type and Set method parameter type do not match");
+    G m_get;
+    S m_set;
 };
 
 } // namespace internal
@@ -870,6 +936,18 @@ public:
         MetaProperty::create(name, *m_currentContainer,
                            std::unique_ptr<IPropertyInvoker>{
                                 new internal::PropertyInvoker<decay_t<P>>{std::forward<P>(prop)}});
+        return std::move(*this);
+    }
+
+    template<typename G, typename S>
+    this_t _property(const char *name, G &&get, S &&set)
+    {
+        static_assert(std::is_void<T>::value || std::is_class<T>::value,
+                      "Propery can be defined in namespace or class");
+        assert(m_currentContainer);
+        MetaProperty::create(name, *m_currentContainer,
+                           std::unique_ptr<IPropertyInvoker>{
+                                new internal::PropertyInvokerEx<decay_t<G>, decay_t<S>>{std::forward<G>(get), std::forward<S>(set)}});
         return std::move(*this);
     }
 
