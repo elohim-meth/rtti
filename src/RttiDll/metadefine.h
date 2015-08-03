@@ -682,13 +682,13 @@ struct PropertyInvoker: IPropertyInvoker
         : m_prop(prop)
     {}
 
-    bool isStatic() const override
+    bool isStatic() const noexcept override
     { return invoker_t::isStatic(); }
 
     MetaType_ID typeId() const override
     { return invoker_t::typeId(); }
 
-    bool readOnly() const override
+    bool readOnly() const noexcept override
     { return invoker_t::readOnly(); }
 
     variant get_static() const override
@@ -714,13 +714,13 @@ struct PropertyInvokerEx: IPropertyInvoker
         : m_get(get), m_set(set)
     {}
 
-    bool isStatic() const override
+    bool isStatic() const noexcept override
     { return std::is_function<G>::value; }
 
     MetaType_ID typeId() const override
     { return metaTypeId<T>(); }
 
-    bool readOnly() const override
+    bool readOnly() const noexcept override
     { return false; }
 
     variant get_static() const override

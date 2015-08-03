@@ -9,9 +9,9 @@ namespace rtti {
 
 struct DLL_PUBLIC IPropertyInvoker
 {
-    virtual bool isStatic() const = 0;
+    virtual bool isStatic() const noexcept = 0;
     virtual MetaType_ID typeId() const = 0;
-    virtual bool readOnly() const = 0;
+    virtual bool readOnly() const noexcept = 0;
     virtual variant get_static() const = 0;
     virtual void set_static(argument arg) const = 0;
     virtual variant get_field(const variant &instance) const = 0;
