@@ -8,4 +8,4 @@ meta_global global_define()
     return meta_global{global, global};;
 }
 
-} //rtti
+} // namespace rtti

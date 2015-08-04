@@ -2,7 +2,8 @@
 #define METATYPE_P_H
 
 #include "metatype.h"
-#include "c_string.h"
+
+#include <c_string.h>
 
 #include "global.h"
 

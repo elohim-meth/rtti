@@ -1,7 +1,7 @@
 ﻿#ifndef TEST_REGISTER_H
 #define TEST_REGISTER_H
 
-#include <rtti.h>
+#include <rtti/rtti.h>
 
 #include <vector>
 

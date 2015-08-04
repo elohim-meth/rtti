@@ -3,7 +3,8 @@
 
 #include "metaitem.h"
 #include "variant.h"
-#include "c_string.h"
+
+#include <c_string.h>
 
 #include <mutex>
 #include <vector>

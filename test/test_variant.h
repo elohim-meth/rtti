@@ -1,7 +1,7 @@
 ﻿#ifndef TEST_VARIANT_H
 #define TEST_VARIANT_H
 
-#include <rtti.h>
+#include <rtti/rtti.h>
 
 void test_variant_1();
 
