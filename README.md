@@ -6,7 +6,7 @@ Implemented meta namespaces, classes, methods, constructors, properties and enum
 Library contains generic variant type. 
 Is's capable of holding any type inluding references (used std::reference_wrapper).
 It supports polymorphic conversion using rtti_cast, when holding references or pointers to registered classes.
-It also support user defined conversion, registered through metatype system.
+It also supports user defined conversion, registered through metatype system.
 
 Library supports for meta_cast replacement of dynamic_cast. 
 
