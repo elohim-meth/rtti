@@ -115,90 +115,69 @@ private:
 
 class A
 {
+    // This macro declares and defines one virtual method named classInfo.
+    // It's needed only if A has derived classes and you need to meta_cast
+    // between them or polymorphic variant behaviour for this class hierarchy.
     DECLARE_CLASSINFO
 public:
-    A()
-    { PRINT_PRETTY_FUNC }
-
+    A() {}
     explicit A(int value)
         : a(value)
-    {
-        PRINT_PRETTY_FUNC
-    }
-
+    {}
     A(const A &other)
-        : a(other.a)
-    {
-        PRINT_PRETTY_FUNC
-    }
-
+        : c(other.c), a(other.a), b(other.b)
+    {}
     A(A &&other) noexcept
     {
-        PRINT_PRETTY_FUNC
-        std::swap(a, other.a);
+        swap(other);
     }
-
     A& operator=(const A &other)
     {
-        PRINT_PRETTY_FUNC
         if (this != &other)
             A{other}.swap(*this);
         return *this;
     }
-
     A& operator=(A &&other) noexcept
     {
-        PRINT_PRETTY_FUNC
         if (this != &other)
             A{std::move(other)}.swap(*this);
         return *this;
     }
-
     void swap(A &other) noexcept
     {
         std::swap(a, other.a);
+        std::swap(b, other.b);
+        std::swap(c, other.c);
     }
-
-
     virtual ~A() noexcept
     {
-        PRINT_PRETTY_FUNC
-        a = -1;
+        a = b = c = -1;
     }
-
     virtual void print() const noexcept
     {
-        PRINT_PRETTY_FUNC
-        std::printf("a = %d\n", a);
+        std::printf("a = %d, b = %d, c = %d \n", a, b, c);
     }
-
     int getA() const
     {
-        PRINT_PRETTY_FUNC
         return a;
     }
-
     void setA(int value)
     {
-        PRINT_PRETTY_FUNC
         a = value;
     }
-
-    std::string overload_on_const(int value) const
+    int& bValue()
     {
-        PRINT_PRETTY_FUNC
-        return std::to_string(value);
+        return b;
+    }
+    const int& bValue() const
+    {
+        return b;
     }
 
-    std::string overload_on_const(int value)
-    {
-        PRINT_PRETTY_FUNC
-        a = value;
-        return std::to_string(value);
-    }
-
+    int c = -1;
 private:
     int a = -1;
+    int b = -1;
 };
 
 class B: public A
@@ -209,13 +188,13 @@ public:
     { PRINT_PRETTY_FUNC }
 
     explicit B(int value)
-        : A{value}, b{value}
+        : A{value}, d{value}
     {
         PRINT_PRETTY_FUNC
     }
 
     B(const B &other)
-        : A{other}, b{other.b}
+        : A{other}, d{other.d}
     {
         PRINT_PRETTY_FUNC
     }
@@ -224,7 +203,7 @@ public:
         : A{std::move(other)}
     {
         PRINT_PRETTY_FUNC
-        std::swap(b, other.b);
+        std::swap(d, other.d);
     }
 
     B& operator=(const B &other)
@@ -246,37 +225,37 @@ public:
     void swap(B &other) noexcept
     {
         A::swap(other);
-        std::swap(b, other.b);
+        std::swap(d, other.d);
     }
 
 
     virtual ~B() noexcept
     {
         PRINT_PRETTY_FUNC
-        b = -1;
+        d = -1;
     }
 
     void print() const noexcept override
     {
         PRINT_PRETTY_FUNC
         A::print();
-        std::printf("b = %d\n", b);
+        std::printf("d = %d\n", d);
     }
 
-    int getB() const
+    int getD() const
     {
         PRINT_PRETTY_FUNC
-        return b;
+        return d;
     }
 
-    void setB(int value)
+    void setD(int value)
     {
         PRINT_PRETTY_FUNC
-        b = value;
+        d = value;
     }
 
 private:
-    int b = -1;
+    int d = -1;
 };
 
 
@@ -286,14 +265,15 @@ void register_classes()
     global_define()
         ._namespace("anonimous_2")
             ._class<A>("A")
+                ._constructor<int>()
                 ._method("print", &A::print)
-                ._method("getA", &A::getA)
-                ._method("setA", &A::setA)
-                ._method<std::string(A::*)(int) const>("overload_on_const", &A::overload_on_const)
-                ._method<std::string(A::*)(int)>("overload_on_const", &A::overload_on_const)
+                ._property("a", &A::getA, &A::setA)
+                ._method<int& (A::*)()>("bValue", &A::bValue)
+                ._method<const int& (A::*)() const>("bValue", &A::bValue)
+                ._property("c", &A::c)
             ._end()
             ._class<B>("B")._base<A>()
-                ._property("b", &B::getB, &B::setB)
+                ._property("d", &B::getD, &B::setD)
             ._end()
             ._class<TestQPointer>("TestQPointer")
                 ._constructor<const char*>()
@@ -452,36 +432,38 @@ void test_variant_1()
     auto lambda = [] (const rtti::variant &v)
     {
         auto MC = rtti::MetaClass::findByTypeId(v.classInfo().typeId); assert(MC);
-        auto getaM = MC->getMethod("getA"); assert(getaM);
-        auto r = getaM->invoke(v); assert(r.to<int>() == 100);
-
-        r = 256;
-        auto setaM = MC->getMethod("setA"); assert(setaM);
-        setaM->invoke(v, r);
-        r = getaM->invoke(v); assert(r.value<int>() == 256);
 
         auto print = MC->getMethod("print"); assert(print);
         print->invoke(v);
 
-        {
-            auto overM = MC->getMethod<A&, int>("overload_on_const"); assert(overM);
-            auto r = overM->invoke(v, 200); assert(r.value<std::string>() == "200");
-        }
+        auto aP = MC->getProperty("a"); assert(aP);
+        auto r = aP->get(v); assert(r.to<int>() == 100);
 
-        {
-            auto overM = MC->getMethod<const A&, int>("overload_on_const"); assert(overM);
-            auto r = overM->invoke(v, 300); assert(r.value<std::string>() == "300");
-        }
+        r = 256;
+        aP->set(v, r);
+        r = aP->get(v); assert(r.value<int>() == 256);
 
-        r = getaM->invoke(v); assert(r.value<int>() == 200);
         print->invoke(v);
 
         {
-            auto bP = MC->getProperty("b");
-            if (bP)
+            auto bvalM = MC->getMethod<A&>("bValue"); assert(bvalM);
+            auto r = bvalM->invoke(v); assert(r.value<int>() == -1);
+            r.value<int>() = 128;
+        }
+
+        {
+            auto bvalCM = MC->getMethod<const A&>("bValue"); assert(bvalCM);
+            auto r = bvalCM->invoke(v); assert(r.to<std::string>() == "128");
+        }
+
+        print->invoke(v);
+
+        {
+            auto dP = MC->getProperty("d");
+            if (dP)
             {
-                auto r = bP->get(v);
-                bP->set(v, 1024);
+                auto r = dP->get(v);
+                dP->set(v, 1024);
 
             }
         }
