@@ -310,20 +310,33 @@ private:
     {
         return ClassInfo{};
     }
+
     static ClassInfo info_selector(const variant_type_storage &value, std::true_type, std::false_type)
-    {
-        return ClassInfo(metaTypeId<Decay>(), Selector::access(value));
-    }
-    static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
     {
         using IsRegistered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
         return info_selector_registered(value, IsRegistered{});
     }
-    static ClassInfo info_selector_registered(const variant_type_storage&, std::false_type)
+    static ClassInfo info_selector_registered(const variant_type_storage &value, std::false_type)
     {
-        return ClassInfo{};
+        return ClassInfo(metaTypeId<Decay>(), Selector::access(value));
     }
     static ClassInfo info_selector_registered(const variant_type_storage &value, std::true_type)
+    {
+        auto ptr = static_cast<C*>(Selector::access(value));
+        return ptr->classInfo();
+    }
+
+    static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
+    {
+        using IsRegistered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
+        return info_selector_registered_ptr(value, IsRegistered{});
+    }
+    static ClassInfo info_selector_registered_ptr(const variant_type_storage &value, std::false_type)
+    {
+        auto ptr = reinterpret_cast<C**>(Selector::access(value));
+        return ClassInfo{metaTypeId<C>(), *ptr};
+    }
+    static ClassInfo info_selector_registered_ptr(const variant_type_storage &value, std::true_type)
     {
         auto ptr = reinterpret_cast<C**>(Selector::access(value));
         return (*ptr)->classInfo();
