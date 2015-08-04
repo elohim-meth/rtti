@@ -29,15 +29,8 @@ public:
           m_typeId{metaTypeId<T>()}
     {}
 
-    bool empty() const noexcept
-    {
-        return m_data == nullptr;
-    }
-
-    MetaType_ID typeId() const noexcept
-    {
-        return m_typeId;
-    }
+    bool empty() const noexcept;
+    MetaType_ID typeId() const noexcept;
 
     template<typename T>
     T value() const

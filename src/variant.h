@@ -367,31 +367,13 @@ class DLL_PUBLIC variant final
 public:
     variant() noexcept = default;
 
-    variant(const variant &other)
-        : manager{other.manager}
-    {
-        manager->f_clone(other.storage, storage);
-    }
+    variant(const variant &other);
+    variant& operator=(const variant &other);
+    variant(variant &&other) noexcept;
+    variant& operator=(variant &&other) noexcept;
 
-    variant& operator=(const variant &other)
-    {
-        if (this != &other)
-            variant{other}.swap(*this);
-        return *this;
-    }
-
-    variant(variant &&other) noexcept
-    {
-        swap(other);
-    }
-
-    variant& operator=(variant &&other) noexcept
-    {
-        variant{std::move(other)}.swap(*this);
-        return *this;
-    }
-
-    template<typename T>
+    template<typename T,
+             typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
     variant(T &&value)
         : manager{internal::function_table_for<remove_reference_t<T>>()}
     {
@@ -402,54 +384,23 @@ public:
         manager->f_construct(storage, std::addressof(value));
     }
 
-    template<typename T>
+    template<typename T,
+             typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
     variant& operator=(T &&value)
     {
         variant{std::forward<T>(value)}.swap(*this);
         return *this;
     }
 
-    ~variant() noexcept
-    {
-        manager->f_destroy(storage);
-        manager = internal::function_table_for<void>();
-        storage = {.buffer = {0}};
-    }
+    ~variant() noexcept;
+    void swap(variant &other) noexcept;
 
-    void clear() noexcept
-    {
-        variant{}.swap(*this);
-    }
+    void clear() noexcept;
+    bool empty() const noexcept;
+    explicit operator bool() const noexcept;
 
-    bool empty() const noexcept
-    {
-        return manager == internal::function_table_for<void>();
-    }
-
-    explicit operator bool() const noexcept
-    {
-        return !empty();
-    }
-
-    void swap(variant &other) noexcept
-    {
-        storage_t temporary = {.buffer = {0}};
-        manager->f_move(storage, temporary);
-        other.manager->f_move(other.storage, storage);
-        manager->f_move(temporary, other.storage);
-
-        std::swap(manager, other.manager);
-    }
-
-    MetaType_ID typeId() const noexcept
-    {
-        return manager->f_type();
-    }
-
-    ClassInfo classInfo() const noexcept
-    {
-        return manager->f_info(storage);
-    }
+    MetaType_ID typeId() const noexcept;
+    ClassInfo classInfo() const noexcept;
 
     template<typename T>
     bool is() const
@@ -535,10 +486,7 @@ public:
 
     static const variant empty_variant;
 private:
-    void* raw_data_ptr() const noexcept
-    {
-        return manager->f_access(storage);
-    }
+    void* raw_data_ptr() const noexcept;
 
     template<typename T>
     struct metafunc_is
