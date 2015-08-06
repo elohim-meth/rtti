@@ -96,12 +96,13 @@ struct function_table_selector<T, true, false>
 {
     using Decay = full_decay_t<T>;
 
-    static MetaType_ID type() noexcept
+    static MetaType_ID type()
     {
         return metaTypeId<remove_cv_t<T>>();
     }
 
     static void construct(variant_type_storage &storage, const void *value)
+        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
         auto ptr = static_cast<const Decay*>(value);
         new (&storage.buffer) Decay(*ptr);
@@ -127,7 +128,8 @@ struct function_table_selector<T, true, false>
         new (&dst.buffer) Decay(std::move(*ptr));
     }
 
-    static void destroy(variant_type_storage &value) noexcept
+    static void destroy(variant_type_storage &value)
+        noexcept(std::is_nothrow_destructible<Decay>::value)
     {
         auto ptr = reinterpret_cast<const Decay*>(&value.buffer);
         ptr->~Decay();
@@ -137,7 +139,9 @@ struct function_table_selector<T, true, false>
 template<typename T>
 struct function_table_selector<T, true, true>
 {
-    static MetaType_ID type() noexcept
+    using Self = decay_t<T>;
+
+    static MetaType_ID type()
     {
         return metaTypeId<Unwrap>();
     }
@@ -147,31 +151,34 @@ struct function_table_selector<T, true, true>
         return access_selector(value, IsArray{});
     }
 
-    static void construct(variant_type_storage &storage, const void *value) noexcept
+    static void construct(variant_type_storage &storage, const void *value)
+        noexcept(std::is_nothrow_copy_constructible<Self>::value)
     {
         auto ptr = static_cast<const Self*>(value);
         new (&storage.buffer) Self(*ptr);
     }
 
-    static void clone(const variant_type_storage &src, variant_type_storage &dst) noexcept
+    static void clone(const variant_type_storage &src, variant_type_storage &dst)
+        noexcept(std::is_nothrow_copy_constructible<Self>::value)
     {
         auto ptr = reinterpret_cast<const Self*>(&src.buffer);
         new (&dst.buffer) Self(*ptr);
     }
 
-    static void move(variant_type_storage &src, variant_type_storage &dst) noexcept
+    static void move(variant_type_storage &src, variant_type_storage &dst)
+        noexcept(std::is_nothrow_move_constructible<Self>::value)
     {
         auto ptr = reinterpret_cast<Self*>(&src.buffer);
         new (&dst.buffer) Self(std::move(*ptr));
     }
 
-    static void destroy(variant_type_storage &value) noexcept
+    static void destroy(variant_type_storage &value)
+        noexcept(std::is_nothrow_destructible<Self>::value)
     {
         auto ptr = reinterpret_cast<const Self*>(&value.buffer);
         ptr->~Self();
     }
 private:
-    using Self = decay_t<T>;
     using Unwrap = unwrap_reference_t<T>;
     using IsArray = is_array_t<Unwrap>;
     using Decay = conditional_t<is_array_t<Unwrap>::value, remove_cv_t<Unwrap>, full_decay_t<Unwrap>>;
@@ -195,7 +202,7 @@ struct function_table_selector<T, false, false>
 {
     using Decay = full_decay_t<T>;
 
-    static MetaType_ID type() noexcept
+    static MetaType_ID type()
     {
         return metaTypeId<remove_cv_t<T>>();
     }
@@ -226,7 +233,8 @@ struct function_table_selector<T, false, false>
         std::swap(src.ptr, dst.ptr);
     }
 
-    static void destroy(variant_type_storage &value) noexcept
+    static void destroy(variant_type_storage &value)
+        noexcept(std::is_nothrow_destructible<Decay>::value)
     {
         auto ptr = static_cast<const Decay*>(value.ptr);
         delete ptr;
@@ -239,7 +247,7 @@ struct function_table_selector<T[N], false, false>
     using Decay = full_decay_t<T>;
     using Allocator = std::allocator<Decay>;
 
-    static MetaType_ID type() noexcept
+    static MetaType_ID type()
     {
         return metaTypeId<remove_cv_t<T>[N]>();
     }
@@ -252,6 +260,7 @@ struct function_table_selector<T[N], false, false>
     }
 
     static void construct(variant_type_storage &storage, const void *value)
+        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
         auto alloc = Allocator{};
         auto from = static_cast<const Decay*>(value);
@@ -262,7 +271,7 @@ struct function_table_selector<T[N], false, false>
     }
 
     static void clone(const variant_type_storage &src, variant_type_storage &dst)
-        noexcept(std::is_nothrow_copy_constructible<T>::value)
+        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
         auto from = static_cast<const Decay*>(src.ptr);
         auto to = static_cast<Decay*>(::operator new(N * sizeof(T)));
@@ -275,7 +284,8 @@ struct function_table_selector<T[N], false, false>
         std::swap(src.ptr, dst.ptr);
     }
 
-    static void destroy(variant_type_storage &value) noexcept
+    static void destroy(variant_type_storage &value)
+        noexcept(std::is_nothrow_destructible<Decay>::value)
     {
         auto alloc = Allocator{};
         auto ptr = static_cast<const Decay*>(value.ptr);
@@ -368,7 +378,7 @@ inline const variant_function_table* function_table_for<void>() noexcept
         [] (const variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&) noexcept {},
-        [] (const variant_type_storage&) { return ClassInfo(); }
+        [] (const variant_type_storage&) noexcept { return ClassInfo(); }
     };
     return &result;
 }
@@ -378,15 +388,14 @@ inline const variant_function_table* function_table_for<void>() noexcept
 class DLL_PUBLIC variant final
 {
 public:
-    variant() noexcept = default;
+    variant() = default;
 
     variant(const variant &other);
     variant& operator=(const variant &other);
     variant(variant &&other) noexcept;
     variant& operator=(variant &&other) noexcept;
 
-    template<typename T,
-             typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
+    template<typename T>
     variant(T &&value)
         : manager{internal::function_table_for<remove_reference_t<T>>()}
     {
@@ -397,23 +406,22 @@ public:
         manager->f_construct(storage, std::addressof(value));
     }
 
-    template<typename T,
-             typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
+    template<typename T>
     variant& operator=(T &&value)
     {
         variant{std::forward<T>(value)}.swap(*this);
         return *this;
     }
 
-    ~variant() noexcept;
+    ~variant();
     void swap(variant &other) noexcept;
 
-    void clear() noexcept;
-    bool empty() const noexcept;
-    explicit operator bool() const noexcept;
+    void clear();
+    bool empty() const;
+    explicit operator bool() const;
 
-    MetaType_ID typeId() const noexcept;
-    ClassInfo classInfo() const noexcept;
+    MetaType_ID typeId() const;
+    ClassInfo classInfo() const;
 
     template<typename T>
     bool is() const
@@ -499,7 +507,7 @@ public:
 
     static const variant empty_variant;
 private:
-    void* raw_data_ptr() const noexcept;
+    void* raw_data_ptr() const;
 
     template<typename T>
     struct metafunc_is

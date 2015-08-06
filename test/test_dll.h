@@ -17,11 +17,11 @@ class Absolute {};
 class Empty
 {
 public:
-    Empty() noexcept
+    Empty()
     { PRINT_PRETTY_FUNC }
-    Empty(const Empty&)  noexcept
+    Empty(const Empty&)
     { PRINT_PRETTY_FUNC }
-    Empty& operator=(const Empty&) noexcept
+    Empty& operator=(const Empty&)
     {
         PRINT_PRETTY_FUNC
         return *this;
@@ -33,19 +33,19 @@ public:
         PRINT_PRETTY_FUNC
         return *this;
     }
-    ~Empty() noexcept
+    ~Empty()
     { PRINT_PRETTY_FUNC }
 };
 
 class Small{
 public:
-    explicit Small() noexcept : i{-1}
+    explicit Small() : i{-1}
     { PRINT_PRETTY_FUNC }
-    explicit Small(std::int8_t v) noexcept : i{v}
+    explicit Small(std::int8_t v) : i{v}
     { PRINT_PRETTY_FUNC }
-    Small(const Small &v) noexcept : i{v.i}
+    Small(const Small &v) : i{v.i}
     { PRINT_PRETTY_FUNC }
-    Small& operator=(const Small&v) noexcept
+    Small& operator=(const Small&v)
     {
         PRINT_PRETTY_FUNC
         i = v.i;
@@ -63,7 +63,7 @@ public:
         v.i = -1;
         return *this;
     }
-    virtual ~Small() noexcept
+    virtual ~Small()
     {
         PRINT_PRETTY_FUNC
     }

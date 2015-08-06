@@ -24,7 +24,7 @@ class MetaPropertyPrivate;
 class DLL_PUBLIC MetaProperty final: public MetaItem
 {
 public:
-    MetaCategory category() const noexcept override;
+    MetaCategory category() const override;
 
     template<typename ...Args>
     variant get(Args&&... args) const
@@ -50,7 +50,7 @@ protected:
     static MetaProperty* create(const char *name, MetaContainer &owner,
                               std::unique_ptr<IPropertyInvoker> invoker);
 private:
-    const IPropertyInvoker* invoker() const noexcept;
+    const IPropertyInvoker* invoker() const;
 
     variant get_selector(index_sequence<>) const
     {

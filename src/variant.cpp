@@ -45,32 +45,32 @@ void variant::swap(variant &other) noexcept
     std::swap(manager, other.manager);
 }
 
-void variant::clear() noexcept
+void variant::clear()
 {
     variant{}.swap(*this);
 }
 
-bool variant::empty() const noexcept
+bool variant::empty() const
 {
     return manager == internal::function_table_for<void>();
 }
 
-variant::operator bool() const noexcept
+variant::operator bool() const
 {
     return !empty();
 }
 
-MetaType_ID variant::typeId() const noexcept
+MetaType_ID variant::typeId() const
 {
     return manager->f_type();
 }
 
-ClassInfo variant::classInfo() const noexcept
+ClassInfo variant::classInfo() const
 {
     return manager->f_info(storage);
 }
 
-void* variant::raw_data_ptr() const noexcept
+void* variant::raw_data_ptr() const
 {
     return manager->f_access(storage);
 }

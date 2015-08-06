@@ -84,10 +84,14 @@ public:
             delete m_pImpl;
     }
 
-    void check() const
+    void check() const noexcept
     {
         if (m_pImpl)
+        {
             assert(this == m_pImpl->m_qImpl);
+            if (this != m_pImpl->m_qImpl)
+                throw std::exception{};
+        }
     }
 
     const std::string& value() const
@@ -105,7 +109,7 @@ public:
     }
 
     bool empty() const
-    { return !m_pImpl; }
+    { check(); return !m_pImpl; }
 
 private:
     PrivatePimpl *m_pImpl = nullptr;

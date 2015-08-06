@@ -35,7 +35,7 @@ public:
     CustomTypes& operator=(const CustomTypes &) = delete;
     CustomTypes(CustomTypes &&) = delete;
     CustomTypes& operator=(CustomTypes &&) = delete;
-    ~CustomTypes() noexcept;
+    ~CustomTypes();
 
     const TypeInfo* getTypeInfo(MetaType_ID typeId) const;
     const TypeInfo* getTypeInfo(const char *name) const;
@@ -61,7 +61,7 @@ CustomTypes::CustomTypes()
 
 #undef DEFINE_STATIC_TYPE_MAP
 
-CustomTypes::~CustomTypes() noexcept
+CustomTypes::~CustomTypes()
 {
     std::lock_guard<std::mutex> lock{m_lock};
     m_items.clear();
@@ -145,14 +145,14 @@ rtti::MetaType::MetaType(const char *name)
     : m_typeInfo(customTypes().getTypeInfo(name))
 {}
 
-MetaType_ID MetaType::typeId() const noexcept
+MetaType_ID MetaType::typeId() const
 {
     if (m_typeInfo)
         return m_typeInfo->type;
     return MetaType_ID{};
 }
 
-MetaType_ID MetaType::decayId() const noexcept
+MetaType_ID MetaType::decayId() const
 {
     if (m_typeInfo)
         return m_typeInfo->decay;
@@ -164,21 +164,21 @@ void MetaType::setTypeId(MetaType_ID typeId)
     *this = MetaType{typeId};
 }
 
-const char* MetaType::typeName() const noexcept
+const char* MetaType::typeName() const
 {
     if (m_typeInfo)
         return m_typeInfo->name.data();
     return nullptr;
 }
 
-std::size_t MetaType::typeSize() const noexcept
+std::size_t MetaType::typeSize() const
 {
     if (m_typeInfo)
         return m_typeInfo->size;
     return 0;
 }
 
-MetaType::TypeFlags MetaType::typeFlags() const noexcept
+MetaType::TypeFlags MetaType::typeFlags() const
 {
     MetaType::TypeFlags result = TypeFlags::None;
     if (m_typeInfo)
@@ -186,14 +186,14 @@ MetaType::TypeFlags MetaType::typeFlags() const noexcept
     return result;
 }
 
-std::uint8_t MetaType::pointerArity() const noexcept
+std::uint8_t MetaType::pointerArity() const
 {
     if (m_typeInfo)
         return m_typeInfo->arity;
     return 0;
 }
 
-bool MetaType::constCompatible(MetaType fromType, MetaType toType) noexcept
+bool MetaType::constCompatible(MetaType fromType, MetaType toType)
 {
     if (!fromType.valid() || !toType.valid())
         return false;
@@ -254,7 +254,7 @@ class MetaTypeFunctionList
 public:
     using key_t = std::pair<MetaType_ID, MetaType_ID>;
 
-    ~MetaTypeFunctionList() noexcept
+    ~MetaTypeFunctionList()
     {
         std::lock_guard<std::mutex> lock{m_lock};
         m_items.clear();

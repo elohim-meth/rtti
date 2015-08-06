@@ -7,13 +7,13 @@ namespace rtti {
 // MetaProperty
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const IPropertyInvoker* MetaProperty::invoker() const noexcept
+const IPropertyInvoker* MetaProperty::invoker() const
 {
     auto d = d_func();
     return d->m_invoker.get();
 }
 
-MetaCategory MetaProperty::category() const noexcept
+MetaCategory MetaProperty::category() const
 {
     return mcatProperty;
 }

@@ -63,30 +63,30 @@ public:
         Destructible         = 1 << 21,
     };
 
-    MetaType() noexcept = default;
+    MetaType() = default;
     explicit MetaType(MetaType_ID typeId);
     explicit MetaType(const char *name);
 
-    bool valid() const noexcept
+    bool valid() const
     {
         return m_typeInfo != nullptr;
     }
-    MetaType_ID typeId() const noexcept;
-    MetaType_ID decayId() const noexcept;
+    MetaType_ID typeId() const;
+    MetaType_ID decayId() const;
     void setTypeId(MetaType_ID typeId);
-    const char* typeName() const noexcept;
-    std::size_t typeSize() const noexcept;
-    MetaType::TypeFlags typeFlags() const noexcept;
+    const char* typeName() const;
+    std::size_t typeSize() const;
+    MetaType::TypeFlags typeFlags() const;
 
-    bool isConst() const noexcept;
-    bool isLvalueReference() const noexcept;
-    bool isRvalueReference() const noexcept;
-    bool isReference() const noexcept;
-    bool isClass() const noexcept;
-    bool isClassPtr() const noexcept;
-    bool isArray() const noexcept;
-    std::uint8_t pointerArity() const noexcept;
-    static bool constCompatible(MetaType fromType, MetaType toType) noexcept;
+    bool isConst() const;
+    bool isLvalueReference() const;
+    bool isRvalueReference() const;
+    bool isReference() const;
+    bool isClass() const;
+    bool isClassPtr() const;
+    bool isArray() const;
+    std::uint8_t pointerArity() const;
+    static bool constCompatible(MetaType fromType, MetaType toType);
 
     static bool hasConverter(MetaType fromType, MetaType toType);
     static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
@@ -212,34 +212,34 @@ inline MetaType_ID metaTypeId()
 // Traits
 //--------------------------------------------------------------------------------------------------------------------------------
 
-inline bool MetaType::isConst() const noexcept
+inline bool MetaType::isConst() const
 {
     return ((typeFlags() & Const) == Const);
 }
 
-inline bool MetaType::isLvalueReference() const noexcept
+inline bool MetaType::isLvalueReference() const
 {
     return ((typeFlags() & LvalueReference) == LvalueReference);
 }
 
-inline bool MetaType::isRvalueReference() const noexcept
+inline bool MetaType::isRvalueReference() const
 {
     return ((typeFlags() & RvalueReference) == RvalueReference);
 }
 
-inline bool MetaType::isReference() const noexcept
+inline bool MetaType::isReference() const
 {
     return (isLvalueReference() || isRvalueReference());
 }
 
-inline bool MetaType::isClass() const noexcept
+inline bool MetaType::isClass() const
 {
     auto flags = typeFlags();
     return ((flags & Class) == Class) &&
            ((flags & Pointer) == None);
 }
 
-inline bool MetaType::isClassPtr() const noexcept
+inline bool MetaType::isClassPtr() const
 {
     auto flags = typeFlags();
     return (pointerArity() == 1) &&
@@ -247,7 +247,7 @@ inline bool MetaType::isClassPtr() const noexcept
             ((flags & Pointer) == Pointer);
 }
 
-inline bool MetaType::isArray() const noexcept
+inline bool MetaType::isArray() const
 {
     return ((typeFlags() & Array) == Array);
 }
@@ -303,7 +303,7 @@ struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
     explicit ConvertFunctor(F &&func)
         : ConvertFunctionBase{convert}, m_func(std::move(func))
     {}
-    ~ConvertFunctor() noexcept
+    ~ConvertFunctor()
     {
         MetaType::unregisterConverter<From, To>();
     }
@@ -330,7 +330,7 @@ struct ConvertMethod: ConvertFunctionBase
         : ConvertFunctionBase{convert}, m_func(func)
     {}
 
-    ~ConvertMethod() noexcept
+    ~ConvertMethod()
     {
         MetaType::unregisterConverter<From, To>();
     }
@@ -357,7 +357,7 @@ struct ConvertMethodOk: ConvertFunctionBase
         : ConvertFunctionBase{convert}, m_func(func)
     {}
 
-    ~ConvertMethodOk() noexcept
+    ~ConvertMethodOk()
     {
         MetaType::unregisterConverter<From, To>();
     }
