@@ -7,13 +7,13 @@ namespace rtti {
 // MetaMethod
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const IMethodInvoker* MetaMethod::invoker() const noexcept
+const IMethodInvoker* MetaMethod::invoker() const
 {
     auto d = d_func();
     return d->m_invoker.get();
 }
 
-MetaCategory MetaMethod::category() const noexcept
+MetaCategory MetaMethod::category() const
 {
     return mcatMethod;
 }

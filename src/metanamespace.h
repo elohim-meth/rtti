@@ -10,9 +10,9 @@ class MetaNamespacePrivate;
 class DLL_PUBLIC MetaNamespace final: public MetaContainer
 {
 public:
-    static const MetaNamespace* global() noexcept;
-    bool isGlobal() const noexcept;
-    MetaCategory category() const noexcept override;
+    static const MetaNamespace* global();
+    bool isGlobal() const;
+    MetaCategory category() const override;
 protected:
     using MetaContainer::MetaContainer;
     static MetaNamespace* create(const char *name, MetaContainer &owner);

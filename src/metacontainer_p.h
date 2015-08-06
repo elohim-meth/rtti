@@ -32,9 +32,9 @@ public:
     using item_t = std::unique_ptr<MetaItem, MetaItemDeleter>;
 
     bool add(MetaItem *value);
-    MetaItem* get(std::size_t index) const noexcept;
+    MetaItem* get(std::size_t index) const;
     MetaItem* get(const char *name) const;
-    std::size_t size() const noexcept;
+    std::size_t size() const;
     template<typename F> void for_each(F &&func) const;
 
 private:
@@ -61,9 +61,9 @@ class DLL_LOCAL MetaContainerPrivate: public MetaItemPrivate
 public:
     using MetaItemPrivate::MetaItemPrivate;
 
-    MetaItem* item(MetaCategory category, std::size_t index) const noexcept
+    MetaItem* item(MetaCategory category, std::size_t index) const
     { return m_lists[category]->get(index); }
-    std::size_t size(MetaCategory category) const noexcept
+    std::size_t size(MetaCategory category) const
     { return m_lists[category]->size(); }
     MetaItem* item(MetaCategory category, const char *name) const
     { return m_lists[category]->get(name); }

@@ -24,24 +24,24 @@ void MetaEnum::addElement(const char *name, variant &&value)
     d->m_elements.set(name, std::move(value));
 }
 
-MetaCategory MetaEnum::category() const noexcept
+MetaCategory MetaEnum::category() const
 {
     return mcatEnum;
 }
 
-std::size_t MetaEnum::elementCount() const noexcept
+std::size_t MetaEnum::elementCount() const
 {
     auto d = d_func();
     return d->m_elements.size();
 }
 
-const variant& MetaEnum::element(std::size_t index) const noexcept
+const variant& MetaEnum::element(std::size_t index) const
 {
     auto d = d_func();
     return d->m_elements.get(index);
 }
 
-const std::string &MetaEnum::elementName(std::size_t index) const noexcept
+const std::string &MetaEnum::elementName(std::size_t index) const
 {
     auto d = d_func();
     return d->m_elements.name(index);

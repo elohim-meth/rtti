@@ -21,15 +21,15 @@ class DLL_PUBLIC MetaClass final: public MetaContainer
 public:
     using cast_func_t = void*(*)(void*);
 
-    MetaCategory category() const noexcept override;
-    static const MetaClass* findByTypeId(MetaType_ID typeId) noexcept;
+    MetaCategory category() const override;
+    static const MetaClass* findByTypeId(MetaType_ID typeId);
     static const MetaClass* findByTypeName(const char *name);
-    MetaType_ID metaTypeId() const noexcept;
-    std::size_t baseClassCount() const noexcept;
-    const MetaClass* baseClass(std::size_t index) const noexcept;
-    std::size_t derivedClassCount() const noexcept;
-    const MetaClass* derivedClass(std::size_t index) const noexcept;
-    bool inheritedFrom(const MetaClass *base) const noexcept;
+    MetaType_ID metaTypeId() const;
+    std::size_t baseClassCount() const;
+    const MetaClass* baseClass(std::size_t index) const;
+    std::size_t derivedClassCount() const;
+    const MetaClass* derivedClass(std::size_t index) const;
+    bool inheritedFrom(const MetaClass *base) const;
 protected:
     explicit MetaClass(const char *name, const MetaContainer &owner, MetaType_ID typeId);
     static MetaClass* create(const char *name, MetaContainer &owner, MetaType_ID typeId);
@@ -53,7 +53,7 @@ struct DLL_PUBLIC ClassInfo
     MetaType_ID typeId;
     const void* instance = nullptr;
 
-    constexpr ClassInfo() noexcept = default;
+    constexpr ClassInfo() = default;
     constexpr ClassInfo(MetaType_ID typeId, const void *instance)
         : typeId(typeId), instance(instance)
     {}

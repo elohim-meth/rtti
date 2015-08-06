@@ -39,7 +39,7 @@ class MetaMethodPrivate;
 class DLL_PUBLIC MetaMethod final: public MetaItem
 {
 public:
-    MetaCategory category() const noexcept override;
+    MetaCategory category() const override;
 
     template<typename ...Args>
     variant invoke(Args&&... args) const
@@ -58,7 +58,7 @@ protected:
     static MetaMethod* create(const char *name, MetaContainer &owner,
                               std::unique_ptr<IMethodInvoker> invoker);
 private:
-    const IMethodInvoker* invoker() const noexcept;
+    const IMethodInvoker* invoker() const;
 
     DECLARE_PRIVATE(MetaMethod)
     template<typename, typename> friend class rtti::meta_define;

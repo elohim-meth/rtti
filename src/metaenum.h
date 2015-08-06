@@ -15,11 +15,11 @@ class DLL_PUBLIC MetaEnum final: public MetaItem
 public:
     using enum_element_t = std::function<bool(const std::string&, const variant&)>;
 
-    MetaCategory category() const noexcept override;
+    MetaCategory category() const override;
 
-    std::size_t elementCount() const noexcept;
-    const variant& element(std::size_t index) const noexcept;
-    const std::string& elementName(std::size_t index) const noexcept;
+    std::size_t elementCount() const;
+    const variant& element(std::size_t index) const;
+    const std::string& elementName(std::size_t index) const;
     const variant& element(const char *name) const;
     void for_each_element(const enum_element_t &func) const;
 protected:

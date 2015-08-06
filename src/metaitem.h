@@ -37,13 +37,13 @@ class DLL_PUBLIC MetaItem
 public:
     using enum_attribute_t = std::function<bool(const std::string&, const variant&)>;
 
-    virtual MetaCategory category() const noexcept = 0;
+    virtual MetaCategory category() const = 0;
     const std::string& name() const;
-    const MetaContainer* owner() const noexcept;
+    const MetaContainer* owner() const;
     const std::string& qualifiedName() const;
-    std::size_t attributeCount() const noexcept;
-    const variant& attribute(std::size_t index) const noexcept;
-    const std::string& attributeName(std::size_t index) const noexcept;
+    std::size_t attributeCount() const;
+    const variant& attribute(std::size_t index) const;
+    const std::string& attributeName(std::size_t index) const;
     const variant& attribute(const char *name) const;
     void for_each_attribute(const enum_attribute_t &func) const;
 protected:

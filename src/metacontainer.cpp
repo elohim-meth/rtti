@@ -42,7 +42,7 @@ bool MetaItemList::add(MetaItem *value)
     return false;
 }
 
-inline MetaItem* MetaItemList::get(std::size_t index) const noexcept
+inline MetaItem* MetaItemList::get(std::size_t index) const
 {
     std::lock_guard<std::mutex> lock{m_lock};
     if (index < m_items.size())
@@ -66,7 +66,7 @@ inline MetaItem* MetaItemList::get(const char *name) const
     return nullptr;
 }
 
-std::size_t MetaItemList::size() const noexcept
+std::size_t MetaItemList::size() const
 {
     std::lock_guard<std::mutex> lock{m_lock};
     return m_items.size();
@@ -159,7 +159,7 @@ bool MetaContainer::addItem(MetaItem *value)
     return d->addItem(value);
 }
 
-std::size_t MetaContainer::count(MetaCategory category) const noexcept
+std::size_t MetaContainer::count(MetaCategory category) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -173,7 +173,7 @@ const MetaItem* MetaContainer::item(MetaCategory category, const char *name) con
     return d->item(category, name);
 }
 
-const MetaItem* MetaContainer::item(MetaCategory category, std::size_t index) const noexcept
+const MetaItem* MetaContainer::item(MetaCategory category, std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -189,12 +189,12 @@ const MetaNamespace* MetaContainer::getNamespace(const char *name) const
     return static_cast<const MetaNamespace*>(item(mcatNamespace, name));
 }
 
-std::size_t MetaContainer::namespaceCount() const noexcept
+std::size_t MetaContainer::namespaceCount() const
 {
     return count(mcatNamespace);
 }
 
-const MetaNamespace *MetaContainer::getNamespace(std::size_t index) const noexcept
+const MetaNamespace *MetaContainer::getNamespace(std::size_t index) const
 {
     return static_cast<const MetaNamespace*>(item(mcatNamespace, index));
 }
@@ -208,12 +208,12 @@ const MetaClass* MetaContainer::getClass(const char *name) const
     return static_cast<const MetaClass*>(item(mcatClass, name));
 }
 
-std::size_t MetaContainer::classCount() const noexcept
+std::size_t MetaContainer::classCount() const
 {
     return count(mcatClass);
 }
 
-const MetaClass* MetaContainer::getClass(std::size_t index) const noexcept
+const MetaClass* MetaContainer::getClass(std::size_t index) const
 {
     return static_cast<const MetaClass*>(item(mcatClass, index));
 }
@@ -245,12 +245,12 @@ const MetaConstructor* MetaContainer::getConstructor(const std::string &name) co
     return getConstructor(name.c_str());
 }
 
-std::size_t MetaContainer::constructorCount() const noexcept
+std::size_t MetaContainer::constructorCount() const
 {
     return count(mcatConstructor);
 }
 
-const MetaConstructor* MetaContainer::getConstructor(std::size_t index) const noexcept
+const MetaConstructor* MetaContainer::getConstructor(std::size_t index) const
 {
     return static_cast<const MetaConstructor*>(item(mcatConstructor, index));
 }
@@ -326,12 +326,12 @@ const MetaMethod *MetaContainer::getMethod(const std::string &name) const
     return getMethod(name.c_str());
 }
 
-std::size_t MetaContainer::methodCount() const noexcept
+std::size_t MetaContainer::methodCount() const
 {
     return count(mcatMethod);
 }
 
-const MetaMethod *MetaContainer::getMethod(std::size_t index) const noexcept
+const MetaMethod *MetaContainer::getMethod(std::size_t index) const
 {
     return static_cast<const MetaMethod*>(item(mcatMethod, index));
 }
@@ -363,12 +363,12 @@ const MetaProperty* MetaContainer::getProperty(const char *name) const
     return getPropertyInternal(name);
 }
 
-std::size_t MetaContainer::propertyCount() const noexcept
+std::size_t MetaContainer::propertyCount() const
 {
     return count(mcatProperty);
 }
 
-const MetaProperty *MetaContainer::getProperty(std::size_t index) const noexcept
+const MetaProperty *MetaContainer::getProperty(std::size_t index) const
 {
     return static_cast<const MetaProperty*>(item(mcatProperty, index));
 }
@@ -382,12 +382,12 @@ const MetaEnum *MetaContainer::getEnum(const char *name) const
     return static_cast<const MetaEnum*>(item(mcatEnum, name));
 }
 
-std::size_t MetaContainer::enumCount() const noexcept
+std::size_t MetaContainer::enumCount() const
 {
     return count(mcatEnum);
 }
 
-const MetaEnum* MetaContainer::getEnum(std::size_t index) const noexcept
+const MetaEnum* MetaContainer::getEnum(std::size_t index) const
 {
     return static_cast<const MetaEnum*>(item(mcatEnum, index));
 }

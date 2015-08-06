@@ -36,7 +36,7 @@ MetaClass* MetaClass::create(const char *name, MetaContainer &owner, MetaType_ID
     return result;
 }
 
-const MetaClass* MetaClass::findByTypeId(MetaType_ID typeId) noexcept
+const MetaClass* MetaClass::findByTypeId(MetaType_ID typeId)
 {
     auto type = MetaType{typeId};
     if (type.valid())
@@ -56,20 +56,20 @@ const MetaClass *MetaClass::findByTypeName(const char *name)
     return nullptr;
 }
 
-MetaType_ID MetaClass::metaTypeId() const noexcept
+MetaType_ID MetaClass::metaTypeId() const
 {
     auto d = d_func();
     return d->m_typeId;
 }
 
-std::size_t MetaClass::baseClassCount() const noexcept
+std::size_t MetaClass::baseClassCount() const
 {
     checkDeferredDefine();
     auto d = d_func();
     return d->m_baseClasses.count();
 }
 
-const MetaClass* MetaClass::baseClass(std::size_t index) const noexcept
+const MetaClass* MetaClass::baseClass(std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -77,14 +77,14 @@ const MetaClass* MetaClass::baseClass(std::size_t index) const noexcept
     return findByTypeId(typeId);
 }
 
-std::size_t MetaClass::derivedClassCount() const noexcept
+std::size_t MetaClass::derivedClassCount() const
 {
     checkDeferredDefine();
     auto d = d_func();
     return d->m_derivedClasses.count();
 }
 
-const MetaClass *MetaClass::derivedClass(std::size_t index) const noexcept
+const MetaClass *MetaClass::derivedClass(std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -125,7 +125,7 @@ void MetaClass::addDerivedClass(MetaType_ID typeId)
     d->m_derivedClasses.add(typeId);
 }
 
-bool MetaClass::inheritedFrom(const MetaClass *base) const noexcept
+bool MetaClass::inheritedFrom(const MetaClass *base) const
 {
     if (!base)
         return false;
@@ -232,7 +232,7 @@ const MetaProperty* MetaClass::getPropertyInternal(const char *name) const
     return (found ? result : nullptr);
 }
 
-MetaCategory MetaClass::category() const noexcept
+MetaCategory MetaClass::category() const
 {
     return mcatClass;
 }

@@ -22,7 +22,7 @@ class MetaEnum;
 struct DLL_PUBLIC IDefinitionCallbackHolder
 {
     virtual void invoke(MetaContainer&) = 0;
-    virtual ~IDefinitionCallbackHolder() noexcept = default;
+    virtual ~IDefinitionCallbackHolder() = default;
 };
 
 class DLL_PUBLIC MetaContainer: public MetaItem
@@ -38,12 +38,12 @@ public:
     using enum_method_t = std::function<bool(const MetaMethod*)>;
 
     const MetaNamespace* getNamespace(const char *name) const;
-    std::size_t namespaceCount() const noexcept;
-    const MetaNamespace* getNamespace(std::size_t index) const noexcept;
+    std::size_t namespaceCount() const;
+    const MetaNamespace* getNamespace(std::size_t index) const;
 
     const MetaClass* getClass(const char *name) const;
-    std::size_t classCount() const noexcept;
-    const MetaClass* getClass(std::size_t index) const noexcept;
+    std::size_t classCount() const;
+    const MetaClass* getClass(std::size_t index) const;
     void for_each_class(const enum_class_t &func) const;
 
     const MetaConstructor* getConstructor(const char *name) const;
@@ -52,8 +52,8 @@ public:
     const MetaConstructor* getConstructor() const
     { return getConstructor(signature<Args...>::get("constructor")); }
 
-    std::size_t constructorCount() const noexcept;
-    const MetaConstructor* getConstructor(std::size_t index) const noexcept;
+    std::size_t constructorCount() const;
+    const MetaConstructor* getConstructor(std::size_t index) const;
     const MetaConstructor* defaultConstructor() const;
     const MetaConstructor* copyConstructor() const;
     const MetaConstructor* moveConstructor() const;
@@ -68,17 +68,17 @@ public:
     const MetaMethod* getMethod(const std::string &name) const
     { return getMethod(signature<Args...>::get(name.c_str())); }
 
-    std::size_t methodCount() const noexcept;
-    const MetaMethod* getMethod(std::size_t index) const noexcept;
+    std::size_t methodCount() const;
+    const MetaMethod* getMethod(std::size_t index) const;
     void for_each_method(const enum_method_t &func) const;
 
     const MetaProperty* getProperty(const char *name) const;
-    std::size_t propertyCount() const noexcept;
-    const MetaProperty* getProperty(std::size_t index) const noexcept;
+    std::size_t propertyCount() const;
+    const MetaProperty* getProperty(std::size_t index) const;
 
     const MetaEnum* getEnum(const char *name) const;
-    std::size_t enumCount() const noexcept;
-    const MetaEnum* getEnum(std::size_t index) const noexcept;
+    std::size_t enumCount() const;
+    const MetaEnum* getEnum(std::size_t index) const;
 
     void forceDeferredDefine(ForceDeferred type) const;
 protected:
@@ -86,8 +86,8 @@ protected:
     explicit MetaContainer(MetaContainerPrivate &value);
 
     bool addItem(MetaItem *value);
-    std::size_t count(MetaCategory category) const noexcept;
-    const MetaItem* item(MetaCategory category, std::size_t index) const noexcept;
+    std::size_t count(MetaCategory category) const;
+    const MetaItem* item(MetaCategory category, std::size_t index) const;
     const MetaItem* item(MetaCategory category, const char *name) const;
 
     void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);

@@ -10,13 +10,13 @@ MetaNamespace::MetaNamespace()
     : MetaContainer(*new MetaNamespacePrivate{"global"})
 {}
 
-const MetaNamespace* MetaNamespace::global() noexcept
+const MetaNamespace* MetaNamespace::global()
 {
     static MetaNamespace globalNamespace;
     return &globalNamespace;
 }
 
-bool MetaNamespace::isGlobal() const noexcept
+bool MetaNamespace::isGlobal() const
 {
     auto d = d_func();
     return (d->owner() == nullptr);
@@ -33,7 +33,7 @@ MetaNamespace* MetaNamespace::create(const char *name, MetaContainer &owner)
     return result;
 }
 
-MetaCategory MetaNamespace::category() const noexcept
+MetaCategory MetaNamespace::category() const
 {
     return mcatNamespace;
 }

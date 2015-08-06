@@ -74,11 +74,11 @@ struct method_invoker<F, void_static_func>
     static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
-    static bool isStatic() noexcept
+    static bool isStatic()
     { return true; }
-    static MetaType_ID returnTypeId() noexcept
+    static MetaType_ID returnTypeId()
     { return metaTypeId<void>(); }
-    static std::vector<MetaType_ID> parametersTypeId() noexcept
+    static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
     { return f_signature<F>::get(name); }
@@ -144,11 +144,11 @@ struct method_invoker<F, return_static_func>
     static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
-    static bool isStatic() noexcept
+    static bool isStatic()
     { return true; }
-    static MetaType_ID returnTypeId() noexcept
+    static MetaType_ID returnTypeId()
     { return metaTypeId<Result>(); }
-    static std::vector<MetaType_ID> parametersTypeId() noexcept
+    static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
     { return f_signature<F>::get(name); }
@@ -220,11 +220,11 @@ struct method_invoker<F, void_member_func>
     static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
-    static bool isStatic() noexcept
+    static bool isStatic()
     { return false; }
-    static MetaType_ID returnTypeId() noexcept
+    static MetaType_ID returnTypeId()
     { return metaTypeId<void>(); }
-    static std::vector<MetaType_ID> parametersTypeId() noexcept
+    static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
     { return f_signature<F>::get(name); }
@@ -300,11 +300,11 @@ struct method_invoker<F, return_member_func>
     static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
-    static bool isStatic() noexcept
+    static bool isStatic()
     { return false; }
-    static MetaType_ID returnTypeId() noexcept
+    static MetaType_ID returnTypeId()
     { return metaTypeId<Result>(); }
-    static std::vector<MetaType_ID> parametersTypeId() noexcept
+    static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
     static std::string signature(const char *name)
     { return f_signature<F>::get(name); }
@@ -564,13 +564,13 @@ template<typename P, typename Tag> struct property_invoker;
 template<typename P>
 struct property_invoker<P, static_pointer>
 {
-    static bool isStatic() noexcept
+    static bool isStatic()
     { return true; }
 
     static MetaType_ID typeId()
     { return metaTypeId<T>(); }
 
-    static bool readOnly() noexcept
+    static bool readOnly()
     { return IsReadOnly::value; }
 
     static variant get_static(P property)
@@ -612,13 +612,13 @@ struct property_invoker<P, member_pointer>
     static_assert(std::is_member_object_pointer<P>::value,
                   "Type should be member object pointer");
 
-    static bool isStatic() noexcept
+    static bool isStatic()
     { return false; }
 
     static MetaType_ID typeId()
     { return metaTypeId<T>(); }
 
-    static bool readOnly() noexcept
+    static bool readOnly()
     { return IsReadOnly::value; }
 
     static variant get_static(P)
@@ -682,13 +682,13 @@ struct PropertyInvoker: IPropertyInvoker
         : m_prop(prop)
     {}
 
-    bool isStatic() const noexcept override
+    bool isStatic() const override
     { return invoker_t::isStatic(); }
 
     MetaType_ID typeId() const override
     { return invoker_t::typeId(); }
 
-    bool readOnly() const noexcept override
+    bool readOnly() const override
     { return invoker_t::readOnly(); }
 
     variant get_static() const override
@@ -714,13 +714,13 @@ struct PropertyInvokerEx: IPropertyInvoker
         : m_get(get), m_set(set)
     {}
 
-    bool isStatic() const noexcept override
+    bool isStatic() const override
     { return std::is_function<G>::value; }
 
     MetaType_ID typeId() const override
     { return metaTypeId<T>(); }
 
-    bool readOnly() const noexcept override
+    bool readOnly() const override
     { return false; }
 
     variant get_static() const override
@@ -963,7 +963,7 @@ public:
     }
 
 protected:
-    meta_define() noexcept = default;
+    meta_define() = default;
     meta_define(const meta_define&) = delete;
     meta_define& operator=(const meta_define&) = delete;
     meta_define(meta_define&&) = default;

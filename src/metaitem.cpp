@@ -9,7 +9,7 @@ const std::string empty_string = {};
 
 namespace internal {
 
-const variant& NamedVariantList::get(std::size_t index) const noexcept
+const variant& NamedVariantList::get(std::size_t index) const
 {
     std::lock_guard<std::mutex> lock{m_lock};
     if (index < m_items.size())
@@ -34,7 +34,7 @@ const variant& NamedVariantList::get(const char *name) const
     return variant::empty_variant;
 }
 
-const std::string& NamedVariantList::name(std::size_t index) const noexcept
+const std::string& NamedVariantList::name(std::size_t index) const
 {
     std::lock_guard<std::mutex> lock{m_lock};
     if (index < m_items.size())
@@ -85,7 +85,7 @@ const std::string& MetaItem::name() const
     return d->name();
 }
 
-const MetaContainer *MetaItem::owner() const noexcept
+const MetaContainer *MetaItem::owner() const
 {
     auto d = d_func();
     return d->owner();
@@ -97,21 +97,21 @@ const std::string& MetaItem::qualifiedName() const
     return d->qualifiedName();
 }
 
-std::size_t MetaItem::attributeCount() const noexcept
+std::size_t MetaItem::attributeCount() const
 {
     checkDeferredDefine();
     auto d = d_func();
     return d->m_attributes.size();
 }
 
-const variant& MetaItem::attribute(std::size_t index) const noexcept
+const variant& MetaItem::attribute(std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
     return d->m_attributes.get(index);
 }
 
-const std::string &MetaItem::attributeName(std::size_t index) const noexcept
+const std::string &MetaItem::attributeName(std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();

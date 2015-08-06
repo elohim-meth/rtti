@@ -17,7 +17,7 @@ class variant;
 class DLL_PUBLIC argument final
 {
 public:
-    argument() noexcept = default;
+    argument() = default;
     argument(const argument&) = delete;
     argument& operator=(const argument&) = delete;
     argument(argument&&) = default;
@@ -29,8 +29,8 @@ public:
           m_typeId{metaTypeId<T>()}
     {}
 
-    bool empty() const noexcept;
-    MetaType_ID typeId() const noexcept;
+    bool empty() const;
+    MetaType_ID typeId() const;
 
     template<typename T>
     T value() const

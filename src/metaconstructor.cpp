@@ -23,13 +23,13 @@ MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
     return result;
 }
 
-const IConstructorInvoker* MetaConstructor::constructor() const noexcept
+const IConstructorInvoker* MetaConstructor::constructor() const
 {
     auto d = d_func();
     return d->m_constructor.get();
 }
 
-MetaCategory MetaConstructor::category() const noexcept
+MetaCategory MetaConstructor::category() const
 {
     return mcatConstructor;
 }

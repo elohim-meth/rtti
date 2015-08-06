@@ -13,7 +13,7 @@ namespace internal {
 class DLL_LOCAL DerivedClassList
 {
 public:
-    void add(MetaType_ID value) noexcept
+    void add(MetaType_ID value)
     {
         std::lock_guard<std::mutex> lock{m_lock};
         auto search = std::find(std::begin(m_items), std::end(m_items), value);
@@ -21,13 +21,13 @@ public:
             m_items.push_back(value);
     }
 
-    std::size_t count() const noexcept
+    std::size_t count() const
     {
         std::lock_guard<std::mutex> lock{m_lock};
         return m_items.size();
     }
 
-    MetaType_ID get(std::size_t index) const noexcept
+    MetaType_ID get(std::size_t index) const
     {
         std::lock_guard<std::mutex> lock{m_lock};
         if (index < m_items.size())
@@ -52,20 +52,20 @@ public:
     using item_t = std::pair<MetaType_ID, MetaClass::cast_func_t>;
     using container_t = std::vector<item_t>;
 
-    void add(MetaType_ID value, MetaClass::cast_func_t func) noexcept
+    void add(MetaType_ID value, MetaClass::cast_func_t func)
     {
         std::lock_guard<std::mutex> lock{m_lock};
         if (!find_imp(value))
             m_items.emplace_back(value, func);
     }
 
-    std::size_t count() const noexcept
+    std::size_t count() const
     {
         std::lock_guard<std::mutex> lock{m_lock};
         return m_items.size();
     }
 
-    MetaType_ID get(std::size_t index) const noexcept
+    MetaType_ID get(std::size_t index) const
     {
         std::lock_guard<std::mutex> lock{m_lock};
         if (index < m_items.size())

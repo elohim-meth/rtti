@@ -2,12 +2,12 @@
 
 namespace rtti {
 
-bool argument::empty() const noexcept
+bool argument::empty() const
 {
     return m_data == nullptr;
 }
 
-MetaType_ID argument::typeId() const noexcept
+MetaType_ID argument::typeId() const
 {
     return m_typeId;
 }

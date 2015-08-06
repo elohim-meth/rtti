@@ -104,7 +104,7 @@ public:
         return m_pImpl->m_value;
     }
 
-    bool empty() const noexcept
+    bool empty() const
     { return !m_pImpl; }
 
 private:
@@ -149,11 +149,11 @@ public:
         std::swap(b, other.b);
         std::swap(c, other.c);
     }
-    virtual ~A() noexcept
+    virtual ~A()
     {
         a = b = c = -1;
     }
-    virtual void print() const noexcept
+    virtual void print() const
     {
         std::printf("a = %d, b = %d, c = %d \n", a, b, c);
     }
@@ -229,13 +229,13 @@ public:
     }
 
 
-    virtual ~B() noexcept
+    virtual ~B()
     {
         PRINT_PRETTY_FUNC
         d = -1;
     }
 
-    void print() const noexcept override
+    void print() const override
     {
         PRINT_PRETTY_FUNC
         A::print();

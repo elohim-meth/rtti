@@ -13,7 +13,7 @@ class MetaConstructorPrivate;
 class DLL_PUBLIC MetaConstructor final: public MetaItem
 {
 public:
-    MetaCategory category() const noexcept override;
+    MetaCategory category() const override;
 
     template<typename ...Args>
     variant invoke(Args&&... args) const
@@ -30,7 +30,7 @@ protected:
                                    std::unique_ptr<IConstructorInvoker> constructor);
 
 private:
-    const IConstructorInvoker* constructor() const noexcept;
+    const IConstructorInvoker* constructor() const;
 
     DECLARE_PRIVATE(MetaConstructor)
     template<typename, typename> friend class rtti::meta_define;

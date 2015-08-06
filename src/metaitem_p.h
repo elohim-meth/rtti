@@ -32,11 +32,11 @@ class DLL_LOCAL NamedVariantList
 public:
     template<typename T>
     void set(const char *name, T &&value);
-    const variant& get(std::size_t index) const noexcept;
+    const variant& get(std::size_t index) const;
     const variant& get(const char *name) const;
-    const std::string& name(std::size_t index) const noexcept;
+    const std::string& name(std::size_t index) const;
 
-    std::size_t size() const noexcept
+    std::size_t size() const
     {
         return m_items.size();
     }
@@ -107,7 +107,7 @@ public:
         : m_name(std::move(name)), m_owner(&owner)
     {}
 
-    virtual ~MetaItemPrivate() noexcept = default;
+    virtual ~MetaItemPrivate() = default;
 
 protected:
     const std::string& name() const
