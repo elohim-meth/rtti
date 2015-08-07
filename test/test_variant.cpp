@@ -109,7 +109,7 @@ public:
     }
 
     bool empty() const
-    { check(); return !m_pImpl; }
+    {  return !m_pImpl; }
 
 private:
     PrivatePimpl *m_pImpl = nullptr;
