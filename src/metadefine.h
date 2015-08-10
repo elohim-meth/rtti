@@ -90,9 +90,9 @@ struct method_invoker<F, void_static_func>
                           const argument &arg6, const argument &arg7,
                           const argument &arg8, const argument &arg9)
     {
-        argument_array_t args = {
+        argument_array_t args = {{
             &arg0, &arg1, &arg2, &arg3, &arg4,
-            &arg5, &arg6, &arg7, &arg8, &arg9};
+            &arg5, &arg6, &arg7, &arg8, &arg9}};
 
         auto count = typelist_size<Args>::value;
         for (const auto &item: args)
@@ -160,9 +160,9 @@ struct method_invoker<F, return_static_func>
                           const argument &arg6, const argument &arg7,
                           const argument &arg8, const argument &arg9)
     {
-        argument_array_t args = {
+        argument_array_t args = {{
             &arg0, &arg1, &arg2, &arg3, &arg4,
-            &arg5, &arg6, &arg7, &arg8, &arg9};
+            &arg5, &arg6, &arg7, &arg8, &arg9}};
 
         auto count = typelist_size<Args>::value;
         for (const auto &item: args)
@@ -237,9 +237,9 @@ struct method_invoker<F, void_member_func>
                           const argument &arg6, const argument &arg7,
                           const argument &arg8, const argument &arg9)
     {
-        argument_array_t args = {
+        argument_array_t args = {{
             &arg0, &arg1, &arg2, &arg3, &arg4,
-            &arg5, &arg6, &arg7, &arg8, &arg9};
+            &arg5, &arg6, &arg7, &arg8, &arg9}};
 
         auto count = typelist_size<Args>::value;
         for (const auto &item: args)
@@ -317,9 +317,9 @@ struct method_invoker<F, return_member_func>
                           const argument &arg6, const argument &arg7,
                           const argument &arg8, const argument &arg9)
     {
-        argument_array_t args = {
+        argument_array_t args = {{
             &arg0, &arg1, &arg2, &arg3, &arg4,
-            &arg5, &arg6, &arg7, &arg8, &arg9};
+            &arg5, &arg6, &arg7, &arg8, &arg9}};
 
         auto count = typelist_size<Args>::value;
         for (const auto &item: args)
@@ -476,9 +476,9 @@ struct ConstructorInvoker: IConstructorInvoker
                           argument arg6 = argument{}, argument arg7 = argument{},
                           argument arg8 = argument{}, argument arg9 = argument{}) const override
     {
-        argument_array_t args = {
+        argument_array_t args = {{
             &arg0, &arg1, &arg2, &arg3, &arg4,
-            &arg5, &arg6, &arg7, &arg8, &arg9};
+            &arg5, &arg6, &arg7, &arg8, &arg9}};
 
         auto count = sizeof...(Args);
         for (const auto &item: args)
@@ -1029,7 +1029,7 @@ private:
         MetaType::registerConverter(&internal::constructor_convert<Arg, T>);
     }
 
-    template<typename> friend class internal::DefinitionCallbackHolder;
+    template<typename, typename> friend struct internal::DefinitionCallbackHolder;
     template<typename, typename> friend class rtti::meta_define;
 };
 

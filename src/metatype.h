@@ -18,11 +18,11 @@ using MetaType_ID = ID<meta_type_tag, std::uint32_t,
 
 // begin forward
 namespace internal {
-template<typename T> struct meta_type;
-class ConvertFunctionBase;
+template<typename T> class meta_type;
+struct ConvertFunctionBase;
 } // namespace internal
 
-class TypeInfo;
+struct TypeInfo;
 class MetaClass;
 class variant;
 // end forward

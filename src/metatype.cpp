@@ -21,10 +21,10 @@ TypeInfo{CString{#NAME}, sizeof(NAME), \
          const_bitset<NAME>::value, \
          internal::type_flags<NAME>::value},
 
-static constexpr std::array<TypeInfo, 38> fundamentalTypes = {
+static constexpr std::array<TypeInfo, 38> fundamentalTypes = {{
     TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, std::uint8_t{0}, 0, internal::type_flags<void>::value},
     FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
-    };
+    }};
 
 #undef DEFINE_STATIC_TYPE_INFO
 

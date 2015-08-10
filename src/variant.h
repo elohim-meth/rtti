@@ -686,7 +686,7 @@ private:
     storage_t storage = {.buffer = {0}};
     table_t* manager = internal::function_table_for<void>();
 
-    friend class std::hash<rtti::variant>;
+    friend struct std::hash<rtti::variant>;
     friend class rtti::argument;
 };
 
