@@ -9,10 +9,6 @@
 
 namespace rtti {
 
-// forward
-class argument;
-class variant;
-
 namespace internal {
 
 constexpr std::size_t STORAGE_SIZE = sizeof(void*) * 2;
@@ -687,7 +683,6 @@ private:
     table_t* manager = internal::function_table_for<void>();
 
     friend struct std::hash<rtti::variant>;
-    friend class rtti::argument;
 };
 
 } //namespace rtti
