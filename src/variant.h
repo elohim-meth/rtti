@@ -549,11 +549,11 @@ private:
 
         // nope
         static bool invoke_selector(const variant&, MetaType,
-                                     std::false_type, std::false_type)
+                                    std::false_type, std::false_type)
         { return false; }
         // class
         static bool invoke_selector(const variant &self, MetaType type,
-                                     std::true_type, std::false_type)
+                                    std::true_type, std::false_type)
         {
             if (type.isClass())
                 return invoke_imp(self);
@@ -561,7 +561,7 @@ private:
         }
         // class ptr
         static bool invoke_selector(const variant &self, MetaType type,
-                                     std::false_type, std::true_type)
+                                    std::false_type, std::true_type)
         {
             if (type.isClassPtr())
                 return invoke_imp(self);
@@ -631,11 +631,11 @@ private:
 
         // nope
         static void* invoke_selector(const variant&, MetaType,
-                                      std::false_type, std::false_type)
+                                     std::false_type, std::false_type)
         { return nullptr; }
         // class
         static void* invoke_selector(const variant &self, MetaType type,
-                                      std::true_type, std::false_type)
+                                     std::true_type, std::false_type)
         {
             if (type.isClass())
                 return invoke_imp(self);
@@ -643,7 +643,7 @@ private:
         }
         // class ptr
         static void* invoke_selector(const variant &self, MetaType type,
-                                      std::false_type, std::true_type)
+                                     std::false_type, std::true_type)
         {
             if (type.isClassPtr())
             {
