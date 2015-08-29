@@ -20,7 +20,8 @@ public:
     argument(argument&&) = default;
     argument& operator=(argument&&) = delete;
 
-    template<typename T>
+    template<typename T,
+             typename = enable_if_t<!std::is_same<decay_t<T>, argument>::value>>
     argument(T &&value) noexcept
         : m_data{const_cast<void*>(reinterpret_cast<const void*>(std::addressof(value)))},
           m_typeId{metaTypeId<T>()}
