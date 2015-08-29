@@ -391,7 +391,8 @@ public:
     variant(variant &&other) noexcept;
     variant& operator=(variant &&other) noexcept;
 
-    template<typename T>
+    template<typename T,
+             typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
     variant(T &&value)
         : manager{internal::function_table_for<remove_reference_t<T>>()}
     {
@@ -402,7 +403,8 @@ public:
         manager->f_construct(storage, std::addressof(value));
     }
 
-    template<typename T>
+    template<typename T,
+             typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
     variant& operator=(T &&value)
     {
         variant{std::forward<T>(value)}.swap(*this);
