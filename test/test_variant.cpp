@@ -550,3 +550,4 @@ void test_variant_1()
 
     std::printf("\n");
 }
+

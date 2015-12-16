@@ -6,7 +6,6 @@
 #include <vector>
 #include <array>
 #include <unordered_map>
-#include <bitset>
 #include <memory>
 #include <cassert>
 
@@ -22,7 +21,7 @@ TypeInfo{CString{#NAME}, sizeof(NAME), \
          internal::type_flags<NAME>::value},
 
 static constexpr std::array<TypeInfo, 38> fundamentalTypes = {{
-    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, std::uint8_t{0}, 0, internal::type_flags<void>::value},
+    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, 0, 0, internal::type_flags<void>::value},
     FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
     }};
 
@@ -40,8 +39,8 @@ public:
     const TypeInfo* getTypeInfo(MetaType_ID typeId) const;
     const TypeInfo* getTypeInfo(const char *name) const;
     const TypeInfo* addTypeInfo(const char *name, std::size_t size,
-                                MetaType_ID decay, std::uint8_t arity,
-                                std::uint8_t const_mask, MetaType::TypeFlags flags);
+                                MetaType_ID decay, std::uint16_t arity,
+                                std::uint16_t const_mask, MetaType::TypeFlags flags);
 private:
     mutable std::mutex m_lock;
     std::vector<std::unique_ptr<TypeInfo>> m_items;
@@ -107,8 +106,8 @@ const TypeInfo* CustomTypes::getTypeInfo(const char *name) const
 }
 
 inline const TypeInfo* CustomTypes::addTypeInfo(const char *name, std::size_t size,
-                                            MetaType_ID decay, std::uint8_t arity,
-                                            std::uint8_t const_mask, MetaType::TypeFlags flags)
+                                            MetaType_ID decay, uint16_t arity,
+                                            uint16_t const_mask, MetaType::TypeFlags flags)
 {
     std::lock_guard<std::mutex> lock{m_lock};
     MetaType_ID::type type = fundamentalTypes.size() + m_items.size();
@@ -186,7 +185,7 @@ MetaType::TypeFlags MetaType::typeFlags() const
     return result;
 }
 
-std::uint8_t MetaType::pointerArity() const
+std::uint16_t MetaType::pointerArity() const
 {
     if (m_typeInfo)
         return m_typeInfo->arity;
@@ -209,12 +208,13 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
         --arity;
     }
 
-    const auto from = std::bitset<8>{fromType.m_typeInfo->const_mask};
-    const auto to = std::bitset<8>{toType.m_typeInfo->const_mask};
+    const auto from = TypeInfo::const_bitset_t{fromType.m_typeInfo->const_mask};
+    const auto to = TypeInfo::const_bitset_t{toType.m_typeInfo->const_mask};
+
     if (from == to)
         return true;
 
-    for (auto i = 0; i <= arity; ++i)
+    for (decltype(arity) i = 0; i <= arity; ++i)
     {
         auto f = from.test(i);
         auto t = to.test(i);
@@ -224,7 +224,7 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
 
         if (!f & t)
         {
-            for (auto j = i + 1; j <= arity; ++j)
+            for (decltype(arity) j = i + 1; j <= arity; ++j)
                 if (!to.test(j))
                     return false;
             break;
@@ -234,8 +234,8 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
 }
 
 MetaType_ID MetaType::registerMetaType(const char *name, std::size_t size,
-                                       MetaType_ID decay, std::uint8_t arity,
-                                       std::uint8_t const_mask,
+                                       MetaType_ID decay, std::uint16_t arity,
+                                       std::uint16_t const_mask,
                                        MetaType::TypeFlags flags)
 {
     auto result = customTypes().addTypeInfo(name, size, decay, arity, const_mask, flags);
@@ -318,7 +318,7 @@ private:
 template<typename F>
 bool MetaTypeFunctionList<F>::Destroyed = false;
 
-static inline MetaTypeFunctionList<internal::ConvertFunctionBase>* customConverters()
+inline MetaTypeFunctionList<internal::ConvertFunctionBase>* customConverters()
 {
     if (MetaTypeFunctionList<internal::ConvertFunctionBase>::Destroyed)
         return nullptr;

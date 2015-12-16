@@ -32,12 +32,12 @@ variant::~variant()
 {
     manager->f_destroy(storage);
     manager = internal::function_table_for<void>();
-    storage = {.buffer = {0}};
+    storage = storage_t{};
 }
 
 void variant::swap(variant &other) noexcept
 {
-    storage_t temporary = {.buffer = {0}};
+    storage_t temporary;
     manager->f_move(storage, temporary);
     other.manager->f_move(other.storage, storage);
     manager->f_move(temporary, other.storage);

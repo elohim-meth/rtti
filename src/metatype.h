@@ -85,7 +85,7 @@ public:
     bool isClass() const;
     bool isClassPtr() const;
     bool isArray() const;
-    std::uint8_t pointerArity() const;
+    uint16_t pointerArity() const;
     static bool constCompatible(MetaType fromType, MetaType toType);
 
     static bool hasConverter(MetaType fromType, MetaType toType);
@@ -109,7 +109,7 @@ public:
     static void unregisterConverter();
 private:
     static MetaType_ID registerMetaType(const char *name, std::size_t size,
-                                        MetaType_ID decay, std::uint8_t arity, uint8_t const_mask,
+                                        MetaType_ID decay, uint16_t arity, uint16_t const_mask,
                                         MetaType::TypeFlags flags);
 
     template<typename From, typename To, typename Func>
@@ -182,8 +182,8 @@ class meta_type final
         const auto &name = type_name<T>();
         const auto flags = type_flags<T>::value;
         const auto size = sizeof(T);
-        const std::uint8_t arity = pointer_arity<Decay>::value;
-        const std::uint8_t const_mask = const_bitset<NoRef>::value;
+        const std::uint16_t arity = pointer_arity<Decay>::value;
+        const std::uint16_t const_mask = const_bitset<NoRef>::value;
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags);
     }
@@ -293,7 +293,7 @@ private:
 };
 
 template<typename From, typename To, typename F>
-struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
+struct ConvertFunctor: ConvertFunctionBase
 {
     using this_t = ConvertFunctor<From, To, F>;
 

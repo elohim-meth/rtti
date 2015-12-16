@@ -51,7 +51,7 @@ private:
 struct DLL_PUBLIC ClassInfo
 {
     MetaType_ID typeId;
-    const void* instance = nullptr;
+    const void *instance = nullptr;
 
     constexpr ClassInfo() = default;
     constexpr ClassInfo(MetaType_ID typeId, const void *instance)

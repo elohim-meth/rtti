@@ -210,7 +210,7 @@ struct has_move_constructor<T, true>:
 #if __GNUC__ >= 5
         std::is_trivially_move_constructible<T>::value ||
 #endif
-        std::is_move_constructible<T>::value && !only_copy_available<T>::value,
+       (std::is_move_constructible<T>::value && !only_copy_available<T>::value),
     std::true_type, std::false_type>
 {};
 

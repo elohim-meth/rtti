@@ -48,6 +48,8 @@ const std::string& NamedVariantList::name(std::size_t index) const
 // MetaItemPrivate
 //--------------------------------------------------------------------------------------------------------------------------------
 
+MetaItemPrivate::~MetaItemPrivate() = default;
+
 inline std::string MetaItemPrivate::makeQualifiedName() const
 {
     std::string result = m_owner ? m_owner->qualifiedName() : "";

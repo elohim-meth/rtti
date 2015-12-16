@@ -1044,11 +1044,10 @@ protected:
 private:
     internal::container_stack_t m_container;
 
-    friend meta_global global_define();
+    friend DLL_PUBLIC meta_global global_define();
 };
 
 DLL_PUBLIC meta_global global_define();
-
 
 } // namespace rtti
 

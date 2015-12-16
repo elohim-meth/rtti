@@ -190,4 +190,3 @@ void register_rtti()
     register_fromString_converter<bool>();
 
 }
-

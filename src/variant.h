@@ -51,6 +51,7 @@ union DLL_PUBLIC variant_type_storage
         void *ptr;
         mutable void *temp;
     };
+    variant_type_storage(): buffer{0} {}
 };
 
 struct DLL_PUBLIC variant_function_table
@@ -681,7 +682,7 @@ private:
     using table_t = const internal::variant_function_table;
     using storage_t = internal::variant_type_storage;
 
-    storage_t storage = {.buffer = {0}};
+    storage_t storage;
     table_t* manager = internal::function_table_for<void>();
 
     friend struct std::hash<rtti::variant>;
