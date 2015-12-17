@@ -1,5 +1,4 @@
 ﻿set(SOURCES
-    ./argument.cpp
     ./metatype.cpp
     ./variant.cpp
     ./metaitem.cpp

@@ -27,8 +27,10 @@ public:
           m_typeId{metaTypeId<T>()}
     {}
 
-    bool empty() const;
-    MetaType_ID typeId() const;
+    bool empty() const
+    { return m_data == nullptr; }
+    MetaType_ID typeId() const
+    { return m_typeId; }
 
     template<typename T>
     T value() const
