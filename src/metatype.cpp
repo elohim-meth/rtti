@@ -110,7 +110,8 @@ inline const TypeInfo* CustomTypes::addTypeInfo(const char *name, std::size_t si
                                             uint16_t const_mask, MetaType::TypeFlags flags)
 {
     std::lock_guard<std::mutex> lock{m_lock};
-    MetaType_ID::type type = fundamentalTypes.size() + m_items.size();
+    auto type = static_cast<MetaType_ID::type>(
+                fundamentalTypes.size() + m_items.size());
 
     // this means that decay_t<type> = type
     if (decay.value() == MetaType::InvalidTypeId)

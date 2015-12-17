@@ -107,7 +107,7 @@ public:
         : m_name(std::move(name)), m_owner(&owner)
     {}
 
-    virtual ~MetaItemPrivate();
+    virtual ~MetaItemPrivate() = default;
 
 protected:
     const std::string& name() const
