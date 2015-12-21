@@ -293,7 +293,7 @@ private:
 };
 
 template<typename From, typename To, typename F>
-struct ConvertFunctor: ConvertFunctionBase
+struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
 {
     using this_t = ConvertFunctor<From, To, F>;
 
@@ -321,7 +321,7 @@ private:
 };
 
 template<typename From, typename To>
-struct ConvertMethod: ConvertFunctionBase
+struct DLL_LOCAL ConvertMethod: ConvertFunctionBase
 {
     using this_t = ConvertMethod<From, To>;
     using func_t = To(From::*)() const;
@@ -348,7 +348,7 @@ private:
 };
 
 template<typename From, typename To>
-struct ConvertMethodOk: ConvertFunctionBase
+struct DLL_LOCAL ConvertMethodOk: ConvertFunctionBase
 {
     using this_t = ConvertMethodOk<From, To>;
     using func_t = To(From::*)(bool*) const;
