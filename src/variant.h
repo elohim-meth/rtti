@@ -31,7 +31,8 @@ struct is_reference_wrapper<std::reference_wrapper<T>>: std::true_type
 template<typename T>
 using is_reference_wrapper_t = typename is_reference_wrapper<T>::type;
 
-template<typename T, bool = is_reference_wrapper<T>::value> struct unwrap_reference;
+template<typename T, bool = is_reference_wrapper<T>::value>
+struct unwrap_reference;
 
 template<typename T>
 struct unwrap_reference<T, false>: identity<T>
@@ -178,7 +179,7 @@ struct function_table_selector<T, true, true>
 private:
     using Unwrap = unwrap_reference_t<T>;
     using IsArray = is_array_t<Unwrap>;
-    using Decay = conditional_t<is_array_t<Unwrap>::value, remove_cv_t<Unwrap>, full_decay_t<Unwrap>>;
+    using Decay = conditional_t<IsArray::value, remove_cv_t<Unwrap>, full_decay_t<Unwrap>>;
 
     static void* access_selector(const variant_type_storage &value, std::false_type) noexcept
     {
