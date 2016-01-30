@@ -12,6 +12,12 @@ namespace rtti {
 template<typename T>
 using add_pointer_t = typename std::add_pointer<T>::type;
 
+template<typename T>
+using add_lvalue_reference_t = typename std::add_lvalue_reference<T>::type;
+
+template<typename T>
+using add_rvalue_reference_t = typename std::add_rvalue_reference<T>::type;
+
 template<bool C, typename T, typename F>
 using conditional_t = typename std::conditional<C, T, F>::type;
 

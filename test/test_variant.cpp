@@ -314,8 +314,9 @@ void test_variant_1()
     std::printf("\n");
 
     {
-        rtti::variant v1 = TestQPointer{"Hello, World"};
+        rtti::variant v1 = TestQPointer{"asdfgh"};
         rtti::variant v2 = TestQPointer{"qwerty"};
+        v2 = TestQPointer{"123456"};
         v1 = std::move(v2);
         assert(v1);
         v1.value<TestQPointer>().check();
@@ -326,8 +327,8 @@ void test_variant_1()
 
     {
         auto lambda = []() { return rtti::variant{TestQPointer{"123456"}}; };
-        auto q1 = lambda().value<TestQPointer>();
-        q1.check();
+        auto q = lambda().value<TestQPointer>();
+        q.check();
     }
 
     register_classes();
@@ -335,8 +336,10 @@ void test_variant_1()
     std::printf("\n");
 
     {
-        rtti::variant v3 = "Hello, World";
-        auto q3 = v3.to<TestQPointer>();
+        rtti::variant v = "Hello, World";
+        auto q1 = v.to<TestQPointer>();
+        auto q = TestQPointer{"123456"};
+        q = v.to<TestQPointer>();
     }
 
     std::printf("\n");
@@ -549,5 +552,30 @@ void test_variant_1()
     }
 
     std::printf("\n");
+
+    {
+        using namespace rtti;
+        int i = 1;
+        const variant v = &i;
+        v.to<int*>();
+        v.value<const int*>();
+
+        const int *pi = &i;
+        int const*&t = pi;
+    }
+
+    {
+        using namespace rtti;
+        const int i[3] = {1, 2, 3};
+        variant v1 = i;
+        auto &t1 = v1.value<int*>();
+        auto &t2 = v1.cvalue<decltype(i)>();
+        variant v2 = std::ref(i);
+        variant v3 = "3.14";
+        //v3.convert<std::string>();
+        v3.convert<double>();
+        assert(v3.value<double>() == 3.14);
+
+    }
 }
 

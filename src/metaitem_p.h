@@ -96,7 +96,7 @@ public:
     MetaItemPrivate& operator=(MetaItemPrivate&&) = delete;
 
     // Constructor for global namespace
-    MetaItemPrivate(const char *name)
+    explicit MetaItemPrivate(const char *name)
         : m_name(name)
     {}
 

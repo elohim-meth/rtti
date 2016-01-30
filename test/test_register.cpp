@@ -180,6 +180,13 @@ void register_rtti()
                 {
                     return std::stod(value);
                 });
+    rtti::MetaType::registerConverter<char*, double>(
+                [] (const char *value)
+                {
+                    char *end;
+                    return std::strtod(value, &end);
+                });
+
     rtti::MetaType::registerConverter<std::string, long double>(
                 [] (const std::string &value)
                 {
