@@ -11,7 +11,7 @@ namespace rtti {
 
 namespace internal {
 template<typename To, typename From>
-To* meta_cast_selector(const From*, std::true_type);
+const To* meta_cast_selector(const From*, std::true_type);
 } // namespace internal
 
 class MetaClassPrivate;
@@ -19,7 +19,7 @@ class MetaClassPrivate;
 class DLL_PUBLIC MetaClass final: public MetaContainer
 {
 public:
-    using cast_func_t = void*(*)(void*);
+    using cast_func_t = const void*(*)(const void*);
 
     MetaCategory category() const override;
     static const MetaClass* findByTypeId(MetaType_ID typeId);
@@ -36,7 +36,8 @@ protected:
 
     void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     void addDerivedClass(MetaType_ID typeId);
-    void* cast(const MetaClass *base, const void *instance) const;
+    const void* cast(const MetaClass *base, const void *instance) const;
+    void* cast(const MetaClass *base, void *instance) const;
 
     const MetaMethod* getMethodInternal(const char *name) const override;
     const MetaProperty* getPropertyInternal(const char *name) const override;
@@ -44,7 +45,7 @@ private:
     DECLARE_PRIVATE(MetaClass)
     template<typename, typename> friend class rtti::meta_define;
     template<typename To, typename From>
-    friend To* internal::meta_cast_selector(const From*, std::true_type);
+    friend const To* internal::meta_cast_selector(const From*, std::true_type);
     friend class rtti::variant;
 };
 
@@ -70,7 +71,7 @@ private: \
 namespace internal {
 
 template<typename To, typename From>
-To* meta_cast_selector(const From *from, std::true_type)
+const To* meta_cast_selector(const From *from, std::true_type)
 {
     static_assert(std::is_class<From>::value && std::is_class<To>::value,
                   "Both template arguments should be classes");
@@ -86,14 +87,27 @@ To* meta_cast_selector(const From *from, std::true_type)
     auto result = fromClass->cast(toClass, info.instance);
     if (!result)
         return nullptr;
-    return static_cast<To*>(result);
+    return static_cast<const To*>(result);
 }
 
 template<typename To, typename From>
-To* meta_cast_selector(const From *from, std::false_type)
+To* meta_cast_selector(From *from, std::true_type)
 {
-    return const_cast<From*>(from);
+    return const_cast<To*>(meta_cast_selector<To>(const_cast<const From*>(from), std::true_type{}));
 }
+
+template<typename To, typename From>
+const To* meta_cast_selector(const From *from, std::false_type)
+{
+    return from;
+}
+
+template<typename To, typename From>
+To* meta_cast_selector(From *from, std::false_type)
+{
+    return from;
+}
+
 
 } // namespace internal
 

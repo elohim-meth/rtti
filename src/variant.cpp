@@ -70,6 +70,11 @@ ClassInfo variant::classInfo() const
     return manager->f_info(storage);
 }
 
+void* variant::raw_data_ptr()
+{
+    return const_cast<void*>(manager->f_access(storage));
+}
+
 const void* variant::raw_data_ptr() const
 {
     return manager->f_access(storage);

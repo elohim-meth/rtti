@@ -27,9 +27,12 @@ namespace internal {
 using container_stack_t = std::stack<MetaContainer*>;
 
 template<typename DerivedType, typename BaseType>
-static void* metacast_to_base(void* value)
+static const void* metacast_to_base(const void *value)
 {
-    return static_cast<void*>(static_cast<BaseType*>(static_cast<DerivedType*>(value)));
+    return
+        static_cast<const void*>(
+            static_cast<const BaseType*>(
+                static_cast<const DerivedType*>(value)));
 }
 
 template<typename T, typename F>

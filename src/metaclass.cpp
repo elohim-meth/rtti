@@ -149,12 +149,12 @@ bool MetaClass::inheritedFrom(const MetaClass *base) const
     return result;
 }
 
-void* MetaClass::cast(const MetaClass *base, const void *instance) const
+const void* MetaClass::cast(const MetaClass *base, const void *instance) const
 {
     if (!base)
         return nullptr;
 
-    auto result = const_cast<void*>(instance);
+    auto result = instance;
     if (base == this)
         return result;
 
@@ -176,6 +176,11 @@ void* MetaClass::cast(const MetaClass *base, const void *instance) const
     });
 
     return (found ? result : nullptr);
+}
+
+void* MetaClass::cast(const MetaClass *base, void *instance) const
+{
+    return const_cast<void*>(cast(base, const_cast<const void*>(instance)));
 }
 
 const MetaMethod* MetaClass::getMethodInternal(const char *name) const

@@ -460,7 +460,9 @@ void test_variant_1()
 
         {
             auto bvalCM = MC->getMethod<const A&>("bValue"); assert(bvalCM);
-            auto r = bvalCM->invoke(v); assert(r.to<std::string>() == "128");
+            auto r = bvalCM->invoke(v);
+            assert(r.cvalue<int>() == 128);
+            assert(r.to<std::string>() == "128");
         }
 
         print->invoke(v);
@@ -555,27 +557,161 @@ void test_variant_1()
 
     {
         using namespace rtti;
-        int i = 1;
-        const variant v = &i;
-        v.to<int*>();
-        v.value<const int*>();
-
-        const int *pi = &i;
-        int const*&t = pi;
+        variant v = 1;
+        assert(v.to<int>() == 1);
+        assert(v.to<const int>() == 1);
+        assert(v.value<int>() == 1);
+        assert(v.value<const int>() == 1);
+        assert(v.cvalue<int>() == 1);
+        assert(v.cvalue<const int>() == 1);
     }
 
     {
         using namespace rtti;
-        const int i[3] = {1, 2, 3};
-        variant v1 = i;
-        auto &t1 = v1.value<int*>();
-        auto &t2 = v1.cvalue<decltype(i)>();
-        variant v2 = std::ref(i);
-        variant v3 = "3.14";
-        //v3.convert<std::string>();
-        v3.convert<double>();
-        assert(v3.value<double>() == 3.14);
-
+        const variant v = 1;
+        assert(v.to<int>() == 1);
+        assert(v.to<const int>() == 1);
+        assert(v.value<int>() == 1);
+        assert(v.value<const int>() == 1);
+        assert(v.cvalue<int>() == 1);
+        assert(v.cvalue<const int>() == 1);
     }
+
+
+    {
+        using namespace rtti;
+        int i = 1;
+        variant v = std::cref(i);
+        assert(v.to<int>() == 1);
+        assert(v.to<const int>() == 1);
+        try {
+            v.value<int>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(v.value<const int>() == 1);
+        assert(v.cvalue<int>() == 1);
+        assert(v.cvalue<const int>() == 1);
+    }
+
+    {
+        using namespace rtti;
+        int i = 1;
+        const variant v = std::cref(i);
+        assert(v.to<int>() == 1);
+        assert(v.to<const int>() == 1);
+        assert(v.value<int>() == 1);
+        assert(v.value<const int>() == 1);
+        assert(v.cvalue<int>() == 1);
+        assert(v.cvalue<const int>() == 1);
+    }
+
+    {
+        using namespace rtti;
+        const int i = 1;
+        variant v = std::ref(i);
+        assert(v.to<int>() == 1);
+        assert(v.to<const int>() == 1);
+        try {
+            v.value<int>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(v.value<const int>() == 1);
+        assert(v.cvalue<int>() == 1);
+        assert(v.cvalue<const int>() == 1);
+    }
+
+    {
+        using namespace rtti;
+        const int i = 1;
+        const variant v = std::ref(i);
+        assert(v.to<int>() == 1);
+        assert(v.to<const int>() == 1);
+        assert(v.value<int>() == 1);
+        assert(v.value<const int>() == 1);
+        assert(v.cvalue<int>() == 1);
+        assert(v.cvalue<const int>() == 1);
+    }
+
+    {
+        using namespace rtti;
+        int i = 1;
+        variant v = &i;
+        assert(*v.to<int*>() == 1);
+        assert(*v.to<const int*>() == 1);
+        assert(*v.value<int*>() == 1);
+        try {
+            v.value<const int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(*v.cvalue<int*>() == 1);
+        assert(*v.cvalue<const int*>() == 1);
+    }
+
+    {
+        using namespace rtti;
+        int i = 1;
+        const variant v = &i;
+        assert(*v.to<int*>() == 1);
+        assert(*v.to<const int*>() == 1);
+        assert(*v.value<int*>() == 1);
+        assert(*v.value<const int*>() == 1);
+        assert(*v.cvalue<int*>() == 1);
+        assert(*v.cvalue<const int*>() == 1);
+    }
+
+    {
+        using namespace rtti;
+        const int i = 1;
+        variant v = &i;
+        try {
+            v.to<int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(*v.to<const int*>() == 1);
+        try {
+            v.value<int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(*v.value<const int*>() == 1);
+        try {
+            v.cvalue<int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(*v.cvalue<const int*>() == 1);
+    }
+
+    {
+        using namespace rtti;
+        const int i = 1;
+        const variant v = &i;
+        try {
+            v.to<int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(*v.to<const int*>() == 1);
+        try {
+            v.value<int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(*v.value<const int*>() == 1);
+        try {
+            v.cvalue<int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(*v.cvalue<const int*>() == 1);
+    }
+
+
+//    {
+//        int **ppi = nullptr;
+//        const int **ppci = nullptr;
+//        ppci = ppi;
+//    }
+
+//    {
+//        using namespace rtti;
+//        int i[3] = {1, 2, 3};
+//        const int (*ri)[3] = &i;
+//        variant v1 = i;
+//        auto &t1 = v1.value<int*>();
+//        auto &t2 = v1.cvalue<decltype(i)>();
+//        variant v2 = std::ref(i);
+//        variant v3 = "3.14";
+//        //v3.convert<std::string>();
+//        v3.convert<double>();
+//        assert(v3.value<double>() == 3.14);
+
+//    }
 }
 

@@ -50,7 +50,7 @@ union DLL_PUBLIC variant_type_storage
     alignas(void*) std::uint8_t buffer[STORAGE_SIZE];
     struct {
         void *ptr;
-        mutable void *temp;
+        mutable const void *temp;
     };
     variant_type_storage(): buffer{0} {}
 };
@@ -519,6 +519,7 @@ public:
 
     static const variant empty_variant;
 private:
+    void* raw_data_ptr();
     const void* raw_data_ptr() const;
 
     static bool isConstCompatible(MetaType from, MetaType to, bool raise)
@@ -610,19 +611,19 @@ private:
             if (self.empty())
                 throw bad_variant_cast{"Variant is empty"};
 
-            Decay* result = nullptr;
+            const Decay* result = nullptr;
             auto from = MetaType{self.typeId()};
             auto to = MetaType{metaTypeId<add_lvalue_reference_t<T>>()};
             if (from.decayId() == to.decayId())
             {
                 if (isConstCompatible(from, to, true))
-                    result = static_cast<Decay*>(const_cast<void*>(self.raw_data_ptr()));
+                    result = static_cast<const Decay*>(self.raw_data_ptr());
             }
             else
             {
                auto ptr = invoke_selector(self, from, IsClass{}, IsClassPtr{});
                if (ptr && isConstCompatible(from, to, true))
-                   result = static_cast<Decay*>(ptr);
+                   result = static_cast<const Decay*>(ptr);
             }
 
             if (!result)
@@ -637,17 +638,17 @@ private:
         using IsClassPtr = is_class_ptr_t<Decay>;
         using C = remove_pointer_t<Decay>;
 
-        static T* result_selector(Decay *value, std::false_type)
+        static T* result_selector(const Decay *value, std::false_type)
         { return const_cast<T*>(value); }
-        static T* result_selector(Decay *value, std::true_type)
+        static T* result_selector(const Decay *value, std::true_type)
         { return reinterpret_cast<T*>(*value); }
 
         // nope
-        static void* invoke_selector(const variant&, MetaType,
+        static const void* invoke_selector(const variant&, MetaType,
                                      std::false_type, std::false_type)
         { return nullptr; }
         // class
-        static void* invoke_selector(const variant &self, MetaType type,
+        static const void* invoke_selector(const variant &self, MetaType type,
                                      std::true_type, std::false_type)
         {
             if (type.isClass())
@@ -655,14 +656,14 @@ private:
             return nullptr;
         }
         // class ptr
-        static void* invoke_selector(const variant &self, MetaType type,
+        static const void* invoke_selector(const variant &self, MetaType type,
                                      std::false_type, std::true_type)
         {
             if (type.isClassPtr())
             {
                 auto ptr = invoke_imp(self);
                 if (ptr == self.storage.ptr)
-                    return const_cast<void**>(&self.storage.ptr);
+                    return &self.storage.ptr;
                 else
                 {
                     self.storage.temp = ptr;
@@ -672,7 +673,7 @@ private:
             return nullptr;
         }
         // implementaion
-        static void* invoke_imp(const variant &self)
+        static const void* invoke_imp(const variant &self)
         {
             const auto &info = self.manager->f_info(self.storage);
 
