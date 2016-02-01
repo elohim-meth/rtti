@@ -424,12 +424,16 @@ public:
     ~variant();
     void swap(variant &other) noexcept;
 
-    void clear();
+    void clear()
+    { variant{}.swap(*this); }
     bool empty() const;
-    explicit operator bool() const;
+    explicit operator bool() const
+    { return !empty(); }
 
-    MetaType_ID typeId() const;
-    ClassInfo classInfo() const;
+    MetaType_ID typeId() const
+    { return manager->f_type(); }
+    ClassInfo classInfo() const
+    { return manager->f_info(storage); }
 
     template<typename T>
     bool is() const
@@ -519,8 +523,10 @@ public:
 
     static const variant empty_variant;
 private:
-    void* raw_data_ptr();
-    const void* raw_data_ptr() const;
+    const void* raw_data_ptr() const
+    { return manager->f_access(storage); }
+    void* raw_data_ptr()
+    { return const_cast<void*>(manager->f_access(storage)); }
 
     static bool isConstCompatible(MetaType from, MetaType to, bool raise)
     {

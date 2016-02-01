@@ -692,6 +692,23 @@ void test_variant_1()
         assert(*v.cvalue<const int*>() == 1);
     }
 
+    {
+        using namespace rtti;
+        int i[7] = {1, 2, 3, 4, 5, 6, 7};
+        //const int*& t = i;
+        variant v = i;
+        assert(*v.to<int*>() == 1);
+        assert(*v.to<const int*>() == 1);
+        assert(*v.value<int*>() == 1);
+        try {
+            v.value<const int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        assert(*v.cvalue<int*>() == 1);
+        assert(*v.cvalue<const int*>() == 1);
+
+        assert(v.value<int[7]>()[6] == 7);
+        assert(v.value<const int[7]>()[6] == 7);
+    }
 
 //    {
 //        int **ppi = nullptr;
