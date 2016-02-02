@@ -139,6 +139,14 @@ struct function_table_selector<T, true, false>
         auto ptr = reinterpret_cast<const Decay*>(&value.buffer);
         ptr->~Decay();
     }
+
+private:
+    static void clone(const variant_type_storage &src, variant_type_storage &dst)
+        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+    {
+        auto ptr = reinterpret_cast<const Decay*>(&src.buffer);
+        new (&dst.buffer) Decay(*ptr);
+    }
 };
 
 template<typename T>
@@ -407,10 +415,11 @@ public:
     {
         using NoRef = remove_reference_t<T>;
         using Type = conditional_t<std::is_array<NoRef>::value, remove_all_extents_t<NoRef>, NoRef>;
-        static constexpr bool valid = std::is_copy_constructible<Type>::value;
+        constexpr bool move = !std::is_reference<T>::value && !std::is_const<T>::value;
+        constexpr bool valid = std::is_copy_constructible<Type>::value
+            || (move && std::is_move_constructible<Type>::value);
         static_assert(valid, "The contained type must be CopyConstructible");
-        manager->f_construct(storage, std::addressof(value),
-                             !std::is_reference<T>::value && !std::is_const<T>::value);
+        manager->f_construct(storage, std::addressof(value), move);
     }
 
     template<typename T,

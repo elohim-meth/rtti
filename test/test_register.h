@@ -4,6 +4,7 @@
 #include <rtti/rtti.h>
 
 #include <vector>
+#include <memory>
 
 template<typename T>
 void define_std_vector(rtti::meta_define<std::vector<T>> define)
@@ -19,12 +20,37 @@ void define_std_vector(rtti::meta_define<std::vector<T>> define)
 }
 
 template<typename T>
+void define_std_unique_ptr(rtti::meta_define<std::unique_ptr<T>> define)
+{
+    using U = std::unique_ptr<T>;
+    define
+        .template _constructor<typename U::pointer>()
+        .template _method("get", &U::get)
+        .template _method("release", &U::release)
+        .template _method("reset", &U::reset)
+    ;
+}
+
+
+template<typename T>
 void register_std_vector()
 {
     rtti::global_define()
         ._namespace("std")
             ._class<std::vector<T>>("vector<" + type_name<T>() + ">")
                 ._lazy(define_std_vector<T>)
+            ._end()
+        ._end()
+    ;
+}
+
+template<typename T>
+void register_std_unique_ptr()
+{
+    rtti::global_define()
+        ._namespace("std")
+            ._class<std::unique_ptr<T>>("unique_ptr<" + type_name<T>() + ">")
+                ._lazy(define_std_unique_ptr<T>)
             ._end()
         ._end()
     ;

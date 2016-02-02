@@ -118,6 +118,7 @@ void register_rtti()
     register_std_vector<int>();
     register_std_vector<std::string>();
     register_std_vector<const char*>();
+    register_std_unique_ptr<int>();
 
     // default
     rtti::MetaType::registerConverter<char*, std::string>();
