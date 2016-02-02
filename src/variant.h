@@ -59,28 +59,32 @@ struct DLL_PUBLIC variant_function_table
 {
     using type_t = MetaType_ID(*)();
     using access_t = const void* (*) (const variant_type_storage&);
-    using construct_t = void (*) (variant_type_storage&, const void*, bool);
-    using clone_t = void (*) (const variant_type_storage&, variant_type_storage&);
+    using copy_construct_t = void (*) (const void*, variant_type_storage&);
+    using move_construct_t = void (*) (void*, variant_type_storage&);
+    using copy_t = void (*) (const variant_type_storage&, variant_type_storage&);
     using move_t = void (*) (variant_type_storage&, variant_type_storage&);
     using destroy_t = void (*) (variant_type_storage&);
     using info_t = ClassInfo(*)(const variant_type_storage&);
 
     const type_t f_type = nullptr;
     const access_t f_access = nullptr;
-    const construct_t f_construct = nullptr;
-    const clone_t f_clone = nullptr;
+    const copy_construct_t f_copy_construct = nullptr;
+    const move_construct_t f_move_construct = nullptr;
+    const copy_t f_copy = nullptr;
     const move_t f_move = nullptr;
     const destroy_t f_destroy = nullptr;
     const info_t f_info = nullptr;
 
     variant_function_table(type_t type, access_t access,
-                           construct_t construct, clone_t clone,
-                           move_t move, destroy_t destroy,
-                           info_t info) noexcept
+                           copy_construct_t copy_construct,
+                           move_construct_t move_construct,
+                           copy_t copy, move_t move,
+                           destroy_t destroy, info_t info) noexcept
         : f_type{type}, f_access{access},
-          f_construct{construct}, f_clone{clone},
-          f_move{move}, f_destroy{destroy},
-          f_info(info)
+          f_copy_construct{copy_construct},
+          f_move_construct{move_construct},
+          f_copy{copy}, f_move{move},
+          f_destroy{destroy}, f_info(info)
     {}
 };
 
@@ -99,31 +103,30 @@ struct function_table_selector<T, true, false>
         return metaTypeId<remove_cv_t<T>>();
     }
 
-    static void construct(variant_type_storage &storage, const void *value, bool move)
-        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
-    {
-        if (move)
-        {
-            auto ptr = static_cast<Decay*>(const_cast<void*>(value));
-            new (&storage.buffer) Decay(std::move(*ptr));
-        }
-        else
-        {
-            auto ptr = static_cast<const Decay*>(value);
-            new (&storage.buffer) Decay(*ptr);
-        }
-    }
-
     static const void* access(const variant_type_storage &value) noexcept
     {
         return &value.buffer;
     }
 
-    static void clone(const variant_type_storage &src, variant_type_storage &dst)
+    static void copy_construct(const void *value, variant_type_storage &storage)
+        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+    {
+        auto ptr = static_cast<const Decay*>(value);
+        copy_selector(ptr, storage, CanCopy{});
+    }
+
+    static void move_construct(void *value, variant_type_storage &storage)
+        noexcept(std::is_nothrow_move_constructible<Decay>::value)
+    {
+        auto ptr = static_cast<Decay*>(value);
+        new (&storage.buffer) Decay(std::move(*ptr));
+    }
+
+    static void copy(const variant_type_storage &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
         auto ptr = reinterpret_cast<const Decay*>(&src.buffer);
-        new (&dst.buffer) Decay(*ptr);
+        copy_selector(ptr, dst, CanCopy{});
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst)
@@ -139,13 +142,17 @@ struct function_table_selector<T, true, false>
         auto ptr = reinterpret_cast<const Decay*>(&value.buffer);
         ptr->~Decay();
     }
-
 private:
-    static void clone(const variant_type_storage &src, variant_type_storage &dst)
-        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+    using CanCopy = typename std::is_copy_constructible<Decay>::type;
+
+    static void copy_selector(const Decay*, variant_type_storage&, std::false_type)
     {
-        auto ptr = reinterpret_cast<const Decay*>(&src.buffer);
-        new (&dst.buffer) Decay(*ptr);
+        throw runtime_error("Trying to copy move only type");
+    }
+
+    static void copy_selector(const Decay *src, variant_type_storage &storage, std::true_type)
+    {
+        new (&storage.buffer) Decay(*src);
     }
 };
 
@@ -162,20 +169,26 @@ struct function_table_selector<T, true, true>
         return access_selector(value, IsArray{});
     }
 
-    static void construct(variant_type_storage &storage, const void *value, bool) noexcept
+    static void copy_construct(const void *value, variant_type_storage &storage) noexcept
     {
         auto ptr = static_cast<const Wrapper*>(value);
         storage.ptr = const_cast<Decay*>(&ptr->get());
     }
 
-    static void clone(const variant_type_storage &src, variant_type_storage &dst) noexcept
+    static void move_construct(void *value, variant_type_storage &storage) noexcept
+    {
+        auto ptr = static_cast<Wrapper*>(value);
+        storage.ptr = const_cast<Decay*>(&ptr->get());
+    }
+
+    static void copy(const variant_type_storage &src, variant_type_storage &dst) noexcept
     {
         dst.ptr = src.ptr;
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst) noexcept
     {
-        std::swap(src.ptr, dst.ptr);
+        dst.ptr = src.ptr;
     }
 
     static void destroy(variant_type_storage&) noexcept
@@ -214,26 +227,25 @@ struct function_table_selector<T, false, false>
         return value.ptr;
     }
 
-    static void construct(variant_type_storage &storage, const void *value, bool move)
+    static void copy_construct(const void *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        if (move)
-        {
-            auto ptr = static_cast<Decay*>(const_cast<void*>(value));
-            storage.ptr = new Decay(std::move(*ptr));
-        }
-        else
-        {
-            auto ptr = static_cast<const Decay*>(value);
-            storage.ptr = new Decay(*ptr);
-        }
+        auto ptr = static_cast<const Decay*>(value);
+        copy_selector(ptr, storage, CanCopy{});
     }
 
-    static void clone(const variant_type_storage &src, variant_type_storage &dst)
+    static void move_construct(void *value, variant_type_storage &storage)
+        noexcept(std::is_nothrow_move_constructible<Decay>::value)
+    {
+        auto ptr = static_cast<Decay*>(value);
+        storage.ptr = new Decay(std::move(*ptr));
+    }
+
+    static void copy(const variant_type_storage &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
         auto ptr = static_cast<const Decay*>(src.ptr);
-        dst.ptr = new Decay(*ptr);
+        copy_selector(ptr, dst, CanCopy{});
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst) noexcept
@@ -246,6 +258,19 @@ struct function_table_selector<T, false, false>
     {
         auto ptr = static_cast<const Decay*>(value.ptr);
         delete ptr;
+    }
+
+private:
+    using CanCopy = typename std::is_copy_constructible<Decay>::type;
+
+    static void copy_selector(const Decay*, variant_type_storage&, std::false_type)
+    {
+        throw runtime_error("Trying to copy move-only type");
+    }
+
+    static void copy_selector(const Decay *src, variant_type_storage &storage, std::true_type)
+    {
+        storage.ptr = new Decay(*src);
     }
 };
 
@@ -265,31 +290,28 @@ struct function_table_selector<T[N], false, false>
         return &value.ptr;
     }
 
-    static void construct(variant_type_storage &storage, const void *value, bool move)
+    static void copy_construct(const void *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+    {
+        auto from = static_cast<const Decay*>(value);
+        copy_selector(from, storage, CanCopy{});
+    }
+
+    static void move_construct(void *value, variant_type_storage &storage)
+        noexcept(std::is_nothrow_move_constructible<Decay>::value)
     {
         auto alloc = Allocator{};
         auto to = alloc.allocate(N);
-        if (move)
-        {
-            auto from = static_cast<Decay*>(const_cast<void*>(value));
-            std::move(from, from + N, to);
-        }
-        else
-        {
-            auto from = static_cast<const Decay*>(value);
-            std::copy(from, from + N, to);
-        }
+        auto from = static_cast<Decay*>(value);
+        std::move(from, from + N, to);
         storage.ptr = to;
     }
 
-    static void clone(const variant_type_storage &src, variant_type_storage &dst)
+    static void copy(const variant_type_storage &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
         auto from = static_cast<const Decay*>(src.ptr);
-        auto to = static_cast<Decay*>(::operator new(N * sizeof(T)));
-        std::copy(from, from + N, to);
-        dst.ptr = to;
+        copy_selector(from, dst, CanCopy{});
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst) noexcept
@@ -305,7 +327,24 @@ struct function_table_selector<T[N], false, false>
         std::_Destroy(ptr, ptr + N);
         alloc.deallocate(ptr, N);
     }
+
+private:
+    using CanCopy = typename std::is_copy_constructible<Decay>::type;
+
+    static void copy_selector(const Decay*, variant_type_storage&, std::false_type)
+    {
+        throw runtime_error("Trying to copy move-only type");
+    }
+
+    static void copy_selector(const Decay *src, variant_type_storage &storage, std::true_type)
+    {
+        auto alloc = Allocator{};
+        auto to = alloc.allocate(N);
+        std::copy(src, src + N, to);
+        storage.ptr = to;
+    }
 };
+
 
 // Since two pointer indirections when casting array<T> -> T*
 // we need to use temp storage and have no room for inplace
@@ -372,8 +411,9 @@ inline const variant_function_table* function_table_for() noexcept
     static const auto result = variant_function_table{
         &function_table_selector<T>::type,
         &function_table_selector<T>::access,
-        &function_table_selector<T>::construct,
-        &function_table_selector<T>::clone,
+        &function_table_selector<T>::copy_construct,
+        &function_table_selector<T>::move_construct,
+        &function_table_selector<T>::copy,
         &function_table_selector<T>::move,
         &function_table_selector<T>::destroy,
         &class_info_get<T>::info
@@ -387,7 +427,8 @@ inline const variant_function_table* function_table_for<void>() noexcept
     static const auto result = variant_function_table{
         [] () noexcept -> MetaType_ID { return MetaType_ID(); },
         [] (const variant_type_storage&) noexcept -> const void* { return nullptr; },
-        [] (variant_type_storage&, const void*, bool) noexcept {},
+        [] (const void*, variant_type_storage&) noexcept {},
+        [] (void*, variant_type_storage&) noexcept {},
         [] (const variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&) noexcept {},
@@ -418,8 +459,9 @@ public:
         constexpr bool move = !std::is_reference<T>::value && !std::is_const<T>::value;
         constexpr bool valid = std::is_copy_constructible<Type>::value
             || (move && std::is_move_constructible<Type>::value);
-        static_assert(valid, "The contained type must be CopyConstructible");
-        manager->f_construct(storage, std::addressof(value), move);
+        static_assert(valid, "The contained type must be at least MoveConstructible");
+        using selector_t = conditional_t<move, std::true_type, std::false_type>;
+        constructor_selector(std::addressof(value), selector_t{});
     }
 
     template<typename T,
@@ -430,13 +472,12 @@ public:
         return *this;
     }
 
-    ~variant();
+    ~variant() noexcept;
     void swap(variant &other) noexcept;
 
-    void clear()
-    { variant{}.swap(*this); }
-    bool empty() const;
-    explicit operator bool() const
+    void clear() noexcept;
+    bool empty() const noexcept;
+    explicit operator bool() const noexcept
     { return !empty(); }
 
     MetaType_ID typeId() const
@@ -537,6 +578,11 @@ private:
     void* raw_data_ptr()
     { return const_cast<void*>(manager->f_access(storage)); }
 
+    void constructor_selector(void *value, std::true_type)
+    { manager->f_move_construct(value, storage); }
+    void constructor_selector(const void *value, std::false_type)
+    { manager->f_copy_construct(value, storage); }
+
     static bool isConstCompatible(MetaType from, MetaType to, bool raise)
     {
         if (!MetaType::constCompatible(from, to))
@@ -602,7 +648,7 @@ private:
         // implementaion
         static bool invoke_imp(const variant &self)
         {
-            const auto &info = self.manager->f_info(self.storage);
+            const auto &info = self.classInfo();
 
             auto fromType = MetaType{info.typeId};
             if (!fromType.valid())
@@ -690,7 +736,7 @@ private:
         // implementaion
         static const void* invoke_imp(const variant &self)
         {
-            const auto &info = self.manager->f_info(self.storage);
+            const auto &info = self.classInfo();
 
             auto fromType = MetaType{info.typeId};
             if (!fromType.valid())
