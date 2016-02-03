@@ -198,6 +198,13 @@ void test_cast_1()
 
     }
 
+    {
+        using namespace rtti;
+        A *a = new VC();
+        variant v = a;
+        auto &b = v.value<B*>();
+    }
+
 }
 
 

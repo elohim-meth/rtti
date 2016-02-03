@@ -108,7 +108,7 @@ private:
                                         fromType.typeName() + " -> " + toType.typeName()};
 
             auto *ptr = static_cast<variant*>(m_data);
-            return ptr->value<T>();
+            return ptr->value<Decay>();
         }
 
         throw bad_argument_cast{std::string{"Incompatible types: "} +
