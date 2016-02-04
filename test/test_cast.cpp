@@ -59,6 +59,10 @@ struct VC: VB1, VB2
     DECLARE_CLASSINFO
 };
 
+void test_param_1(B*const&)
+{ return; }
+
+
 void register_classes()
 {
     using namespace rtti;
@@ -199,6 +203,9 @@ void test_cast_1()
     }
 
     {
+        VC *vc = new VC();
+        test_param_1(vc);
+
         using namespace rtti;
         A *a = new VC();
         variant v = a;
