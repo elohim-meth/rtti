@@ -1,6 +1,7 @@
 ﻿#include "test_cast.h"
 
 #include <rtti/rtti.h>
+#include <finally.h>
 #include <debug.h>
 
 #include <memory>
@@ -34,7 +35,7 @@ struct D
     DECLARE_CLASSINFO
 };
 
-struct E: C, D
+struct E: D, C
 {
     int e = 5;
     DECLARE_CLASSINFO
@@ -59,7 +60,15 @@ struct VC: VB1, VB2
     DECLARE_CLASSINFO
 };
 
-void test_param_1(B*const&)
+void test_param_1(B *)
+{ return; }
+void test_param_2(B *&)
+{ return; }
+void test_param_3(B *const &)
+{ return; }
+void test_param_4(B &)
+{ return; }
+void test_param_5(B const &)
 { return; }
 
 
@@ -77,6 +86,11 @@ void register_classes()
             ._class<VB2>("VB2")._base<B>()._end()
             ._class<VC>("VC")._base<VB1, VB2>()._end()
         ._end()
+        ._method("test_param_1", &test_param_1)
+        ._method("test_param_2", &test_param_2)
+        ._method("test_param_3", &test_param_3)
+        ._method("test_param_4", &test_param_4)
+        ._method("test_param_5", &test_param_5)
     ;
 }
 
@@ -203,16 +217,62 @@ void test_cast_1()
     }
 
     {
-        VC *vc = new VC();
-        test_param_1(vc);
+        E e;
+        test_param_1(&e);
+        //test_param_2(&e);
+        test_param_3(&e);
+        test_param_4(e);
+        test_param_5(e);
+
+        E *pe = new E();
+        FINALLY { delete pe; };
+        test_param_1(pe);
+        //test_param_2(pe);
+        test_param_3(pe);
+
+
+        VC vc;
+        test_param_1(&vc);
+        //test_param_2(&vc);
+        test_param_3(&vc);
+        test_param_4(vc);
+        test_param_5(vc);
+
+        VC *pvc = new VC();
+        test_param_1(pvc);
+        //test_param_2(pvc);
+        test_param_3(pvc);
+        delete pvc;
+
+        A *pa = new E();
+        FINALLY { delete pa; };
+//        test_param_1(pa);
+//        test_param_2(pa);
+//        test_param_3(pa);
 
         using namespace rtti;
-        A *a = new VC();
-        variant v = a;
-        auto &b = v.value<B*>();
+        auto nsGlobal = MetaNamespace::global();
+        auto mTestParam1 = nsGlobal->getMethod("test_param_1"); assert(mTestParam1);
+        auto mTestParam2 = nsGlobal->getMethod("test_param_2"); assert(mTestParam2);
+        auto mTestParam3 = nsGlobal->getMethod("test_param_3"); assert(mTestParam3);
+        auto mTestParam4 = nsGlobal->getMethod("test_param_4"); assert(mTestParam4);
+        auto mTestParam5 = nsGlobal->getMethod("test_param_5"); assert(mTestParam5);
+
+        variant v = &e;
+        v.value<D*>();
+        mTestParam1->invoke(v);
+        mTestParam2->invoke(v);
+        mTestParam3->invoke(v);
+        //
+        mTestParam4->invoke(v);
+        mTestParam5->invoke(v);
+
+//        using namespace rtti;
+//        A *a = new VC();
+//        variant v = a;
+//        auto &b = v.value<B*>();
     }
 
 }
-
 
 
