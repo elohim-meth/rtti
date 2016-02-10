@@ -31,6 +31,12 @@ struct DLL_PUBLIC IMethodInvoker
                                   argument arg4 = argument{}, argument arg5 = argument{},
                                   argument arg6 = argument{}, argument arg7 = argument{},
                                   argument arg8 = argument{}, argument arg9 = argument{}) const = 0;
+    virtual variant invoke_method(variant &instance,
+                                  argument arg0 = argument{}, argument arg1 = argument{},
+                                  argument arg2 = argument{}, argument arg3 = argument{},
+                                  argument arg4 = argument{}, argument arg5 = argument{},
+                                  argument arg6 = argument{}, argument arg7 = argument{},
+                                  argument arg8 = argument{}, argument arg9 = argument{}) const = 0;
     virtual ~IMethodInvoker() = default;
 };
 

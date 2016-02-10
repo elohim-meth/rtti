@@ -531,22 +531,9 @@ public:
         static_assert(std::is_move_constructible<T>::value,
                       "Type should be MoveConstructible");
 
-        if (metafunc_is<T>::invoke(*this, true))
-            return cvalue<T>();
-
-        auto from = MetaType{typeId()};
-        auto to = MetaType{metaTypeId<T>()};
-        if (MetaType::hasConverter(from, to))
-        {
-            alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
-            if (MetaType::convert(raw_data_ptr(), from, &buffer, to))
-                return std::move(*reinterpret_cast<T*>(&buffer));
-            throw bad_variant_convert{std::string{"Conversion failed: "} +
-                                      from.typeName() + " -> " + to.typeName()};
-
-        }
-        throw bad_variant_convert{std::string{"Converter not found: "} +
-                                  from.typeName() + " -> " + to.typeName()};
+        alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
+        metafunc_to<T>::invoke(*this, &buffer);
+        return std::move(*reinterpret_cast<T*>(&buffer));
     }
 
     template<typename T>
@@ -573,14 +560,14 @@ public:
 
     static const variant empty_variant;
 private:
-    const void* raw_data_ptr() const
+    void const * raw_data_ptr() const
     { return manager->f_access(storage); }
-    void* raw_data_ptr()
+    void * raw_data_ptr()
     { return const_cast<void*>(manager->f_access(storage)); }
 
     void constructor_selector(void *value, std::true_type)
     { manager->f_move_construct(value, storage); }
-    void constructor_selector(const void *value, std::false_type)
+    void constructor_selector(void const *value, std::false_type)
     { manager->f_copy_construct(value, storage); }
 
     static bool isConstCompatible(MetaType from, MetaType to, bool raise)
@@ -750,6 +737,119 @@ private:
             return fromClass->cast(toClass, info.instance);
         }
     };
+
+    template<typename T>
+    struct metafunc_to
+    {
+        using Decay = full_decay_t<T>;
+
+        static void invoke(variant const &self, void *buffer)
+        {
+            assert(buffer);
+            if (self.empty())
+                throw bad_variant_cast{"Variant is empty"};
+
+            auto from = MetaType{self.typeId()};
+            auto to = MetaType{metaTypeId<T>()};
+            if (from.decayId() == to.decayId())
+            {
+                if (MetaType::constCompatible(from, to))
+                {
+                    Decay const *value = static_cast<Decay const *>(self.raw_data_ptr());
+                    new (buffer) T(*value);
+                    return;
+                }
+                else
+                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
+                                           from.typeName() + " -> " + to.typeName()};
+
+            }
+            else
+            {
+                if (cast_selector(self, from, to, buffer, IsClass{}, IsClassPtr{}))
+                    return;
+
+                if (MetaType::hasConverter(from, to))
+                {
+                    if (MetaType::convert(self.raw_data_ptr(), from, buffer, to))
+                        return;
+
+                    throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                              from.typeName() + " -> " + to.typeName()};
+                }
+                throw bad_variant_convert{std::string{"Converter not found: "} +
+                                          from.typeName() + " -> " + to.typeName()};
+            }
+
+            throw bad_variant_cast{std::string{"Incompatible types: "} +
+                                   from.typeName() + " -> " + to.typeName()};
+        }
+
+    private:
+        using IsClass = is_class_t<Decay>;
+        using IsClassPtr = is_class_ptr_t<Decay>;
+        using C = remove_pointer_t<Decay>;
+
+        // nope
+        static bool cast_selector(variant const &, MetaType, MetaType, void *,
+                                  std::false_type, std::false_type)
+        {
+            return false;
+        }
+        // class
+        static bool cast_selector(variant const &self, MetaType from, MetaType, void *buffer,
+                                  std::true_type, std::false_type)
+        {
+            if (from.isClass())
+            {
+                auto ptr = invoke_imp(self);
+                if (ptr)
+                {
+                    new (buffer) C(*static_cast<C const *>(ptr));
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
+        // class ptr
+        static bool cast_selector(variant const &self, MetaType from, MetaType to, void *buffer,
+                                     std::false_type, std::true_type)
+        {
+            if (from.isClassPtr())
+            {
+                if (!MetaType::constCompatible(from, to))
+                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
+                                           from.typeName() + " -> " + to.typeName()};
+
+                auto ptr = invoke_imp(self);
+                if (ptr)
+                {
+                    new (buffer) T(static_cast<C*>(const_cast<void*>(ptr)));
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
+        // implementaion
+        static void const * invoke_imp(const variant &self)
+        {
+            auto const &info = self.classInfo();
+
+            auto fromType = MetaType{info.typeId};
+            if (!fromType.valid())
+                return nullptr;
+
+            auto fromClass = MetaClass::findByTypeId(info.typeId);
+            auto toClass = MetaClass::findByTypeId(metaTypeId<C>());
+            if (!fromClass && !toClass)
+                return nullptr;
+
+            return fromClass->cast(toClass, info.instance);
+        }
+    };
+
 
     using table_t = const internal::variant_function_table;
     using storage_t = internal::variant_type_storage;

@@ -75,7 +75,7 @@ using add_pointers_t = typename add_pointers<T, I>::type;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = std::is_pointer<T>::value>
+template<typename T, bool = std::is_pointer<decay_t<T>>::value && !std::is_function<T>::value>
 struct pointer_arity;
 
 template<typename T>
@@ -85,12 +85,12 @@ struct pointer_arity<T, false>:
 
 template<typename T>
 struct pointer_arity<T, true>:
-    std::integral_constant<std::size_t, pointer_arity<remove_pointer_t<T>>::value + 1>
+    std::integral_constant<std::size_t, pointer_arity<remove_pointer_t<decay_t<T>>>::value + 1>
 {};
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = std::is_pointer<T>::value>
+template<typename T, bool = std::is_pointer<decay_t<T>>::value && !std::is_function<T>::value>
 struct remove_all_pointers;
 
 template<typename T>
@@ -98,7 +98,7 @@ struct remove_all_pointers<T, false>: identity<remove_cv_t<T>>
 {};
 
 template<typename T>
-struct remove_all_pointers<T, true>: remove_all_pointers<remove_pointer_t<T>>
+struct remove_all_pointers<T, true>: remove_all_pointers<remove_pointer_t<decay_t<T>>>
 {};
 
 template<typename T>

@@ -280,11 +280,11 @@ void register_classes()
                 ._property("d", &B::getD, &B::setD)
             ._end()
             ._class<TestQPointer>("TestQPointer")
-                ._constructor<const char*>()
+                ._constructor<char const*>()
                 ._method("empty", &TestQPointer::empty)
                 ._method("check", &TestQPointer::check)
-                ._method<std::string&(TestQPointer::*)()>("value", &TestQPointer::value)
-                ._method<const std::string&(TestQPointer::*)() const>("value", &TestQPointer::value)
+                ._method<std::string& (TestQPointer::*)()>("value", &TestQPointer::value)
+                ._method<std::string const& (TestQPointer::*)() const>("value", &TestQPointer::value)
             ._end()
         ._end()
     ;
@@ -355,7 +355,7 @@ void test_variant_1()
         try {
             s.value<std::string>() = "222"; // shoud throw
             assert(false);
-        } catch (const bad_variant_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
 
         m = c->getMethod<TestQPointer&>("value"); assert(m);
         s = m->invoke(v);
@@ -367,7 +367,7 @@ void test_variant_1()
         try {
             s = m->invoke(v1); //should throw
             assert(false);
-        } catch (const bad_variant_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
 
         variant v2 = q;
         s = m->invoke(v2); //shouldn't throw
@@ -376,7 +376,7 @@ void test_variant_1()
         try {
             s = m->invoke(v3); //should throw
             assert(false);
-        } catch (const bad_variant_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
         delete q;
     }
 
@@ -436,7 +436,7 @@ void test_variant_1()
         assert(!v.is<int*>() && !v.is<int&>() && !v.is<const int*>() && !v.is<const int&>());
     }
 
-    auto lambda = [] (const rtti::variant &v)
+    auto lambda = [] (rtti::variant &v)
     {
         auto MC = rtti::MetaClass::findByTypeId(v.classInfo().typeId); assert(MC);
 
@@ -526,7 +526,7 @@ void test_variant_1()
         chkM->invoke(obj);
         assert(empM->invoke(obj).to<bool>());
 
-        auto cusC = qpMC->getConstructor<const char*>(); assert(cusC);
+        auto cusC = qpMC->getConstructor<char const*>(); assert(cusC);
         obj = cusC->invoke("Hello, World");
         chkM->invoke(obj);
         assert(!empM->invoke(obj).to<bool>());

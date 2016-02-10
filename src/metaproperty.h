@@ -15,7 +15,8 @@ struct DLL_PUBLIC IPropertyInvoker
     virtual variant get_static() const = 0;
     virtual void set_static(argument arg) const = 0;
     virtual variant get_field(const variant &instance) const = 0;
-    virtual void set_field(const variant &instance, argument arg) const = 0;
+    virtual void set_field(variant &instance, argument arg) const = 0;
+    virtual void set_field(variant const &instance, argument arg) const = 0;
     virtual ~IPropertyInvoker() = default;
 };
 
@@ -81,7 +82,17 @@ private:
     }
 
     template<typename Arg>
-    void set_selector(index_sequence<0, 1>, const variant &instance, Arg &&arg) const
+    void set_selector(index_sequence<0, 1>, variant const &instance, Arg &&arg) const
+    {
+        auto interface = invoker();
+        if (interface->isStatic())
+            throw invoke_error{"Trying to set field property " +
+                               qualifiedName() + " as static property"};
+        interface->set_field(instance, std::forward<Arg>(arg));
+    }
+
+    template<typename Arg>
+    void set_selector(index_sequence<0, 1>, variant &instance, Arg &&arg) const
     {
         auto interface = invoker();
         if (interface->isStatic())

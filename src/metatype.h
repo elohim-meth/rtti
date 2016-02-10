@@ -65,7 +65,7 @@ public:
 
     MetaType() = default;
     explicit MetaType(MetaType_ID typeId);
-    explicit MetaType(const char *name);
+    explicit MetaType(char const *name);
 
     bool valid() const
     {
@@ -74,7 +74,7 @@ public:
     MetaType_ID typeId() const;
     MetaType_ID decayId() const;
     void setTypeId(MetaType_ID typeId);
-    const char* typeName() const;
+    char const* typeName() const;
     std::size_t typeSize() const;
     MetaType::TypeFlags typeFlags() const;
 
@@ -108,7 +108,7 @@ public:
     template<typename From, typename To>
     static void unregisterConverter();
 private:
-    static MetaType_ID registerMetaType(const char *name, std::size_t size,
+    static MetaType_ID registerMetaType(char const *name, std::size_t size,
                                         MetaType_ID decay, uint16_t arity, uint16_t const_mask,
                                         MetaType::TypeFlags flags);
 
@@ -119,11 +119,11 @@ private:
     template<typename From, typename To>
     static bool registerConverter_imp(To(From::*func)(bool*) const);
     static bool registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
-                                  const internal::ConvertFunctionBase &converter);
-    static bool convert(const void *from, MetaType fromType, void *to, MetaType toType);
-    static bool convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId);
+                                  internal::ConvertFunctionBase const &converter);
+    static bool convert(void const *from, MetaType fromType, void *to, MetaType toType);
+    static bool convert(void const *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId);
 
-    const TypeInfo *m_typeInfo = nullptr;
+    TypeInfo const *m_typeInfo = nullptr;
 
     template<typename> friend class internal::meta_type;
     friend class rtti::MetaClass;
@@ -142,7 +142,7 @@ struct type_flags {
     using no_ptr = conditional_t<std::is_array<T>::value,
                                  remove_all_extents_t<T>,
                                  remove_all_pointers_t<T>>;
-    static const Flags value = static_cast<Flags>(
+    static Flags const value = static_cast<Flags>(
         (std::is_const<no_ref>::value ? Flags::Const : Flags::None) |
         (std::is_pointer<no_ref>::value ? Flags::Pointer : Flags::None) |
         (std::is_member_pointer<no_ref>::value ? Flags::MemberPointer : Flags::None) |
@@ -179,11 +179,11 @@ class meta_type final
         //register decayed type
         auto decay = decay_selector(std::is_same<T, Decay>{});
 
-        const auto &name = type_name<T>();
-        const auto flags = type_flags<T>::value;
-        const auto size = sizeof(T);
-        const std::uint16_t arity = pointer_arity<Decay>::value;
-        const std::uint16_t const_mask = const_bitset<NoRef>::value;
+        auto const &name = type_name<T>();
+        auto const flags = type_flags<T>::value;
+        auto const size = sizeof(T);
+        std::uint16_t const arity = pointer_arity<Decay>::value;
+        std::uint16_t const const_mask = const_bitset<NoRef>::value;
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags);
     }
@@ -272,19 +272,19 @@ To constructor_convert(From value)
 
 struct DLL_LOCAL ConvertFunctionBase
 {
-    using converter_t = bool(*)(const ConvertFunctionBase&, const void*, void*);
+    using converter_t = bool(*)(ConvertFunctionBase const&, void const*, void*);
 
     ConvertFunctionBase() = delete;
-    ConvertFunctionBase(const ConvertFunctionBase&) = delete;
+    ConvertFunctionBase(ConvertFunctionBase const&) = delete;
     ConvertFunctionBase(ConvertFunctionBase&&) = delete;
-    ConvertFunctionBase& operator=(const ConvertFunctionBase&) = delete;
+    ConvertFunctionBase& operator=(ConvertFunctionBase const&) = delete;
     ConvertFunctionBase& operator=(ConvertFunctionBase&&) = delete;
 
     explicit ConvertFunctionBase(converter_t converter)
         : m_converter(converter)
     {}
 
-    bool invoke(const void *in, void *out) const
+    bool invoke(void const *in, void *out) const
     {
         return m_converter(*this, in, out);
     }
@@ -297,7 +297,7 @@ struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
 {
     using this_t = ConvertFunctor<From, To, F>;
 
-    explicit ConvertFunctor(const F &func)
+    explicit ConvertFunctor(F const &func)
         : ConvertFunctionBase{convert}, m_func(func)
     {}
     explicit ConvertFunctor(F &&func)
@@ -308,16 +308,16 @@ struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
         MetaType::unregisterConverter<From, To>();
     }
 
-    static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
+    static bool convert(ConvertFunctionBase const &self, void const *in, void *out)
     {
-        auto &_this = static_cast<const this_t&>(self);
-        auto from = static_cast<const From*>(in);
+        auto &_this = static_cast<this_t const&>(self);
+        auto from = static_cast<From const*>(in);
         new (out) To(_this.m_func(*from));
         return true;
     }
 
 private:
-    const F m_func;
+    F const m_func;
 };
 
 template<typename From, typename To>
@@ -335,16 +335,16 @@ struct DLL_LOCAL ConvertMethod: ConvertFunctionBase
         MetaType::unregisterConverter<From, To>();
     }
 
-    static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
+    static bool convert(ConvertFunctionBase const &self, void const *in, void *out)
     {
-        auto &_this = static_cast<const this_t&>(self);
-        auto from = static_cast<const From*>(in);
+        auto &_this = static_cast<this_t const&>(self);
+        auto from = static_cast<From const*>(in);
         new (out) To(from->*_this.m_func());
         return true;
     }
 
 private:
-    const func_t m_func;
+    func_t const m_func;
 };
 
 template<typename From, typename To>
@@ -362,17 +362,17 @@ struct DLL_LOCAL ConvertMethodOk: ConvertFunctionBase
         MetaType::unregisterConverter<From, To>();
     }
 
-    static bool convert(const ConvertFunctionBase &self, const void *in, void *out)
+    static bool convert(ConvertFunctionBase const &self, void const *in, void *out)
     {
-        auto &_this = static_cast<const this_t&>(self);
-        auto from = static_cast<const From*>(in);
+        auto &_this = static_cast<this_t const&>(self);
+        auto from = static_cast<From const*>(in);
         auto result = false;
         new (out) To(from->*_this.m_func(&result));
         return result;
     }
 
 private:
-    const func_t m_func;
+    func_t const m_func;
 };
 
 } // namespace internal
@@ -505,6 +505,6 @@ FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_METATYPE_ID)
 
 } //namespace rtti
 
-DLL_PUBLIC std::ostream& operator<<(std::ostream &stream, const rtti::MetaType &value);
+DLL_PUBLIC std::ostream& operator<<(std::ostream &stream, rtti::MetaType const &value);
 
 #endif // METATYPE_H

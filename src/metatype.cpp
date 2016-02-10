@@ -30,15 +30,15 @@ static constexpr std::array<TypeInfo, 38> fundamentalTypes = {{
 class DLL_LOCAL CustomTypes {
 public:
     CustomTypes();
-    CustomTypes(const CustomTypes &) = delete;
-    CustomTypes& operator=(const CustomTypes &) = delete;
+    CustomTypes(CustomTypes const&) = delete;
+    CustomTypes& operator=(CustomTypes const&) = delete;
     CustomTypes(CustomTypes &&) = delete;
     CustomTypes& operator=(CustomTypes &&) = delete;
     ~CustomTypes();
 
-    const TypeInfo* getTypeInfo(MetaType_ID typeId) const;
-    const TypeInfo* getTypeInfo(const char *name) const;
-    const TypeInfo* addTypeInfo(const char *name, std::size_t size,
+    TypeInfo const* getTypeInfo(MetaType_ID typeId) const;
+    TypeInfo const*  getTypeInfo(char const *name) const;
+    TypeInfo const* addTypeInfo(char const *name, std::size_t size,
                                 MetaType_ID decay, std::uint16_t arity,
                                 std::uint16_t const_mask, MetaType::TypeFlags flags);
 private:
@@ -67,7 +67,7 @@ CustomTypes::~CustomTypes()
     m_names.clear();
 }
 
-const TypeInfo* CustomTypes::getTypeInfo(MetaType_ID typeId) const
+TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
 {
     auto type = typeId.value();
     if (type == MetaType::InvalidTypeId)
@@ -84,7 +84,7 @@ const TypeInfo* CustomTypes::getTypeInfo(MetaType_ID typeId) const
     return nullptr;
 }
 
-const TypeInfo* CustomTypes::getTypeInfo(const char *name) const
+const TypeInfo* CustomTypes::getTypeInfo(char const *name) const
 {
     if (!name)
         return nullptr;
@@ -105,7 +105,7 @@ const TypeInfo* CustomTypes::getTypeInfo(const char *name) const
     return nullptr;
 }
 
-inline const TypeInfo* CustomTypes::addTypeInfo(const char *name, std::size_t size,
+inline TypeInfo const* CustomTypes::addTypeInfo(char const *name, std::size_t size,
                                             MetaType_ID decay, uint16_t arity,
                                             uint16_t const_mask, MetaType::TypeFlags flags)
 {
@@ -141,7 +141,7 @@ MetaType::MetaType(MetaType_ID typeId)
     : m_typeInfo{customTypes().getTypeInfo(typeId)}
 {}
 
-rtti::MetaType::MetaType(const char *name)
+rtti::MetaType::MetaType(char const *name)
     : m_typeInfo(customTypes().getTypeInfo(name))
 {}
 
@@ -164,7 +164,7 @@ void MetaType::setTypeId(MetaType_ID typeId)
     *this = MetaType{typeId};
 }
 
-const char* MetaType::typeName() const
+char const* MetaType::typeName() const
 {
     if (m_typeInfo)
         return m_typeInfo->name.data();
@@ -209,8 +209,8 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
         --arity;
     }
 
-    const auto from = TypeInfo::const_bitset_t{fromType.m_typeInfo->const_mask};
-    const auto to = TypeInfo::const_bitset_t{toType.m_typeInfo->const_mask};
+    auto const from = TypeInfo::const_bitset_t{fromType.m_typeInfo->const_mask};
+    auto const to = TypeInfo::const_bitset_t{toType.m_typeInfo->const_mask};
 
     if (from == to)
         return true;
@@ -234,7 +234,7 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
     return true;
 }
 
-MetaType_ID MetaType::registerMetaType(const char *name, std::size_t size,
+MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
                                        MetaType_ID decay, std::uint16_t arity,
                                        std::uint16_t const_mask,
                                        MetaType::TypeFlags flags)
@@ -262,13 +262,13 @@ public:
         Destroyed = true;
     }
 
-    bool find(const key_t &key) const
+    bool find(key_t const &key) const
     {
         std::lock_guard<std::mutex> lock{m_lock};
         return (m_items.find(key) != std::end(m_items));
     }
 
-    bool add(key_t key, const F *func)
+    bool add(key_t key, F const *func)
     {
         if (!func)
             return false;
@@ -282,7 +282,7 @@ public:
         return true;
     }
 
-    const F* get(const key_t &key) const
+    F const* get(key_t const &key) const
     {
         std::lock_guard<std::mutex> lock{m_lock};
         auto search = m_items.find(key);
@@ -291,7 +291,7 @@ public:
         return nullptr;
     }
 
-    void remove(const key_t &key)
+    void remove(key_t const &key)
     {
         std::lock_guard<std::mutex> lock{m_lock};
         m_items.erase(key);
@@ -301,7 +301,7 @@ private:
     {
         using result_type = std::size_t;
         using argument_type = key_t;
-        result_type operator()(const argument_type &key) const
+        result_type operator()(argument_type const &key) const
         {
             return std::_Hash_impl::__hash_combine(key.first.value(),
                         std::_Hash_impl::hash(key.second.value()));
@@ -309,7 +309,7 @@ private:
     };
 
     mutable std::mutex m_lock;
-    std::unordered_map<key_t, const F*, hash_key> m_items;
+    std::unordered_map<key_t, F const*, hash_key> m_items;
 
     static bool Destroyed;
 
@@ -350,7 +350,7 @@ bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
 }
 
 bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
-                                 const internal::ConvertFunctionBase &converter)
+                                 internal::ConvertFunctionBase const &converter)
 {
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
@@ -365,7 +365,7 @@ bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
     return false;
 }
 
-bool MetaType::convert(const void *from, MetaType fromType, void *to, MetaType toType)
+bool MetaType::convert(void const *from, MetaType fromType, void *to, MetaType toType)
 {
     if (fromType.valid() && toType.valid())
     {
@@ -381,7 +381,7 @@ bool MetaType::convert(const void *from, MetaType fromType, void *to, MetaType t
     return false;
 }
 
-bool MetaType::convert(const void *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId)
+bool MetaType::convert(void const *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId)
 {
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
@@ -403,7 +403,7 @@ void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
 
 } //namespace rtti
 
-std::ostream& operator<<(std::ostream &stream, const rtti::MetaType &value)
+std::ostream& operator<<(std::ostream &stream, rtti::MetaType const &value)
 {
     return stream << value.typeId().value() << ":"
                   << value.typeName() << ":"
