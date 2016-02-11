@@ -11,13 +11,13 @@ public:
     PrivatePimpl() = delete;
     PrivatePimpl(const PrivatePimpl &other)
         : m_value{other.m_value}
-    { PRINT_PRETTY_FUNC }
+    { PRINT_PRETTY_FUNC; }
     PrivatePimpl& operator=(const PrivatePimpl&) = delete;
     PrivatePimpl(PrivatePimpl &&) = delete;
     PrivatePimpl& operator=(PrivatePimpl&&) = delete;
     explicit PrivatePimpl(const char *value)
         : m_value{value}
-    { PRINT_PRETTY_FUNC }
+    { PRINT_PRETTY_FUNC; }
 
 private:
     std::string m_value;
@@ -28,32 +28,32 @@ private:
 class TestQPointer {
 public:
     TestQPointer()
-    { PRINT_PRETTY_FUNC }
+    { PRINT_PRETTY_FUNC; }
 
     explicit TestQPointer(const char *value)
         : m_pImpl{new PrivatePimpl{value}}
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         m_pImpl->m_qImpl = this;
     }
 
     TestQPointer(const TestQPointer &other)
         : m_pImpl{other.m_pImpl ? new PrivatePimpl(*other.m_pImpl) : nullptr}
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         if (m_pImpl)
             m_pImpl->m_qImpl = this;
     }
 
     TestQPointer(TestQPointer &&other) noexcept
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         swap(other);
     }
 
     TestQPointer& operator=(const TestQPointer &other)
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         if (m_pImpl != other.m_pImpl)
             TestQPointer{other}.swap(*this);
         return *this;
@@ -61,7 +61,7 @@ public:
 
     TestQPointer& operator=(TestQPointer &&other) noexcept
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         if (m_pImpl != other.m_pImpl)
             TestQPointer{std::move(other)}.swap(*this);
         return *this;
@@ -79,7 +79,7 @@ public:
 
     virtual ~TestQPointer()
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         if (m_pImpl)
             delete m_pImpl;
     }
@@ -96,14 +96,14 @@ public:
 
     const std::string& value() const
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         assert(m_pImpl);
         return m_pImpl->m_value;
     }
 
     std::string& value()
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         assert(m_pImpl);
         return m_pImpl->m_value;
     }
@@ -189,30 +189,30 @@ class B: public A
     DECLARE_CLASSINFO
 public:
     B() : A()
-    { PRINT_PRETTY_FUNC }
+    { PRINT_PRETTY_FUNC; }
 
     explicit B(int value)
         : A{value}, d{value}
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
     }
 
     B(const B &other)
         : A{other}, d{other.d}
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
     }
 
     B(B &&other) noexcept
         : A{std::move(other)}
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         std::swap(d, other.d);
     }
 
     B& operator=(const B &other)
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         if (this != &other)
             B{other}.swap(*this);
         return *this;
@@ -220,7 +220,7 @@ public:
 
     B& operator=(B &&other) noexcept
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         if (this != &other)
             B{std::move(other)}.swap(*this);
         return *this;
@@ -235,26 +235,26 @@ public:
 
     virtual ~B()
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         d = -1;
     }
 
     void print() const override
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         A::print();
         std::printf("d = %d\n", d);
     }
 
     int getD() const
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         return d;
     }
 
     void setD(int value)
     {
-        PRINT_PRETTY_FUNC
+        PRINT_PRETTY_FUNC;
         d = value;
     }
 
@@ -314,6 +314,7 @@ void test_variant_1()
     std::printf("\n");
 
     {
+        std::printf("Size of rtti::variant = %llu\n", sizeof(rtti::variant));
         rtti::variant v1 = TestQPointer{"asdfgh"};
         rtti::variant v2 = TestQPointer{"qwerty"};
         v2 = TestQPointer{"123456"};

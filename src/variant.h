@@ -11,6 +11,7 @@ namespace rtti {
 
 namespace internal {
 
+constexpr std::size_t STORAGE_ALIGN = sizeof(void*);
 constexpr std::size_t STORAGE_SIZE = sizeof(void*) * 2;
 
 template<typename T, bool Small = sizeof(T) <= STORAGE_SIZE>
@@ -48,7 +49,7 @@ using unwrap_reference_t = typename unwrap_reference<T>::type;
 union DLL_PUBLIC variant_type_storage
 {
     void *ptr;
-    alignas(STORAGE_SIZE) std::uint8_t buffer[STORAGE_SIZE];
+    alignas(STORAGE_ALIGN) std::uint8_t buffer[STORAGE_SIZE];
 
     variant_type_storage(): buffer{0} {}
 };
