@@ -47,33 +47,31 @@ using unwrap_reference_t = typename unwrap_reference<T>::type;
 
 union DLL_PUBLIC variant_type_storage
 {
-    alignas(void*) std::uint8_t buffer[STORAGE_SIZE];
-    struct {
-        void *ptr;
-        mutable const void *temp;
-    };
+    void *ptr;
+    alignas(STORAGE_SIZE) std::uint8_t buffer[STORAGE_SIZE];
+
     variant_type_storage(): buffer{0} {}
 };
 
 struct DLL_PUBLIC variant_function_table
 {
     using type_t = MetaType_ID(*)();
-    using access_t = const void* (*) (const variant_type_storage&);
-    using copy_construct_t = void (*) (const void*, variant_type_storage&);
+    using access_t = void const* (*) (variant_type_storage const&);
+    using copy_construct_t = void (*) (void const*, variant_type_storage&);
     using move_construct_t = void (*) (void*, variant_type_storage&);
-    using copy_t = void (*) (const variant_type_storage&, variant_type_storage&);
+    using copy_t = void (*) (variant_type_storage const&, variant_type_storage&);
     using move_t = void (*) (variant_type_storage&, variant_type_storage&);
     using destroy_t = void (*) (variant_type_storage&);
-    using info_t = ClassInfo(*)(const variant_type_storage&);
+    using info_t = ClassInfo(*)(variant_type_storage const&);
 
-    const type_t f_type = nullptr;
-    const access_t f_access = nullptr;
-    const copy_construct_t f_copy_construct = nullptr;
-    const move_construct_t f_move_construct = nullptr;
-    const copy_t f_copy = nullptr;
-    const move_t f_move = nullptr;
-    const destroy_t f_destroy = nullptr;
-    const info_t f_info = nullptr;
+    type_t const f_type = nullptr;
+    access_t const f_access = nullptr;
+    copy_construct_t const f_copy_construct = nullptr;
+    move_construct_t const f_move_construct = nullptr;
+    copy_t const f_copy = nullptr;
+    move_t const f_move = nullptr;
+    destroy_t const f_destroy = nullptr;
+    info_t const f_info = nullptr;
 
     variant_function_table(type_t type, access_t access,
                            copy_construct_t copy_construct,
@@ -103,15 +101,15 @@ struct function_table_selector<T, true, false>
         return metaTypeId<remove_cv_t<T>>();
     }
 
-    static const void* access(const variant_type_storage &value) noexcept
+    static void const* access(variant_type_storage const &value) noexcept
     {
         return &value.buffer;
     }
 
-    static void copy_construct(const void *value, variant_type_storage &storage)
+    static void copy_construct(void const *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto ptr = static_cast<const Decay*>(value);
+        auto ptr = static_cast<Decay const*>(value);
         copy_selector(ptr, storage, CanCopy{});
     }
 
@@ -122,10 +120,10 @@ struct function_table_selector<T, true, false>
         new (&storage.buffer) Decay(std::move(*ptr));
     }
 
-    static void copy(const variant_type_storage &src, variant_type_storage &dst)
+    static void copy(variant_type_storage const &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto ptr = reinterpret_cast<const Decay*>(&src.buffer);
+        auto ptr = reinterpret_cast<Decay const*>(&src.buffer);
         copy_selector(ptr, dst, CanCopy{});
     }
 
@@ -139,18 +137,18 @@ struct function_table_selector<T, true, false>
     static void destroy(variant_type_storage &value)
         noexcept(std::is_nothrow_destructible<Decay>::value)
     {
-        auto ptr = reinterpret_cast<const Decay*>(&value.buffer);
+        auto ptr = reinterpret_cast<Decay const*>(&value.buffer);
         ptr->~Decay();
     }
 private:
     using CanCopy = typename std::is_copy_constructible<Decay>::type;
 
-    static void copy_selector(const Decay*, variant_type_storage&, std::false_type)
+    static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
     {
         throw runtime_error("Trying to copy move only type");
     }
 
-    static void copy_selector(const Decay *src, variant_type_storage &storage, std::true_type)
+    static void copy_selector(Decay const *src, variant_type_storage &storage, std::true_type)
     {
         new (&storage.buffer) Decay(*src);
     }
@@ -164,14 +162,14 @@ struct function_table_selector<T, true, true>
         return metaTypeId<Unwrap>();
     }
 
-    static const void* access(const variant_type_storage &value) noexcept
+    static void const* access(variant_type_storage const &value) noexcept
     {
         return access_selector(value, IsArray{});
     }
 
-    static void copy_construct(const void *value, variant_type_storage &storage) noexcept
+    static void copy_construct(void const *value, variant_type_storage &storage) noexcept
     {
-        auto ptr = static_cast<const Wrapper*>(value);
+        auto ptr = static_cast<Wrapper const*>(value);
         storage.ptr = const_cast<Decay*>(&ptr->get());
     }
 
@@ -181,7 +179,7 @@ struct function_table_selector<T, true, true>
         storage.ptr = const_cast<Decay*>(&ptr->get());
     }
 
-    static void copy(const variant_type_storage &src, variant_type_storage &dst) noexcept
+    static void copy(variant_type_storage const &src, variant_type_storage &dst) noexcept
     {
         dst.ptr = src.ptr;
     }
@@ -201,12 +199,12 @@ private:
     using IsArray = is_array_t<Unwrap>;
     using Decay = conditional_t<IsArray::value, remove_cv_t<Unwrap>, full_decay_t<Unwrap>>;
 
-    static const void* access_selector(const variant_type_storage &value, std::false_type) noexcept
+    static void const* access_selector(variant_type_storage const &value, std::false_type) noexcept
     {
         return value.ptr;
     }
 
-    static const void* access_selector(const variant_type_storage &value, std::true_type) noexcept
+    static void const* access_selector(variant_type_storage const &value, std::true_type) noexcept
     {
         return &value.ptr;
     }
@@ -222,15 +220,15 @@ struct function_table_selector<T, false, false>
         return metaTypeId<remove_cv_t<T>>();
     }
 
-    static const void* access(const variant_type_storage &value) noexcept
+    static void const* access(variant_type_storage const &value) noexcept
     {
         return value.ptr;
     }
 
-    static void copy_construct(const void *value, variant_type_storage &storage)
+    static void copy_construct(void const *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto ptr = static_cast<const Decay*>(value);
+        auto ptr = static_cast<Decay const*>(value);
         copy_selector(ptr, storage, CanCopy{});
     }
 
@@ -241,10 +239,10 @@ struct function_table_selector<T, false, false>
         storage.ptr = new Decay(std::move(*ptr));
     }
 
-    static void copy(const variant_type_storage &src, variant_type_storage &dst)
+    static void copy(variant_type_storage const &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto ptr = static_cast<const Decay*>(src.ptr);
+        auto ptr = static_cast<Decay const*>(src.ptr);
         copy_selector(ptr, dst, CanCopy{});
     }
 
@@ -256,19 +254,19 @@ struct function_table_selector<T, false, false>
     static void destroy(variant_type_storage &value)
         noexcept(std::is_nothrow_destructible<Decay>::value)
     {
-        auto ptr = static_cast<const Decay*>(value.ptr);
+        auto ptr = static_cast<Decay const*>(value.ptr);
         delete ptr;
     }
 
 private:
     using CanCopy = typename std::is_copy_constructible<Decay>::type;
 
-    static void copy_selector(const Decay*, variant_type_storage&, std::false_type)
+    static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
     {
         throw runtime_error("Trying to copy move-only type");
     }
 
-    static void copy_selector(const Decay *src, variant_type_storage &storage, std::true_type)
+    static void copy_selector(Decay const *src, variant_type_storage &storage, std::true_type)
     {
         storage.ptr = new Decay(*src);
     }
@@ -285,15 +283,15 @@ struct function_table_selector<T[N], false, false>
         return metaTypeId<remove_cv_t<T>[N]>();
     }
 
-    static const void* access(const variant_type_storage &value) noexcept
+    static void const* access(variant_type_storage const &value) noexcept
     {
         return &value.ptr;
     }
 
-    static void copy_construct(const void *value, variant_type_storage &storage)
+    static void copy_construct(void const *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto from = static_cast<const Decay*>(value);
+        auto from = static_cast<Decay const*>(value);
         copy_selector(from, storage, CanCopy{});
     }
 
@@ -307,10 +305,10 @@ struct function_table_selector<T[N], false, false>
         storage.ptr = to;
     }
 
-    static void copy(const variant_type_storage &src, variant_type_storage &dst)
+    static void copy(variant_type_storage const &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto from = static_cast<const Decay*>(src.ptr);
+        auto from = static_cast<Decay const*>(src.ptr);
         copy_selector(from, dst, CanCopy{});
     }
 
@@ -331,12 +329,12 @@ struct function_table_selector<T[N], false, false>
 private:
     using CanCopy = typename std::is_copy_constructible<Decay>::type;
 
-    static void copy_selector(const Decay*, variant_type_storage&, std::false_type)
+    static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
     {
         throw runtime_error("Trying to copy move-only type");
     }
 
-    static void copy_selector(const Decay *src, variant_type_storage &storage, std::true_type)
+    static void copy_selector(Decay const *src, variant_type_storage &storage, std::true_type)
     {
         auto alloc = Allocator{};
         auto to = alloc.allocate(N);
@@ -356,7 +354,7 @@ struct function_table_selector<T[N], true, false>:
 template<typename T>
 struct class_info_get
 {
-    static ClassInfo info(const variant_type_storage &value)
+    static ClassInfo info(variant_type_storage const &value)
     {
         return info_selector(value, IsClass{}, IsClassPtr{});
     }
@@ -368,37 +366,37 @@ private:
     using IsClassPtr = is_class_ptr_t<Decay>;
     using C = remove_pointer_t<Decay>;
 
-    static ClassInfo info_selector(const variant_type_storage&, std::false_type, std::false_type)
+    static ClassInfo info_selector(variant_type_storage const&, std::false_type, std::false_type)
     {
         return ClassInfo{};
     }
 
-    static ClassInfo info_selector(const variant_type_storage &value, std::true_type, std::false_type)
+    static ClassInfo info_selector(variant_type_storage const &value, std::true_type, std::false_type)
     {
         using IsRegistered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
         return info_selector_registered(value, IsRegistered{});
     }
-    static ClassInfo info_selector_registered(const variant_type_storage &value, std::false_type)
+    static ClassInfo info_selector_registered(variant_type_storage const &value, std::false_type)
     {
         return ClassInfo{metaTypeId<Decay>(), Selector::access(value)};
     }
-    static ClassInfo info_selector_registered(const variant_type_storage &value, std::true_type)
+    static ClassInfo info_selector_registered(variant_type_storage const &value, std::true_type)
     {
-        auto ptr = static_cast<const C*>(Selector::access(value));
+        auto ptr = static_cast<C const*>(Selector::access(value));
         return ptr->classInfo();
     }
 
-    static ClassInfo info_selector(const variant_type_storage &value, std::false_type, std::true_type)
+    static ClassInfo info_selector(variant_type_storage const &value, std::false_type, std::true_type)
     {
         using IsRegistered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
         return info_selector_registered_ptr(value, IsRegistered{});
     }
-    static ClassInfo info_selector_registered_ptr(const variant_type_storage &value, std::false_type)
+    static ClassInfo info_selector_registered_ptr(variant_type_storage const &value, std::false_type)
     {
         auto ptr = reinterpret_cast<C const * const *>(Selector::access(value));
         return ClassInfo{metaTypeId<C>(), *ptr};
     }
-    static ClassInfo info_selector_registered_ptr(const variant_type_storage &value, std::true_type)
+    static ClassInfo info_selector_registered_ptr(variant_type_storage const &value, std::true_type)
     {
         auto ptr = reinterpret_cast<C const * const *>(Selector::access(value));
         return (*ptr)->classInfo();
@@ -406,9 +404,9 @@ private:
 };
 
 template<typename T>
-inline const variant_function_table* function_table_for() noexcept
+inline variant_function_table const* function_table_for() noexcept
 {
-    static const auto result = variant_function_table{
+    static auto const result = variant_function_table{
         &function_table_selector<T>::type,
         &function_table_selector<T>::access,
         &function_table_selector<T>::copy_construct,
@@ -422,17 +420,17 @@ inline const variant_function_table* function_table_for() noexcept
 }
 
 template<>
-inline const variant_function_table* function_table_for<void>() noexcept
+inline variant_function_table const* function_table_for<void>() noexcept
 {
-    static const auto result = variant_function_table{
+    static auto const result = variant_function_table{
         [] () noexcept -> MetaType_ID { return MetaType_ID(); },
-        [] (const variant_type_storage&) noexcept -> const void* { return nullptr; },
-        [] (const void*, variant_type_storage&) noexcept {},
+        [] (variant_type_storage const&) noexcept -> void const* { return nullptr; },
+        [] (void const*, variant_type_storage&) noexcept {},
         [] (void*, variant_type_storage&) noexcept {},
-        [] (const variant_type_storage&, variant_type_storage&) noexcept {},
+        [] (variant_type_storage const&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&) noexcept {},
-        [] (const variant_type_storage&) noexcept { return ClassInfo(); }
+        [] (variant_type_storage const&) noexcept { return ClassInfo(); }
     };
     return &result;
 }
@@ -444,8 +442,8 @@ class DLL_PUBLIC variant final
 public:
     variant() = default;
 
-    variant(const variant &other);
-    variant& operator=(const variant &other);
+    variant(variant const &other);
+    variant& operator=(variant const &other);
     variant(variant &&other) noexcept;
     variant& operator=(variant &&other) noexcept;
 
@@ -461,6 +459,7 @@ public:
             || (move && std::is_move_constructible<Type>::value);
         static_assert(valid, "The contained type must be at least MoveConstructible");
         using selector_t = conditional_t<move, std::true_type, std::false_type>;
+
         constructor_selector(std::addressof(value), selector_t{});
     }
 
@@ -488,14 +487,14 @@ public:
     template<typename T>
     bool is() const
     {
-        return metafunc_is<T>::invoke(*this, false);
+        return metafunc_is<T>::invoke(*this);
     }
 
     template<typename T>
-    const T& value() const &
+    T const& value() const &
     {
         using U = remove_reference_t<T>;
-        const auto *result = metafunc_cast<const U>::invoke(*this);
+        auto const *result = metafunc_cast<U const>::invoke(*this);
         return *result;
     }
 
@@ -508,10 +507,10 @@ public:
     }
 
     template<typename T>
-    const T& cvalue() const
+    T const& cvalue() const
     {
         using U = remove_reference_t<T>;
-        const auto *result = metafunc_cast<const U>::invoke(*this);
+        auto const *result = metafunc_cast<U const>::invoke(*this);
         return *result;
     }
 
@@ -537,30 +536,12 @@ public:
     }
 
     template<typename T>
-    bool convert()
-    {
-        if (metafunc_is<T>::invoke(*this, false))
-            return true;
+    void convert()
+    { *this = to<T>(); }
 
-        auto fromId = typeId();
-        auto toId = metaTypeId<T>();
-        if (MetaType::hasConverter(fromId, toId))
-        {
-            alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
-            if (MetaType::convert(raw_data_ptr(), fromId, &buffer, toId))
-            {
-                *this = std::move(*reinterpret_cast<T*>(&buffer));
-                return true;
-            }
-            return false;
-
-        }
-        return false;
-    }
-
-    static const variant empty_variant;
+    static variant const empty_variant;
 private:
-    void const * raw_data_ptr() const
+    void const* raw_data_ptr() const
     { return manager->f_access(storage); }
     void * raw_data_ptr()
     { return const_cast<void*>(manager->f_access(storage)); }
@@ -570,40 +551,21 @@ private:
     void constructor_selector(void const *value, std::false_type)
     { manager->f_copy_construct(value, storage); }
 
-    static bool isConstCompatible(MetaType from, MetaType to, bool raise)
-    {
-        if (!MetaType::constCompatible(from, to))
-        {
-            if (raise)
-                throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                       from.typeName() + " -> " + to.typeName()};
-            return false;
-        }
-        return true;
-    }
-
     template<typename T>
     struct metafunc_is
     {
-        static bool invoke(const variant &self, bool raise)
+        static bool invoke(variant const &self)
         {
             if (self.empty())
-            {
-                if (raise)
-                    throw bad_variant_cast{"Variant is empty"};
                 return false;
-            }
 
             auto from = MetaType{self.typeId()};
             auto to = MetaType{metaTypeId<T>()};
 
             if (from.decayId() == to.decayId())
-                return isConstCompatible(from, to, raise);
+                return MetaType::constCompatible(from, to);
 
-            if (invoke_selector(self, from, IsClass{}, IsClassPtr{}))
-                return isConstCompatible(from, to, raise);
-
-            return false;
+            return cast_selector(self, from, to, IsClass{}, IsClassPtr{});
         }
 
     private:
@@ -613,29 +575,29 @@ private:
         using C = remove_pointer_t<Decay>;
 
         // nope
-        static bool invoke_selector(const variant&, MetaType,
-                                    std::false_type, std::false_type)
+        static bool cast_selector(variant const&, MetaType, MetaType,
+                                  std::false_type, std::false_type)
         { return false; }
         // class
-        static bool invoke_selector(const variant &self, MetaType type,
-                                    std::true_type, std::false_type)
+        static bool cast_selector(variant const &self, MetaType from, MetaType to,
+                                  std::true_type, std::false_type)
         {
-            if (type.isClass())
+            if (from.isClass() && MetaType::constCompatible(from, to))
                 return invoke_imp(self);
             return false;
         }
         // class ptr
-        static bool invoke_selector(const variant &self, MetaType type,
-                                    std::false_type, std::true_type)
+        static bool cast_selector(variant const &self, MetaType from, MetaType to,
+                                  std::false_type, std::true_type)
         {
-            if (type.isClassPtr())
-                return invoke_imp(self);
+            if (from.isClassPtr() && MetaType::constCompatible(from, to))
+                return  invoke_imp(self);
             return false;
         }
         // implementaion
-        static bool invoke_imp(const variant &self)
+        static bool invoke_imp(variant const &self)
         {
-            const auto &info = self.classInfo();
+            auto const &info = self.classInfo();
 
             auto fromType = MetaType{info.typeId};
             if (!fromType.valid())
@@ -654,24 +616,27 @@ private:
     {
         using Decay = full_decay_t<T>;
 
-        static T* invoke(const variant &self)
+        static T* invoke(variant const &self)
         {
             if (self.empty())
                 throw bad_variant_cast{"Variant is empty"};
 
-            const Decay* result = nullptr;
+            Decay const *result = nullptr;
             auto from = MetaType{self.typeId()};
             auto to = MetaType{metaTypeId<add_lvalue_reference_t<T>>()};
             if (from.decayId() == to.decayId())
             {
-                if (isConstCompatible(from, to, true))
-                    result = static_cast<const Decay*>(self.raw_data_ptr());
+                if (MetaType::constCompatible(from, to))
+                    result = static_cast<Decay const*>(self.raw_data_ptr());
+                else
+                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
+                                           from.typeName() + " -> " + to.typeName()};
             }
             else
             {
-               auto ptr = invoke_selector(self, from, IsClass{}, IsClassPtr{});
-               if (ptr && isConstCompatible(from, to, true))
-                   result = static_cast<const Decay*>(ptr);
+               auto ptr = cast_selector(self, from, to, IsClass{}, IsClassPtr{});
+               if (ptr)
+                   result = static_cast<Decay const*>(ptr);
             }
 
             if (!result)
@@ -686,44 +651,54 @@ private:
         using IsClassPtr = is_class_ptr_t<Decay>;
         using C = remove_pointer_t<Decay>;
 
-        static T* result_selector(const Decay *value, std::false_type)
+        static T* result_selector(Decay const *value, std::false_type)
         { return const_cast<T*>(value); }
-        static T* result_selector(const Decay *value, std::true_type)
+        static T* result_selector(Decay const *value, std::true_type)
         { return reinterpret_cast<T*>(*value); }
 
         // nope
-        static const void* invoke_selector(const variant&, MetaType,
+        static void const* cast_selector(variant const&, MetaType, MetaType,
                                      std::false_type, std::false_type)
         { return nullptr; }
         // class
-        static const void* invoke_selector(const variant &self, MetaType type,
+        static void const* cast_selector(variant const &self, MetaType from, MetaType to,
                                      std::true_type, std::false_type)
         {
-            if (type.isClass())
+            if (from.isClass())
+            {
+                if (!MetaType::constCompatible(from, to))
+                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
+                                           from.typeName() + " -> " + to.typeName()};
+
                 return invoke_imp(self);
+            }
             return nullptr;
         }
         // class ptr
-        static const void* invoke_selector(const variant &self, MetaType type,
-                                     std::false_type, std::true_type)
+        static void const* cast_selector(variant const &self, MetaType from, MetaType to,
+                                         std::false_type, std::true_type)
         {
-            if (type.isClassPtr())
+            if (from.isClassPtr())
             {
+                if (!MetaType::constCompatible(from, to))
+                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
+                                           from.typeName() + " -> " + to.typeName()};
+
                 auto ptr = invoke_imp(self);
-                if (ptr == self.storage.ptr)
-                    return &self.storage.ptr;
-                else
+                if (ptr)
                 {
-                    self.storage.temp = ptr;
-                    return &self.storage.temp;
+                    if (ptr == self.storage.ptr)
+                        return &self.storage.ptr;
+                    else
+                        throw bad_variant_cast("Reference to sub-object pointers isn't supported");
                 }
             }
             return nullptr;
         }
         // implementaion
-        static const void* invoke_imp(const variant &self)
+        static void const* invoke_imp(variant const &self)
         {
-            const auto &info = self.classInfo();
+            auto const &info = self.classInfo();
 
             auto fromType = MetaType{info.typeId};
             if (!fromType.valid())
@@ -741,13 +716,15 @@ private:
     template<typename T>
     struct metafunc_to
     {
+        static_assert(!std::is_array<T>::value, "Array types aren't supported");
+
         using Decay = full_decay_t<T>;
 
         static void invoke(variant const &self, void *buffer)
         {
             assert(buffer);
             if (self.empty())
-                throw bad_variant_cast{"Variant is empty"};
+                throw bad_variant_convert{"Variant is empty"};
 
             auto from = MetaType{self.typeId()};
             auto to = MetaType{metaTypeId<T>()};
@@ -760,7 +737,7 @@ private:
                     return;
                 }
                 else
-                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
+                    throw bad_variant_convert{std::string{"Const incompatible types: "} +
                                            from.typeName() + " -> " + to.typeName()};
 
             }
@@ -780,9 +757,6 @@ private:
                 throw bad_variant_convert{std::string{"Converter not found: "} +
                                           from.typeName() + " -> " + to.typeName()};
             }
-
-            throw bad_variant_cast{std::string{"Incompatible types: "} +
-                                   from.typeName() + " -> " + to.typeName()};
         }
 
     private:
@@ -791,11 +765,9 @@ private:
         using C = remove_pointer_t<Decay>;
 
         // nope
-        static bool cast_selector(variant const &, MetaType, MetaType, void *,
+        static bool cast_selector(variant const&, MetaType, MetaType, void *,
                                   std::false_type, std::false_type)
-        {
-            return false;
-        }
+        { return false; }
         // class
         static bool cast_selector(variant const &self, MetaType from, MetaType, void *buffer,
                                   std::true_type, std::false_type)
@@ -805,7 +777,7 @@ private:
                 auto ptr = invoke_imp(self);
                 if (ptr)
                 {
-                    new (buffer) C(*static_cast<C const *>(ptr));
+                    new (buffer) C(*static_cast<C const*>(ptr));
                     return true;
                 }
                 return false;
@@ -833,7 +805,7 @@ private:
             return false;
         }
         // implementaion
-        static void const * invoke_imp(const variant &self)
+        static void const* invoke_imp(variant const &self)
         {
             auto const &info = self.classInfo();
 
@@ -851,7 +823,7 @@ private:
     };
 
 
-    using table_t = const internal::variant_function_table;
+    using table_t = internal::variant_function_table const;
     using storage_t = internal::variant_type_storage;
 
     storage_t storage;
@@ -873,7 +845,7 @@ template<>
 struct hash<rtti::variant>: public std::__hash_base<std::size_t, rtti::variant>
 {
     using this_t = hash<rtti::variant>;
-    typename this_t::result_type operator()(const typename this_t::argument_type &value) const
+    typename this_t::result_type operator()(typename this_t::argument_type const &value) const
     {
         if (!value)
             return 0;
