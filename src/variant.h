@@ -734,7 +734,7 @@ private:
                 if (MetaType::constCompatible(from, to))
                 {
                     Decay const *value = static_cast<Decay const *>(self.raw_data_ptr());
-                    new (buffer) T(*value);
+                    new (buffer) Decay(*value);
                     return;
                 }
                 else

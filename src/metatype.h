@@ -83,6 +83,7 @@ public:
     bool isRvalueReference() const;
     bool isReference() const;
     bool isClass() const;
+    bool isPointer() const;
     bool isClassPtr() const;
     bool isArray() const;
     uint16_t pointerArity() const;
@@ -236,7 +237,12 @@ inline bool MetaType::isClass() const
 {
     auto flags = typeFlags();
     return ((flags & Class) == Class) &&
-           ((flags & Pointer) == None);
+            ((flags & Pointer) == None);
+}
+
+inline bool MetaType::isPointer() const
+{
+    return ((typeFlags() & Pointer) == Pointer);
 }
 
 inline bool MetaType::isClassPtr() const

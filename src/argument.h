@@ -108,11 +108,23 @@ private:
                                         fromType.typeName() + " -> " + toType.typeName()};
 
             auto *ptr = static_cast<variant*>(m_data);
-            return ptr->value<Decay>();
+            return result_selector<T>(*ptr, is_lvalue_reference_t<T>{});
         }
 
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                fromType.typeName() + " -> " + toType.typeName()};
+    }
+
+    template<typename T>
+    T result_selector(variant &v, std::false_type) const
+    {
+        return v.to<T>();
+    }
+
+    template<typename T>
+    T result_selector(variant &v, std::true_type) const
+    {
+        return v.value<T>();
     }
 
     void *m_data = nullptr;

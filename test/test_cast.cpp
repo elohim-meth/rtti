@@ -258,11 +258,11 @@ void test_cast_1()
         auto mTestParam4 = nsGlobal->getMethod("test_param_4"); assert(mTestParam4);
         auto mTestParam5 = nsGlobal->getMethod("test_param_5"); assert(mTestParam5);
 
-//        variant v = &e;
-//        v.value<D*>();
-//        mTestParam1->invoke(v);
-//        mTestParam2->invoke(v);
-//        mTestParam3->invoke(v);
+        variant v = &e;
+        v.value<D*>();
+        mTestParam1->invoke(v);
+        mTestParam2->invoke(v);
+        mTestParam3->invoke(v);
 //        //
 //        mTestParam4->invoke(v);
 //        mTestParam5->invoke(v);
