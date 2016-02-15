@@ -261,16 +261,17 @@ void test_cast_1()
         variant v = &e;
         v.value<D*>();
         mTestParam1->invoke(v);
-        mTestParam2->invoke(v);
-        mTestParam3->invoke(v);
-//        //
-//        mTestParam4->invoke(v);
-//        mTestParam5->invoke(v);
+        try {
+           mTestParam2->invoke(v); assert(false);
+        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()); }
+        try {
+           mTestParam3->invoke(v); assert(false);
+        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()); }
+        v = e;
+        mTestParam4->invoke(v);
+        mTestParam5->invoke(v);
 
-//        using namespace rtti;
-//        A *a = new VC();
-//        variant v = a;
-//        auto &b = v.value<B*>();
+        std::printf("\n");
     }
 
 }

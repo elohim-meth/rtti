@@ -306,6 +306,7 @@ void test_variant_1()
     {
         auto q1 = TestQPointer{"Hello, World"};
         auto q2 = TestQPointer{"qwerty"};
+        q2 = TestQPointer{"123456"};
         q1 = std::move(q2);
         q1.check();
         q2.check();
