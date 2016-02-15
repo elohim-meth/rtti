@@ -198,15 +198,22 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
     if (!fromType.valid() || !toType.valid())
         return false;
 
-    auto arity = fromType.m_typeInfo->arity;
-    if (arity != toType.m_typeInfo->arity)
+    auto arity1 = fromType.m_typeInfo->arity;
+    if (fromType.isArray() && !toType.isArray())
+        ++arity1;
+
+    auto arity2 = toType.m_typeInfo->arity;
+    if (toType.isArray() && !fromType.isArray())
+        ++arity2;
+
+    if (arity1 != arity2)
         return false;
 
     if (!toType.isReference())
     {
-        if (!arity)
+        if (!arity1)
             return true;
-        --arity;
+        --arity1;
     }
 
     auto const from = TypeInfo::const_bitset_t{fromType.m_typeInfo->const_mask};
@@ -215,7 +222,7 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
     if (from == to)
         return true;
 
-    for (decltype(arity) i = 0; i <= arity; ++i)
+    for (decltype(arity1) i = 0; i <= arity1; ++i)
     {
         auto f = from.test(i);
         auto t = to.test(i);
@@ -225,7 +232,7 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
 
         if (!f & t)
         {
-            for (decltype(arity) j = i + 1; j <= arity; ++j)
+            for (decltype(arity1) j = i + 1; j <= arity1; ++j)
                 if (!to.test(j))
                     return false;
             break;

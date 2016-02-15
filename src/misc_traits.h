@@ -75,7 +75,7 @@ using add_pointers_t = typename add_pointers<T, I>::type;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = std::is_pointer<decay_t<T>>::value && !std::is_function<T>::value>
+template<typename T, bool = std::is_pointer<T>::value>
 struct pointer_arity;
 
 template<typename T>
@@ -85,12 +85,12 @@ struct pointer_arity<T, false>:
 
 template<typename T>
 struct pointer_arity<T, true>:
-    std::integral_constant<std::size_t, pointer_arity<remove_pointer_t<decay_t<T>>>::value + 1>
+    std::integral_constant<std::size_t, pointer_arity<remove_pointer_t<T>>::value + 1>
 {};
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = std::is_pointer<decay_t<T>>::value && !std::is_function<T>::value>
+template<typename T, bool = std::is_pointer<T>::value>
 struct remove_all_pointers;
 
 template<typename T>
@@ -98,7 +98,7 @@ struct remove_all_pointers<T, false>: identity<remove_cv_t<T>>
 {};
 
 template<typename T>
-struct remove_all_pointers<T, true>: remove_all_pointers<remove_pointer_t<decay_t<T>>>
+struct remove_all_pointers<T, true>: remove_all_pointers<remove_pointer_t<T>>
 {};
 
 template<typename T>
@@ -106,12 +106,84 @@ using remove_all_pointers_t = typename remove_all_pointers<T>::type;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
+
 template<typename T>
-struct full_decay: add_pointers<remove_all_pointers_t<decay_t<T>>, pointer_arity<decay_t<T>>::value>
+struct array_length: std::integral_constant<std::size_t, 1>
+{};
+
+template<typename T, std::size_t N>
+struct array_length<T[N]>: std::integral_constant<std::size_t, N * array_length<T>::value>
+{};
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+template<typename T, bool = std::is_reference<T>::value,
+                     bool = std::is_pointer<T>::value,
+                     bool = std::is_array<T>::value>
+struct remove_all_cv;
+
+template<typename T>
+struct remove_all_cv<T, false, false, false>
+{
+    using type = remove_cv_t<T>;
+};
+
+template<typename T>
+struct remove_all_cv<T, true, false, false>
+{
+    constexpr static bool lref = is_lvalue_reference_t<T>::value;
+    using U = typename remove_all_cv<remove_reference_t<T>>::type;
+    using type = conditional_t<lref, add_lvalue_reference_t<U>, add_rvalue_reference_t<U>>;
+};
+
+template<typename T>
+struct remove_all_cv<T, false, true, false>
+{
+    using U = typename remove_all_cv<remove_pointer_t<T>>::type;
+    using type = add_pointer_t<U>;
+};
+
+template<typename T>
+struct remove_all_cv<T, false, false, true>
+{
+    constexpr static std::size_t extent = std::extent<T>::value;
+    using U = typename remove_all_cv<remove_extent_t<T>>::type;
+    using type = U[extent];
+};
+
+template<typename T>
+using remove_all_cv_t = typename remove_all_cv<T>::type;
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+template<typename T>
+using full_decay_t = remove_all_cv_t<decay_t<T>>;
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+template<typename T, bool = std::is_reference<T>::value,
+                     bool = std::is_pointer<T>::value,
+                     bool = std::is_array<T>::value>
+struct base_type;
+
+template<typename T>
+struct base_type<T, false, false, false>: identity<remove_cv_t<T>>
 {};
 
 template<typename T>
-using full_decay_t = typename full_decay<T>::type;
+struct base_type<T, true, false, false>: base_type<remove_reference_t<T>>
+{};
+
+template<typename T>
+struct base_type<T, false, true, false>: base_type<remove_pointer_t<T>>
+{};
+
+template<typename T>
+struct base_type<T, false, false, true>: base_type<remove_all_extents_t<T>>
+{};
+
+template<typename T>
+using base_type_t = typename base_type<T>::type;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 

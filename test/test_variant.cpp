@@ -1,5 +1,6 @@
 ﻿#include "test_variant.h"
 
+#include <finally.h>
 #include <debug.h>
 
 namespace {
@@ -697,7 +698,6 @@ void test_variant_1()
     {
         using namespace rtti;
         int i[7] = {1, 2, 3, 4, 5, 6, 7};
-        //const int*& t = i;
         variant v = i;
         assert(*v.to<int*>() == 1);
         assert(*v.to<const int*>() == 1);
@@ -712,11 +712,13 @@ void test_variant_1()
         assert(v.value<const int[7]>()[6] == 7);
     }
 
-//    {
-//        int **ppi = nullptr;
-//        const int **ppci = nullptr;
-//        ppci = ppi;
-//    }
+    {
+        using namespace rtti;
+        int const i[2][3] = {{1, 2, 3}, {4, 5, 6}};
+        variant v = i;
+        auto t = v.to<int(*)[3]>();
+        assert(*t[0] == 1 && *t[1] == 2 && *t[2] == 3);
+    }
 
 //    {
 //        using namespace rtti;

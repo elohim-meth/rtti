@@ -140,32 +140,31 @@ template <typename T>
 struct type_flags {
     using Flags = MetaType::TypeFlags;
     using no_ref = remove_reference_t<T>;
-    using no_ptr = conditional_t<std::is_array<T>::value,
-                                 remove_all_extents_t<T>,
-                                 remove_all_pointers_t<T>>;
+    using no_ptr = remove_pointer_t<no_ref>;
+    using base = base_type_t<T>;
     static Flags const value = static_cast<Flags>(
         (std::is_const<no_ref>::value ? Flags::Const : Flags::None) |
         (std::is_pointer<no_ref>::value ? Flags::Pointer : Flags::None) |
         (std::is_member_pointer<no_ref>::value ? Flags::MemberPointer : Flags::None) |
         (std::is_lvalue_reference<T>::value ? Flags::LvalueReference : Flags::None) |
         (std::is_rvalue_reference<T>::value ? Flags::RvalueReference : Flags::None) |
-        (std::is_array<no_ref>::value ? Flags::Array : Flags::None) |
-        (std::is_void<no_ptr>::value ? Flags::Void : Flags::None) |
-        (std::is_integral<no_ptr>::value ? Flags::Integral : Flags::None) |
-        (std::is_floating_point<no_ptr>::value ? Flags::FloatPoint : Flags::None) |
-        (std::is_enum<no_ptr>::value ? Flags::Enum : Flags::None) |
-        (std::is_function<no_ptr>::value ? Flags::Function : Flags::None) |
-        (std::is_union<no_ptr>::value ? Flags::Union : Flags::None) |
-        (std::is_class<no_ptr>::value ? Flags::Class : Flags::None) |
-        (std::is_pod<no_ptr>::value ? Flags::Pod : Flags::None) |
-        (std::is_abstract<no_ptr>::value ? Flags::Abstract : Flags::None) |
-        (std::is_polymorphic<no_ptr>::value ? Flags::Polymorphic : Flags::None) |
-        (std::is_default_constructible<no_ptr>::value ? Flags::DefaultConstructible : Flags::None) |
-        (std::is_copy_constructible<no_ptr>::value ? Flags::CopyConstructible : Flags::None) |
-        (std::is_copy_assignable<no_ptr>::value ? Flags::CopyAssignable : Flags::None) |
-        (std::is_move_constructible<no_ptr>::value ? Flags::MoveConstructible : Flags::None) |
-        (std::is_move_assignable<no_ptr>::value ? Flags::MoveAssignable : Flags::None) |
-        (std::is_destructible<no_ptr>::value ? Flags::Destructible : Flags::None)
+        (std::is_array<no_ptr>::value ? Flags::Array : Flags::None) |
+        (std::is_void<base>::value ? Flags::Void : Flags::None) |
+        (std::is_integral<base>::value ? Flags::Integral : Flags::None) |
+        (std::is_floating_point<base>::value ? Flags::FloatPoint : Flags::None) |
+        (std::is_enum<base>::value ? Flags::Enum : Flags::None) |
+        (std::is_function<base>::value ? Flags::Function : Flags::None) |
+        (std::is_union<base>::value ? Flags::Union : Flags::None) |
+        (std::is_class<base>::value ? Flags::Class : Flags::None) |
+        (std::is_pod<base>::value ? Flags::Pod : Flags::None) |
+        (std::is_abstract<base>::value ? Flags::Abstract : Flags::None) |
+        (std::is_polymorphic<base>::value ? Flags::Polymorphic : Flags::None) |
+        (std::is_default_constructible<base>::value ? Flags::DefaultConstructible : Flags::None) |
+        (std::is_copy_constructible<base>::value ? Flags::CopyConstructible : Flags::None) |
+        (std::is_copy_assignable<base>::value ? Flags::CopyAssignable : Flags::None) |
+        (std::is_move_constructible<base>::value ? Flags::MoveConstructible : Flags::None) |
+        (std::is_move_assignable<base>::value ? Flags::MoveAssignable : Flags::None) |
+        (std::is_destructible<base>::value ? Flags::Destructible : Flags::None)
     );
 };
 
@@ -183,7 +182,7 @@ class meta_type final
         auto const &name = type_name<T>();
         auto const flags = type_flags<T>::value;
         auto const size = sizeof(T);
-        std::uint16_t const arity = pointer_arity<Decay>::value;
+        std::uint16_t const arity = pointer_arity<NoRef>::value;
         std::uint16_t const const_mask = const_bitset<NoRef>::value;
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags);
@@ -237,7 +236,7 @@ inline bool MetaType::isClass() const
 {
     auto flags = typeFlags();
     return ((flags & Class) == Class) &&
-            ((flags & Pointer) == None);
+           ((flags & Pointer) == None);
 }
 
 inline bool MetaType::isPointer() const
@@ -255,7 +254,9 @@ inline bool MetaType::isClassPtr() const
 
 inline bool MetaType::isArray() const
 {
-    return ((typeFlags() & Array) == Array);
+    auto flags = typeFlags();
+    return ((flags & Array) == Array) &&
+           ((flags & Pointer) == None);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -273,7 +274,7 @@ To default_convert(From value)
 template<typename From, typename To>
 To constructor_convert(From value)
 {
-    return To(value);
+    return To(std::move(value));
 }
 
 struct DLL_LOCAL ConvertFunctionBase

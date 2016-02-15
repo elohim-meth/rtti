@@ -195,10 +195,10 @@ struct function_table_selector<T, true, true>
         // do nothing
     }
 private:
-    using Wrapper = decay_t<T>;
+    using Wrapper = remove_all_cv_t<T>;
     using Unwrap = unwrap_reference_t<Wrapper>;
     using IsArray = is_array_t<Unwrap>;
-    using Decay = conditional_t<IsArray::value, remove_cv_t<Unwrap>, full_decay_t<Unwrap>>;
+    using Decay = conditional_t<IsArray::value, remove_all_cv_t<Unwrap>, full_decay_t<Unwrap>>;
 
     static void const* access_selector(variant_type_storage const &value, std::false_type) noexcept
     {
@@ -276,12 +276,13 @@ private:
 template<typename T, std::size_t N>
 struct function_table_selector<T[N], false, false>
 {
-    using Decay = full_decay_t<T>;
-    using Allocator = std::allocator<Decay>;
+    using Decay = remove_all_cv_t<T>;
+    using Base = remove_all_extents_t<Decay>;
+    using Allocator = std::allocator<Base>;
 
     static MetaType_ID type()
     {
-        return metaTypeId<remove_cv_t<T>[N]>();
+        return metaTypeId<Decay[N]>();
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -290,26 +291,28 @@ struct function_table_selector<T[N], false, false>
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage)
-        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+        noexcept(std::is_nothrow_copy_constructible<Base>::value)
     {
-        auto from = static_cast<Decay const*>(value);
+        auto from = static_cast<Base const*>(value);
         copy_selector(from, storage, CanCopy{});
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
-        noexcept(std::is_nothrow_move_constructible<Decay>::value)
+        noexcept(std::is_nothrow_move_constructible<Base>::value)
     {
+        constexpr auto length = array_length<T[N]>::value;
+
         auto alloc = Allocator{};
-        auto to = alloc.allocate(N);
-        auto from = static_cast<Decay*>(value);
-        std::move(from, from + N, to);
+        auto to = alloc.allocate(length);
+        auto from = static_cast<Base*>(value);
+        std::move(from, from + length, to);
         storage.ptr = to;
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
-        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+        noexcept(std::is_nothrow_copy_constructible<Base>::value)
     {
-        auto from = static_cast<Decay const*>(src.ptr);
+        auto from = static_cast<Base const*>(src.ptr);
         copy_selector(from, dst, CanCopy{});
     }
 
@@ -319,27 +322,31 @@ struct function_table_selector<T[N], false, false>
     }
 
     static void destroy(variant_type_storage &value)
-        noexcept(std::is_nothrow_destructible<Decay>::value)
+        noexcept(std::is_nothrow_destructible<Base>::value)
     {
+        constexpr auto length = array_length<T[N]>::value;
+
         auto alloc = Allocator{};
-        auto ptr = static_cast<Decay*>(value.ptr);
-        std::_Destroy(ptr, ptr + N);
-        alloc.deallocate(ptr, N);
+        auto ptr = static_cast<Base*>(value.ptr);
+        std::_Destroy(ptr, ptr + length);
+        alloc.deallocate(ptr, length);
     }
 
 private:
-    using CanCopy = typename std::is_copy_constructible<Decay>::type;
+    using CanCopy = typename std::is_copy_constructible<Base>::type;
 
-    static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
+    static void copy_selector(Base const*, variant_type_storage&, std::false_type)
     {
         throw runtime_error("Trying to copy move-only type");
     }
 
-    static void copy_selector(Decay const *src, variant_type_storage &storage, std::true_type)
+    static void copy_selector(Base const *src, variant_type_storage &storage, std::true_type)
     {
+        constexpr auto length = array_length<T[N]>::value;
+
         auto alloc = Allocator{};
-        auto to = alloc.allocate(N);
-        std::copy(src, src + N, to);
+        auto to = alloc.allocate(length);
+        std::copy(src, src + length, to);
         storage.ptr = to;
     }
 };
@@ -360,7 +367,7 @@ struct class_info_get
         return info_selector(value, IsClass{}, IsClassPtr{});
     }
 private:
-    using Unwrap = unwrap_reference_t<T>;
+    using Unwrap = unwrap_reference_t<remove_cv_t<T>>;
     using Decay = conditional_t<std::is_array<Unwrap>::value, void, full_decay_t<Unwrap>>;
     using Selector = function_table_selector<T>;
     using IsClass = is_class_t<Decay>;
