@@ -151,8 +151,7 @@ void test_cast_1()
             (void) d2;
             assert(false);
         }
-        catch(const bad_meta_cast &e)
-        {}
+        catch(const bad_meta_cast &e) { LOG_RED(e.what()); }
     }
 
     {
@@ -272,6 +271,16 @@ void test_cast_1()
         mTestParam5->invoke(v);
 
         std::printf("\n");
+    }
+
+    {
+        using namespace rtti;
+        variant v = std::unique_ptr<int const>{new int(16)};
+        auto mc = MetaClass::findByTypeId(v.typeId()); assert(mc);
+        auto m = mc->getMethod("get"); assert(m);
+        auto t = m->invoke(v);
+        auto val = t.to<int const*>();
+        assert(*val == 16);
     }
 
 }

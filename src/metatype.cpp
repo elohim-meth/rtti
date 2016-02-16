@@ -193,22 +193,25 @@ std::uint16_t MetaType::pointerArity() const
     return 0;
 }
 
-bool MetaType::constCompatible(MetaType fromType, MetaType toType)
+bool MetaType::compatible(MetaType fromType, MetaType toType)
 {
     if (!fromType.valid() || !toType.valid())
         return false;
 
-    auto arity1 = fromType.m_typeInfo->arity;
-    if (fromType.isArray() && !toType.isArray())
-        ++arity1;
-
-    auto arity2 = toType.m_typeInfo->arity;
-    if (toType.isArray() && !fromType.isArray())
-        ++arity2;
-
-    if (arity1 != arity2)
+    // check array length
+    if (fromType.isArray() && toType.isArray() && (fromType.typeSize() != toType.typeSize()))
         return false;
 
+    // decay array to pointer
+    auto arity1 = fromType.m_typeInfo->arity;
+    if (fromType.isArray() && toType.isPointer())
+        ++arity1;
+
+    // compare pointer arity
+    if (arity1 != toType.m_typeInfo->arity)
+        return false;
+
+    // skip top-most const when destination type isn't reference
     if (!toType.isReference())
     {
         if (!arity1)
@@ -216,8 +219,12 @@ bool MetaType::constCompatible(MetaType fromType, MetaType toType)
         --arity1;
     }
 
-    auto const from = TypeInfo::const_bitset_t{fromType.m_typeInfo->const_mask};
-    auto const to = TypeInfo::const_bitset_t{toType.m_typeInfo->const_mask};
+    auto from = TypeInfo::const_bitset_t{fromType.m_typeInfo->const_mask};
+    auto to = TypeInfo::const_bitset_t{toType.m_typeInfo->const_mask};
+
+    // Decay to reference to pointer should be reference to const pointer
+    if (fromType.isArray() && !toType.isArray() && toType.isReference())
+        from.set(arity1);
 
     if (from == to)
         return true;

@@ -571,7 +571,7 @@ private:
             auto to = MetaType{metaTypeId<T>()};
 
             if (from.decayId() == to.decayId())
-                return MetaType::constCompatible(from, to);
+                return MetaType::compatible(from, to);
 
             return cast_selector(self, from, to, IsClass{}, IsClassPtr{});
         }
@@ -590,7 +590,7 @@ private:
         static bool cast_selector(variant const &self, MetaType from, MetaType to,
                                   std::true_type, std::false_type)
         {
-            if (from.isClass() && MetaType::constCompatible(from, to))
+            if (from.isClass() && MetaType::compatible(from, to))
                 return invoke_imp(self);
             return false;
         }
@@ -598,8 +598,8 @@ private:
         static bool cast_selector(variant const &self, MetaType from, MetaType to,
                                   std::false_type, std::true_type)
         {
-            if (from.isClassPtr() && MetaType::constCompatible(from, to))
-                return  invoke_imp(self);
+            if (from.isClassPtr() && MetaType::compatible(from, to))
+                return invoke_imp(self);
             return false;
         }
         // implementaion
@@ -634,11 +634,8 @@ private:
             auto to = MetaType{metaTypeId<add_lvalue_reference_t<T>>()};
             if (from.decayId() == to.decayId())
             {
-                if (MetaType::constCompatible(from, to))
+                if (MetaType::compatible(from, to))
                     result = static_cast<Decay const*>(self.raw_data_ptr());
-                else
-                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                           from.typeName() + " -> " + to.typeName()};
             }
             else
             {
@@ -672,26 +669,17 @@ private:
         static void const* cast_selector(variant const &self, MetaType from, MetaType to,
                                      std::true_type, std::false_type)
         {
-            if (from.isClass())
-            {
-                if (!MetaType::constCompatible(from, to))
-                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                           from.typeName() + " -> " + to.typeName()};
-
+            if (from.isClass() && MetaType::compatible(from, to))
                 return invoke_imp(self);
-            }
+
             return nullptr;
         }
         // class ptr
         static void const* cast_selector(variant const &self, MetaType from, MetaType to,
                                          std::false_type, std::true_type)
         {
-            if (from.isClassPtr())
+            if (from.isClassPtr() && MetaType::compatible(from, to))
             {
-                if (!MetaType::constCompatible(from, to))
-                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                           from.typeName() + " -> " + to.typeName()};
-
                 auto ptr = invoke_imp(self);
                 if (ptr)
                 {
@@ -738,16 +726,15 @@ private:
             auto to = MetaType{metaTypeId<T>()};
             if (from.decayId() == to.decayId())
             {
-                if (MetaType::constCompatible(from, to))
+                if (MetaType::compatible(from, to))
                 {
                     Decay const *value = static_cast<Decay const *>(self.raw_data_ptr());
                     new (buffer) Decay(*value);
                     return;
                 }
                 else
-                    throw bad_variant_convert{std::string{"Const incompatible types: "} +
+                    throw bad_variant_convert{std::string{"Incompatible types: "} +
                                            from.typeName() + " -> " + to.typeName()};
-
             }
             else
             {
@@ -796,12 +783,8 @@ private:
         static bool cast_selector(variant const &self, MetaType from, MetaType to, void *buffer,
                                      std::false_type, std::true_type)
         {
-            if (from.isClassPtr())
+            if (from.isClassPtr() && MetaType::compatible(from, to))
             {
-                if (!MetaType::constCompatible(from, to))
-                    throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                           from.typeName() + " -> " + to.typeName()};
-
                 auto ptr = invoke_imp(self);
                 if (ptr)
                 {

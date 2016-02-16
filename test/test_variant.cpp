@@ -698,11 +698,14 @@ void test_variant_1()
     {
         using namespace rtti;
         int i[7] = {1, 2, 3, 4, 5, 6, 7};
-        int* &rpi = i;
+        //int* &rpi = i;
         variant v = i;
         assert(*v.to<int*>() == 1);
         assert(*v.to<const int*>() == 1);
-        assert(*v.value<int*>() == 1);
+        try {
+            v.value<int*>(); assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
         try {
             v.value<const int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
@@ -716,7 +719,9 @@ void test_variant_1()
     {
         using namespace rtti;
         int i[2][3] = {{1, 2, 3}, {4, 5, 6}};
-        int(*& rpi)[3] = i;
+//        metaTypeId<int (&)[3][3]>();
+//        metaTypeId<int const ****>();
+//        metaTypeId<int       **** const>();
         variant v = i;
         {
             auto t = v.to<int(*)[3]>();
@@ -729,12 +734,23 @@ void test_variant_1()
                     t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
         }
         {
-            auto &t = v.value<int(*)[3]>();
+            try {
+                v.value<int(*)[3]>(); assert(false);
+            } catch (const rtti::bad_cast &e) { LOG_RED(e.what()); }
+
+        }
+        {
+            auto &t = v.cvalue<int(*)[3]>();
             assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
                     t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
         }
         {
-            auto &t = v.value<int const(*)[3]>();
+            try {
+                v.value<int const(*)[3]>(); assert(false);
+            } catch (const rtti::bad_cast &e) { LOG_RED(e.what()); }
+        }
+        {
+            auto &t = v.cvalue<int const(*)[3]>();
             assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
                     t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
         }
@@ -750,19 +766,10 @@ void test_variant_1()
         }
     }
 
-//    {
-//        using namespace rtti;
-//        int i[3] = {1, 2, 3};
-//        const int (*ri)[3] = &i;
-//        variant v1 = i;
-//        auto &t1 = v1.value<int*>();
-//        auto &t2 = v1.cvalue<decltype(i)>();
-//        variant v2 = std::ref(i);
-//        variant v3 = "3.14";
-//        //v3.convert<std::string>();
-//        v3.convert<double>();
-//        assert(v3.value<double>() == 3.14);
-
-//    }
+    {
+//        int const * const * const * i;
+//        int *** j;
+//        i = j;
+    }
 }
 

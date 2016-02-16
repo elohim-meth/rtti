@@ -73,6 +73,8 @@ public:
     }
     MetaType_ID typeId() const;
     MetaType_ID decayId() const;
+    bool decayed() const
+    { return valid() && (typeId() == decayId()); }
     void setTypeId(MetaType_ID typeId);
     char const* typeName() const;
     std::size_t typeSize() const;
@@ -87,7 +89,7 @@ public:
     bool isClassPtr() const;
     bool isArray() const;
     uint16_t pointerArity() const;
-    static bool constCompatible(MetaType fromType, MetaType toType);
+    static bool compatible(MetaType fromType, MetaType toType);
 
     static bool hasConverter(MetaType fromType, MetaType toType);
     static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);

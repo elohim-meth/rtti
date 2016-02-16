@@ -54,17 +54,16 @@ private:
 
         if (fromType.decayId() == toType.decayId())
         {
-            if (!MetaType::constCompatible(fromType, toType))
-                throw bad_argument_cast{std::string{"Const incompatible types: "} +
-                                        fromType.typeName() + " -> " + toType.typeName()};
+            if (MetaType::compatible(fromType, toType))
+            {
+                Decay *ptr = nullptr;
+                if (fromType.isArray())
+                    ptr = static_cast<Decay*>(m_dataptr);
+                else
+                    ptr = static_cast<Decay*>(m_data);
 
-            Decay *ptr = nullptr;
-            if (fromType.isArray())
-                ptr = static_cast<Decay*>(m_dataptr);
-            else
-                ptr = static_cast<Decay*>(m_data);
-
-            return std::move(*ptr);
+                return std::move(*ptr);
+            }
         }
         else if (fromType.decayId() == metaTypeId<variant>())
         {
@@ -85,28 +84,25 @@ private:
         auto toType = MetaType{metaTypeId<T>()};
 
         if (!fromType.isLvalueReference() && toType.isLvalueReference() && !toType.isConst())
-            throw bad_argument_cast{"Try to bind rvalue reference to non const lvalue reference"};
+            throw bad_argument_cast{"Try to bind r-reference to non const l-reference"};
+        if (fromType.isLvalueReference() && fromType.isConst() && toType.isLvalueReference() && !toType.isConst())
+            throw bad_argument_cast{"Try to bind const l-reference to non const l-reference"};
 
         if (fromType.decayId() == toType.decayId())
         {
-            if (!MetaType::constCompatible(fromType, toType))
-                throw bad_argument_cast{std::string{"Const incompatible types: "} +
-                                        fromType.typeName() + " -> " + toType.typeName()};
-            Decay *ptr = nullptr;
-            if (fromType.isArray())
-                ptr = static_cast<Decay*>(m_dataptr);
-            else
-                ptr = static_cast<Decay*>(m_data);
+            if (MetaType::compatible(fromType, toType))
+            {
+                Decay *ptr = nullptr;
+                if (fromType.isArray())
+                    ptr = static_cast<Decay*>(m_dataptr);
+                else
+                    ptr = static_cast<Decay*>(m_data);
 
-            return *ptr;
+                return *ptr;
+            }
         }
         else if (fromType.decayId() == metaTypeId<variant>())
         {
-            if (fromType.isLvalueReference() && fromType.isConst() &&
-                toType.isLvalueReference() && !toType.isConst())
-                throw bad_argument_cast{std::string{"Const incompatible types: "} +
-                                        fromType.typeName() + " -> " + toType.typeName()};
-
             auto *ptr = static_cast<variant*>(m_data);
             return result_selector<T>(*ptr, is_lvalue_reference_t<T>{});
         }
