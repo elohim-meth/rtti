@@ -698,6 +698,7 @@ void test_variant_1()
     {
         using namespace rtti;
         int i[7] = {1, 2, 3, 4, 5, 6, 7};
+        int* &rpi = i;
         variant v = i;
         assert(*v.to<int*>() == 1);
         assert(*v.to<const int*>() == 1);
@@ -714,10 +715,39 @@ void test_variant_1()
 
     {
         using namespace rtti;
-        int const i[2][3] = {{1, 2, 3}, {4, 5, 6}};
+        int i[2][3] = {{1, 2, 3}, {4, 5, 6}};
+        int(*& rpi)[3] = i;
         variant v = i;
-        auto t = v.to<int(*)[3]>();
-        assert(*t[0] == 1 && *t[1] == 2 && *t[2] == 3);
+        {
+            auto t = v.to<int(*)[3]>();
+            assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
+                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
+        }
+        {
+            auto t = v.to<int const(*)[3]>();
+            assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
+                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
+        }
+        {
+            auto &t = v.value<int(*)[3]>();
+            assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
+                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
+        }
+        {
+            auto &t = v.value<int const(*)[3]>();
+            assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
+                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
+        }
+        {
+            auto &t = v.value<int[2][3]>();
+            assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
+                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
+        }
+        {
+            auto &t = v.value<int const[2][3]>();
+            assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
+                   t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
+        }
     }
 
 //    {
