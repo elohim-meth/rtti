@@ -276,11 +276,11 @@ void test_cast_1()
     {
         using namespace rtti;
         variant v = std::unique_ptr<int const>{new int(16)};
-        auto mc = MetaClass::findByTypeId(v.typeId()); assert(mc);
-        auto m = mc->getMethod("get"); assert(m);
-        auto t = m->invoke(v);
-        auto val = t.to<int const*>();
-        assert(*val == 16);
+        auto mcUptrInt = MetaClass::findByTypeId(v.typeId()); assert(mcUptrInt);
+        auto mGet = mcUptrInt->getMethod("get"); assert(mGet);
+        auto result = mGet->invoke(v);
+        auto vallue = result.to<int const*>();
+        assert(*vallue == 16);
     }
 
 }
