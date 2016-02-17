@@ -245,6 +245,8 @@ void test_cast_1()
 
         A *pa = new E();
         FINALLY { delete pa; };
+        D *pd = new E();
+        FINALLY { delete pd; };
 //        test_param_1(pa);
 //        test_param_2(pa);
 //        test_param_3(pa);
@@ -258,7 +260,6 @@ void test_cast_1()
         auto mTestParam5 = nsGlobal->getMethod("test_param_5"); assert(mTestParam5);
 
         variant v = &e;
-        v.value<D*>();
         mTestParam1->invoke(v);
         try {
            mTestParam2->invoke(v); assert(false);
@@ -269,6 +270,20 @@ void test_cast_1()
         v = e;
         mTestParam4->invoke(v);
         mTestParam5->invoke(v);
+
+        v = pa;
+        mTestParam1->invoke(v);
+        mTestParam2->invoke(v);
+        mTestParam3->invoke(v);
+
+        v = pd;
+        mTestParam1->invoke(v);
+        try {
+           mTestParam2->invoke(v); assert(false);
+        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()); }
+        try {
+           mTestParam3->invoke(v); assert(false);
+        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()); }
 
         std::printf("\n");
     }

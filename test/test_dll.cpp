@@ -113,6 +113,7 @@ int main(int argc, char* argv[])
         test_cast_1();
         test_variant_1();
 
+        std::printf("/n");
     } catch(const std::exception& e) {
         LOG_RED(e.what());
     } catch (...) {

@@ -198,8 +198,13 @@ bool MetaType::compatible(MetaType fromType, MetaType toType)
     if (!fromType.valid() || !toType.valid())
         return false;
 
+    if (!fromType.isLvalueReference() && toType.isLvalueReference() && !toType.isConst())
+        return false;
+    if (fromType.isLvalueReference() && toType.isRvalueReference())
+        return false;
+
     // check array length
-    if (fromType.isArray() && toType.isArray() && (fromType.typeSize() != toType.typeSize()))
+    if (fromType.isArray() && toType.isArray() && (fromType.typeSize() < toType.typeSize()))
         return false;
 
     // decay array to pointer

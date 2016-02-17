@@ -9,6 +9,8 @@
 
 namespace rtti {
 
+class argument;
+
 namespace internal {
 
 constexpr std::size_t STORAGE_ALIGN = sizeof(void*);
@@ -54,9 +56,11 @@ union DLL_PUBLIC variant_type_storage
     variant_type_storage(): buffer{0} {}
 };
 
+enum class type_attribute {NONE, LREF, RREF, LREF_CONST};
+
 struct DLL_PUBLIC variant_function_table
 {
-    using type_t = MetaType_ID(*)();
+    using type_t = MetaType_ID(*)(type_attribute);
     using access_t = void const* (*) (variant_type_storage const&);
     using copy_construct_t = void (*) (void const*, variant_type_storage&);
     using move_construct_t = void (*) (void*, variant_type_storage&);
@@ -97,9 +101,17 @@ struct function_table_selector<T, true, false>
 {
     using Decay = full_decay_t<T>;
 
-    static MetaType_ID type()
+    static MetaType_ID type(type_attribute attr)
     {
-        return metaTypeId<remove_cv_t<T>>();
+        if (attr == type_attribute::NONE)
+            return metaTypeId<U>();
+        else if (attr == type_attribute::LREF)
+            return metaTypeId<ULref>();
+        else if (attr == type_attribute::RREF)
+            return metaTypeId<URref>();
+        else if (attr == type_attribute::LREF_CONST)
+            return metaTypeId<UConstLref>();
+        return metaTypeId<U>();
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -142,6 +154,11 @@ struct function_table_selector<T, true, false>
         ptr->~Decay();
     }
 private:
+    using U = remove_cv_t<T>;
+    using ULref = add_lvalue_reference_t<U>;
+    using URref = add_rvalue_reference_t<U>;
+    using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
+
     using CanCopy = typename std::is_copy_constructible<Decay>::type;
 
     static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
@@ -158,9 +175,17 @@ private:
 template<typename T>
 struct function_table_selector<T, true, true>
 {
-    static MetaType_ID type()
+    static MetaType_ID type(type_attribute attr)
     {
-        return metaTypeId<Unwrap>();
+        if (attr == type_attribute::NONE)
+            return metaTypeId<U>();
+        else if (attr == type_attribute::LREF)
+            return metaTypeId<ULref>();
+        else if (attr == type_attribute::RREF)
+            return metaTypeId<URref>();
+        else if (attr == type_attribute::LREF_CONST)
+            return metaTypeId<UConstLref>();
+        return metaTypeId<U>();
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -196,9 +221,13 @@ struct function_table_selector<T, true, true>
     }
 private:
     using Wrapper = remove_all_cv_t<T>;
-    using Unwrap = unwrap_reference_t<Wrapper>;
-    using IsArray = is_array_t<Unwrap>;
-    using Decay = conditional_t<IsArray::value, remove_all_cv_t<Unwrap>, full_decay_t<Unwrap>>;
+    using U = unwrap_reference_t<Wrapper>;
+    using ULref = add_lvalue_reference_t<U>;
+    using URref = add_rvalue_reference_t<U>;
+    using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
+
+    using IsArray = is_array_t<U>;
+    using Decay = conditional_t<IsArray::value, remove_all_cv_t<U>, full_decay_t<U>>;
 
     static void const* access_selector(variant_type_storage const &value, std::false_type) noexcept
     {
@@ -216,9 +245,17 @@ struct function_table_selector<T, false, false>
 {
     using Decay = full_decay_t<T>;
 
-    static MetaType_ID type()
+    static MetaType_ID type(type_attribute attr)
     {
-        return metaTypeId<remove_cv_t<T>>();
+        if (attr == type_attribute::NONE)
+            return metaTypeId<U>();
+        else if (attr == type_attribute::LREF)
+            return metaTypeId<ULref>();
+        else if (attr == type_attribute::RREF)
+            return metaTypeId<URref>();
+        else if (attr == type_attribute::LREF_CONST)
+            return metaTypeId<UConstLref>();
+        return metaTypeId<U>();
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -260,6 +297,11 @@ struct function_table_selector<T, false, false>
     }
 
 private:
+    using U = remove_cv_t<T>;
+    using ULref = add_lvalue_reference_t<U>;
+    using URref = add_rvalue_reference_t<U>;
+    using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
+
     using CanCopy = typename std::is_copy_constructible<Decay>::type;
 
     static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
@@ -276,13 +318,21 @@ private:
 template<typename T, std::size_t N>
 struct function_table_selector<T[N], false, false>
 {
-    using Decay = remove_all_cv_t<T>;
+    using Decay = remove_all_cv_t<T[N]>;
     using Base = remove_all_extents_t<Decay>;
     using Allocator = std::allocator<Base>;
 
-    static MetaType_ID type()
+    static MetaType_ID type(type_attribute attr)
     {
-        return metaTypeId<Decay[N]>();
+        if (attr == type_attribute::NONE)
+            return metaTypeId<U>();
+        else if (attr == type_attribute::LREF)
+            return metaTypeId<ULref>();
+        else if (attr == type_attribute::RREF)
+            return metaTypeId<URref>();
+        else if (attr == type_attribute::LREF_CONST)
+            return metaTypeId<UConstLref>();
+        return metaTypeId<U>();
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -333,6 +383,11 @@ struct function_table_selector<T[N], false, false>
     }
 
 private:
+    using U = Decay;
+    using ULref = add_lvalue_reference_t<U>;
+    using URref = add_rvalue_reference_t<U>;
+    using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
+
     using CanCopy = typename std::is_copy_constructible<Base>::type;
 
     static void copy_selector(Base const*, variant_type_storage&, std::false_type)
@@ -431,7 +486,7 @@ template<>
 inline variant_function_table const* function_table_for<void>() noexcept
 {
     static auto const result = variant_function_table{
-        [] () noexcept -> MetaType_ID { return MetaType_ID(); },
+        [] (type_attribute) noexcept -> MetaType_ID { return MetaType_ID(); },
         [] (variant_type_storage const&) noexcept -> void const* { return nullptr; },
         [] (void const*, variant_type_storage&) noexcept {},
         [] (void*, variant_type_storage&) noexcept {},
@@ -488,7 +543,7 @@ public:
     { return !empty(); }
 
     MetaType_ID typeId() const
-    { return manager->f_type(); }
+    { return internalTypeId(); }
     ClassInfo classInfo() const
     { return manager->f_info(storage); }
 
@@ -501,8 +556,10 @@ public:
     template<typename T>
     T const& value() const &
     {
-        using U = remove_reference_t<T>;
-        auto const *result = metafunc_cast<U const>::invoke(*this);
+        using U = add_const_t<remove_reference_t<T>>;
+        auto fromId = internalTypeId(type_attribute::LREF_CONST);
+        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
 
@@ -510,24 +567,54 @@ public:
     T& value() &
     {
         using U = remove_reference_t<T>;
-        auto *result = metafunc_cast<U>::invoke(*this);
+        auto fromId = internalTypeId(type_attribute::LREF);
+        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
+        return *result;
+    }
+
+    template<typename T>
+    T const& cvalue()
+    {
+        using U = add_const_t<remove_reference_t<T>>;
+        auto fromId = internalTypeId(type_attribute::LREF);
+        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
 
     template<typename T>
     T const& cvalue() const
     {
-        using U = remove_reference_t<T>;
-        auto const *result = metafunc_cast<U const>::invoke(*this);
+        using U = add_const_t<remove_reference_t<T>>;
+        auto fromId = internalTypeId(type_attribute::LREF_CONST);
+        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
 
     template<typename T>
     T&& value() &&
     {
-        using U = remove_reference_t<T>;
-        auto *result = metafunc_cast<U>::invoke(*this);
+        using U = remove_cv_t<remove_reference_t<T>>;
+        auto fromId = internalTypeId(type_attribute::NONE);
+        auto toId = metaTypeId<U>();
+        auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return std::move(*result);
+    }
+
+    template<typename T>
+    T to()
+    {
+        static_assert(!std::is_reference<T>::value,
+                      "Type cannot be reference");
+        static_assert(std::is_move_constructible<T>::value,
+                      "Type should be MoveConstructible");
+
+        alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
+        auto typeId = internalTypeId(type_attribute::LREF);
+        metafunc_to<T>::invoke(*this, typeId, &buffer);
+        return std::move(*reinterpret_cast<T*>(&buffer));
     }
 
     template<typename T>
@@ -539,7 +626,8 @@ public:
                       "Type should be MoveConstructible");
 
         alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
-        metafunc_to<T>::invoke(*this, &buffer);
+        auto typeId = internalTypeId(type_attribute::LREF_CONST);
+        metafunc_to<T>::invoke(*this, typeId, &buffer);
         return std::move(*reinterpret_cast<T*>(&buffer));
     }
 
@@ -549,10 +637,14 @@ public:
 
     static variant const empty_variant;
 private:
+    using type_attribute = internal::type_attribute;
+
     void const* raw_data_ptr() const
     { return manager->f_access(storage); }
     void * raw_data_ptr()
     { return const_cast<void*>(manager->f_access(storage)); }
+    MetaType_ID internalTypeId(type_attribute attr = type_attribute::NONE) const
+    { return manager->f_type(attr); }
 
     void constructor_selector(void *value, std::true_type)
     { manager->f_move_construct(value, storage); }
@@ -624,14 +716,14 @@ private:
     {
         using Decay = full_decay_t<T>;
 
-        static T* invoke(variant const &self)
+        static T* invoke(variant const &self, MetaType_ID fromId, MetaType_ID toId)
         {
             if (self.empty())
                 throw bad_variant_cast{"Variant is empty"};
 
             Decay const *result = nullptr;
-            auto from = MetaType{self.typeId()};
-            auto to = MetaType{metaTypeId<add_lvalue_reference_t<T>>()};
+            auto from = MetaType{fromId};
+            auto to = MetaType{toId};
             if (from.decayId() == to.decayId())
             {
                 if (MetaType::compatible(from, to))
@@ -716,13 +808,13 @@ private:
 
         using Decay = full_decay_t<T>;
 
-        static void invoke(variant const &self, void *buffer)
+        static void invoke(variant const &self, MetaType_ID typeId, void *buffer)
         {
             assert(buffer);
             if (self.empty())
                 throw bad_variant_convert{"Variant is empty"};
 
-            auto from = MetaType{self.typeId()};
+            auto from = MetaType{typeId};
             auto to = MetaType{metaTypeId<T>()};
             if (from.decayId() == to.decayId())
             {
@@ -813,7 +905,6 @@ private:
         }
     };
 
-
     using table_t = internal::variant_function_table const;
     using storage_t = internal::variant_type_storage;
 
@@ -821,6 +912,7 @@ private:
     table_t* manager = internal::function_table_for<void>();
 
     friend struct std::hash<rtti::variant>;
+    friend class rtti::argument;
 };
 
 } //namespace rtti

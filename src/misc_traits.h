@@ -10,6 +10,9 @@ namespace rtti {
 // Until C++14
 
 template<typename T>
+using add_const_t = typename std::add_const<T>::type;
+
+template<typename T>
 using add_pointer_t = typename std::add_pointer<T>::type;
 
 template<typename T>
