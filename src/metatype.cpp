@@ -258,7 +258,9 @@ MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
                                        std::uint16_t const_mask,
                                        MetaType::TypeFlags flags)
 {
-    auto result = customTypes().addTypeInfo(name, size, decay, arity, const_mask, flags);
+    auto result = customTypes().getTypeInfo(name);
+    if (!result)
+        result = customTypes().addTypeInfo(name, size, decay, arity, const_mask, flags);
     return result->type;
 }
 

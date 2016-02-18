@@ -307,9 +307,6 @@ void test(int &&) {}
 
 void test_variant_1()
 {
-    int i = 0;
-    int &ri = i;
-    int const &rci = 1;
 
     {
         auto q1 = TestQPointer{"Hello, World"};

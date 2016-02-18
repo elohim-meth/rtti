@@ -45,16 +45,15 @@ private:
     {
         using Decay = decay_t<T>;
 
-        auto fromType = MetaType{m_typeId};
-        if (fromType.isLvalueReference())
-            throw bad_argument_cast{"Try to bind lvalue reference to rvalue reference"};
-
+        auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
+
+        if (!MetaType::compatible(fromType, toType))
+            throw bad_argument_cast{std::string{"Incompatible types: "} +
+                                    fromType.typeName() + " -> " + toType.typeName()};
 
         if (fromType.decayId() == toType.decayId())
         {
-            if (MetaType::compatible(fromType, toType))
-            {
                 Decay *ptr = nullptr;
                 if (fromType.isArray())
                     ptr = static_cast<Decay*>(m_dataptr);
@@ -62,7 +61,6 @@ private:
                     ptr = static_cast<Decay*>(m_data);
 
                 return std::move(*ptr);
-            }
         }
         else if (fromType.decayId() == metaTypeId<variant>())
         {
@@ -82,23 +80,19 @@ private:
         auto fromType = MetaType{m_typeId};
         auto toType = MetaType{metaTypeId<T>()};
 
-        if (!fromType.isLvalueReference() && toType.isLvalueReference() && !toType.isConst())
-            throw bad_argument_cast{"Try to bind r-reference to non const l-reference"};
-        if (fromType.isLvalueReference() && fromType.isConst() && toType.isLvalueReference() && !toType.isConst())
-            throw bad_argument_cast{"Try to bind const l-reference to non const l-reference"};
+        if (!MetaType::compatible(MetaType{typeId()}, toType))
+            throw bad_argument_cast{std::string{"Incompatible types: "} +
+                                    fromType.typeName() + " -> " + toType.typeName()};
 
         if (fromType.decayId() == toType.decayId())
         {
-            if (MetaType::compatible(fromType, toType))
-            {
-                Decay *ptr = nullptr;
-                if (fromType.isArray())
-                    ptr = static_cast<Decay*>(m_dataptr);
-                else
-                    ptr = static_cast<Decay*>(m_data);
+            Decay *ptr = nullptr;
+            if (fromType.isArray())
+                ptr = static_cast<Decay*>(m_dataptr);
+            else
+                ptr = static_cast<Decay*>(m_data);
 
-                return *ptr;
-            }
+            return *ptr;
         }
         else if (fromType.decayId() == metaTypeId<variant>())
         {
