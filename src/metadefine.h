@@ -286,8 +286,8 @@ private:
 
     static class_ref_t class_selector(variant const&, std::false_type)
     {
-        throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                               "const rtti::variant -> " + type_name<class_ref_t>()};
+        throw bad_variant_cast{std::string{"Incompatible types: "} +
+                               "const rtti::variant& -> " + type_name<class_ref_t>()};
     }
 
     static class_ref_t class_selector(variant const &instance, std::true_type)
@@ -405,8 +405,8 @@ private:
 
     static class_ref_t class_selector(variant const&, std::false_type)
     {
-        throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                               "const rtti::variant -> " + type_name<class_ref_t>()};
+        throw bad_variant_cast{std::string{"Incompatible types: "} +
+                               "const rtti::variant& -> " + type_name<class_ref_t>()};
     }
 
     static class_ref_t class_selector(variant const &instance, std::true_type)
@@ -734,8 +734,8 @@ private:
         auto argType = MetaType{arg.typeId()};
         if (type.isClass())
         {
-            throw bad_variant_cast{std::string{"Const incompatible types: "} +
-                                   "const rtti::variant -> " + type_name<class_ref_t>()};
+            throw bad_variant_cast{std::string{"Incompatible types: "} +
+                                   "const rtti::variant& -> " + type_name<class_ref_t>()};
         }
         else if (type.isClassPtr())
         {

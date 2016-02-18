@@ -423,7 +423,7 @@ struct class_info_get
     }
 private:
     using Unwrap = unwrap_reference_t<remove_cv_t<T>>;
-    using Decay = conditional_t<std::is_array<Unwrap>::value, void, full_decay_t<Unwrap>>;
+    using Decay = conditional_t<is_array_t<Unwrap>::value, void, full_decay_t<Unwrap>>;
     using Selector = function_table_selector<T>;
     using IsClass = is_class_t<Decay>;
     using IsClassPtr = is_class_ptr_t<Decay>;
@@ -441,7 +441,7 @@ private:
     }
     static ClassInfo info_selector_registered(variant_type_storage const &value, std::false_type)
     {
-        return ClassInfo{metaTypeId<Decay>(), Selector::access(value)};
+        return ClassInfo{metaTypeId<C>(), Selector::access(value)};
     }
     static ClassInfo info_selector_registered(variant_type_storage const &value, std::true_type)
     {

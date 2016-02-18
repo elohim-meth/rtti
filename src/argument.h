@@ -24,7 +24,7 @@ public:
              typename = enable_if_t<!std::is_same<decay_t<T>, argument>::value>>
     argument(T &&value) noexcept
         : m_data{const_cast<void*>(reinterpret_cast<const void*>(std::addressof(value)))},
-          m_typeId{metaTypeId<T>()}
+          m_type{metaTypeId<T>()}
     {}
 
     bool empty() const
@@ -40,6 +40,8 @@ public:
     }
 
 private:
+    bool isVariant() const;
+
     template<typename T>
     T value(std::true_type) const
     {
@@ -52,7 +54,7 @@ private:
             throw bad_argument_cast{std::string{"Incompatible types: "} +
                                     fromType.typeName() + " -> " + toType.typeName()};
 
-        if (fromType.decayId() == toType.decayId())
+        if (m_type.decayId() == toType.decayId())
         {
                 Decay *ptr = nullptr;
                 if (fromType.isArray())
@@ -62,7 +64,7 @@ private:
 
                 return std::move(*ptr);
         }
-        else if (fromType.decayId() == metaTypeId<variant>())
+        else if (isVariant())
         {
             auto *ptr = static_cast<variant*>(m_data);
             return std::move(*ptr).value<Decay>();
@@ -77,14 +79,14 @@ private:
     {
         using Decay = decay_t<T>;
 
-        auto fromType = MetaType{m_typeId};
+        auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
 
-        if (!MetaType::compatible(MetaType{typeId()}, toType))
+        if (!MetaType::compatible(fromType, toType))
             throw bad_argument_cast{std::string{"Incompatible types: "} +
                                     fromType.typeName() + " -> " + toType.typeName()};
 
-        if (fromType.decayId() == toType.decayId())
+        if (m_type.decayId() == toType.decayId())
         {
             Decay *ptr = nullptr;
             if (fromType.isArray())
@@ -94,7 +96,7 @@ private:
 
             return *ptr;
         }
-        else if (fromType.decayId() == metaTypeId<variant>())
+        else if (isVariant())
         {
             auto *ptr = static_cast<variant*>(m_data);
             return result_selector<T>(*ptr, is_lvalue_reference_t<T>{});
@@ -118,7 +120,7 @@ private:
 
     void *m_data = nullptr;
     void *m_dataptr = &m_data;
-    const MetaType_ID m_typeId;
+    MetaType m_type;
 };
 
 }

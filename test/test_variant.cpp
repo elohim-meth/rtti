@@ -77,7 +77,6 @@ public:
             other.m_pImpl->m_qImpl = &other;
     }
 
-
     virtual ~TestQPointer()
     {
         PRINT_PRETTY_FUNC;
@@ -85,14 +84,13 @@ public:
             delete m_pImpl;
     }
 
-    void check() const noexcept
+    bool check() const
     {
+        auto result = true;
         if (m_pImpl)
-        {
-            assert(this == m_pImpl->m_qImpl);
-            if (this != m_pImpl->m_qImpl)
-                throw std::exception{};
-        }
+            result = (this == m_pImpl->m_qImpl);
+        assert(result);
+        return result;
     }
 
     const std::string& value() const
@@ -118,43 +116,43 @@ private:
     friend class PrivatePimpl;
 };
 
-class A
+class TestA
 {
     // This macro declares and defines one virtual method named classInfo.
     // It's needed only if A has derived classes and you need to meta_cast
     // between them or polymorphic variant behaviour for this class hierarchy.
     DECLARE_CLASSINFO
 public:
-    A() {}
-    explicit A(int value)
+    TestA() {}
+    explicit TestA(int value)
         : a(value)
     {}
-    A(const A &other)
+    TestA(const TestA &other)
         : c(other.c), a(other.a), b(other.b)
     {}
-    A(A &&other) noexcept
+    TestA(TestA &&other) noexcept
     {
         swap(other);
     }
-    A& operator=(const A &other)
+    TestA& operator=(const TestA &other)
     {
         if (this != &other)
-            A{other}.swap(*this);
+            TestA{other}.swap(*this);
         return *this;
     }
-    A& operator=(A &&other) noexcept
+    TestA& operator=(TestA &&other) noexcept
     {
         if (this != &other)
-            A{std::move(other)}.swap(*this);
+            TestA{std::move(other)}.swap(*this);
         return *this;
     }
-    void swap(A &other) noexcept
+    void swap(TestA &other) noexcept
     {
         std::swap(a, other.a);
         std::swap(b, other.b);
         std::swap(c, other.c);
     }
-    virtual ~A()
+    virtual ~TestA()
     {
         a = b = c = -1;
     }
@@ -185,56 +183,56 @@ private:
     int b = -1;
 };
 
-class B: public A
+class TestB: public TestA
 {
     DECLARE_CLASSINFO
 public:
-    B() : A()
+    TestB() : TestA()
     { PRINT_PRETTY_FUNC; }
 
-    explicit B(int value)
-        : A{value}, d{value}
+    explicit TestB(int value)
+        : TestA{value}, d{value}
     {
         PRINT_PRETTY_FUNC;
     }
 
-    B(const B &other)
-        : A{other}, d{other.d}
+    TestB(const TestB &other)
+        : TestA{other}, d{other.d}
     {
         PRINT_PRETTY_FUNC;
     }
 
-    B(B &&other) noexcept
-        : A{std::move(other)}
+    TestB(TestB &&other) noexcept
+        : TestA{std::move(other)}
     {
         PRINT_PRETTY_FUNC;
         std::swap(d, other.d);
     }
 
-    B& operator=(const B &other)
+    TestB& operator=(const TestB &other)
     {
         PRINT_PRETTY_FUNC;
         if (this != &other)
-            B{other}.swap(*this);
+            TestB{other}.swap(*this);
         return *this;
     }
 
-    B& operator=(B &&other) noexcept
+    TestB& operator=(TestB &&other) noexcept
     {
         PRINT_PRETTY_FUNC;
         if (this != &other)
-            B{std::move(other)}.swap(*this);
+            TestB{std::move(other)}.swap(*this);
         return *this;
     }
 
-    void swap(B &other) noexcept
+    void swap(TestB &other) noexcept
     {
-        A::swap(other);
+        TestA::swap(other);
         std::swap(d, other.d);
     }
 
 
-    virtual ~B()
+    virtual ~TestB()
     {
         PRINT_PRETTY_FUNC;
         d = -1;
@@ -243,7 +241,7 @@ public:
     void print() const override
     {
         PRINT_PRETTY_FUNC;
-        A::print();
+        TestA::print();
         std::printf("d = %d\n", d);
     }
 
@@ -268,17 +266,17 @@ void register_classes()
 {
     using namespace rtti;
     global_define()
-        ._namespace("anonimous_2")
-            ._class<A>("A")
+        ._namespace("anonimous")
+            ._class<TestA>("TestA")
                 ._constructor<int>()
-                ._method("print", &A::print)
-                ._property("a", &A::getA, &A::setA)
-                ._method<int& (A::*)()>("bValue", &A::bValue)
-                ._method<const int& (A::*)() const>("bValue", &A::bValue)
-                ._property("c", &A::c)
+                ._method("print", &TestA::print)
+                ._property("a", &TestA::getA, &TestA::setA)
+                ._method<int& (TestA::*)()>("bValue", &TestA::bValue)
+                ._method<const int& (TestA::*)() const>("bValue", &TestA::bValue)
+                ._property("c", &TestA::c)
             ._end()
-            ._class<B>("B")._base<A>()
-                ._property("d", &B::getD, &B::setD)
+            ._class<TestB>("TestB")._base<TestA>()
+                ._property("d", &TestB::getD, &TestB::setD)
             ._end()
             ._class<TestQPointer>("TestQPointer")
                 ._constructor<char const*>()
@@ -390,56 +388,56 @@ void test_variant_1()
     std::printf("\n");
 
     {
-        rtti::variant v = B{100};
-        assert(v.is<B>() && v.is<const B>());
-        assert(v.is<A>() && v.is<const A>());
-        assert(!v.is<B*>() && !v.is<const B*>());
-        assert(!v.is<A*>() && !v.is<const A*>());
+        rtti::variant v = TestB{100};
+        assert(v.is<TestB>() && v.is<const TestB>());
+        assert(v.is<TestA>() && v.is<const TestA>());
+        assert(!v.is<TestB*>() && !v.is<const TestB*>());
+        assert(!v.is<TestA*>() && !v.is<const TestA*>());
         assert(!v.is<int>());
     }
 
     std::printf("\n");
 
     {
-        rtti::variant v = new B{100};
-        assert(v.is<B*>() && v.is<const B*>());
-        assert(v.is<A*>() && v.is<const A*>());
-        assert(!v.is<B>() && !v.is<const B>());
-        assert(!v.is<A>() && !v.is<const A>());
+        rtti::variant v = new TestB{100};
+        assert(v.is<TestB*>() && v.is<const TestB*>());
+        assert(v.is<TestA*>() && v.is<const TestA*>());
+        assert(!v.is<TestB>() && !v.is<const TestB>());
+        assert(!v.is<TestA>() && !v.is<const TestA>());
         assert(!v.is<int*>() && !v.is<const int*>());
-        delete v.value<B*>();
+        delete v.value<TestB*>();
     }
 
     std::printf("\n");
 
     {
-        const A *a = new B{100};
+        const TestA *a = new TestB{100};
         rtti::variant v = a;
-        assert(!v.is<B*>() && v.is<const B*>());
-        assert(!v.is<A*>() && v.is<const A*>());
-        assert(!v.is<B>() && !v.is<const B>());
-        assert(!v.is<A>() && !v.is<const A>());
+        assert(!v.is<TestB*>() && v.is<const TestB*>());
+        assert(!v.is<TestA*>() && v.is<const TestA*>());
+        assert(!v.is<TestB>() && !v.is<const TestB>());
+        assert(!v.is<TestA>() && !v.is<const TestA>());
         assert(!v.is<int*>() && !v.is<const int*>());
         delete a;
     }
 
     {
-        const B b{100};
+        const TestB b{100};
         rtti::variant v = b;
-        assert(!v.is<B*>() && !v.is<const B*>());
-        assert(!v.is<A*>() && !v.is<const A*>());
-        assert(v.is<B>() && v.is<const B>());
-        assert(v.is<A>() && v.is<const A>());
+        assert(!v.is<TestB*>() && !v.is<const TestB*>());
+        assert(!v.is<TestA*>() && !v.is<const TestA*>());
+        assert(v.is<TestB>() && v.is<const TestB>());
+        assert(v.is<TestA>() && v.is<const TestA>());
         assert(!v.is<int*>() && !v.is<const int*>());
     }
 
     {
-        const B b{100};
+        const TestB b{100};
         rtti::variant v = std::ref(b);
-        assert(!v.is<B*>() && !v.is<const B*>());
-        assert(!v.is<A*>() && !v.is<const A*>());
-        assert(v.is<B>() && !v.is<B&>() && v.is<const B>() && v.is<const B&>());
-        assert(v.is<A>() && !v.is<A&>() && v.is<const A>() && v.is<const A&>());
+        assert(!v.is<TestB*>() && !v.is<const TestB*>());
+        assert(!v.is<TestA*>() && !v.is<const TestA*>());
+        assert(v.is<TestB>() && !v.is<TestB&>() && v.is<const TestB>() && v.is<const TestB&>());
+        assert(v.is<TestA>() && !v.is<TestA&>() && v.is<const TestA>() && v.is<const TestA&>());
         assert(!v.is<int*>() && !v.is<int&>() && !v.is<const int*>() && !v.is<const int&>());
     }
 
@@ -460,13 +458,13 @@ void test_variant_1()
         print->invoke(v);
 
         {
-            auto bvalM = MC->getMethod<A&>("bValue"); assert(bvalM);
+            auto bvalM = MC->getMethod<TestA&>("bValue"); assert(bvalM);
             auto r = bvalM->invoke(v); assert(r.value<int>() == -1);
             r.value<int>() = 128;
         }
 
         {
-            auto bvalCM = MC->getMethod<const A&>("bValue"); assert(bvalCM);
+            auto bvalCM = MC->getMethod<const TestA&>("bValue"); assert(bvalCM);
             auto r = bvalCM->invoke(v);
             assert(r.cvalue<int>() == 128);
             assert(r.to<std::string>() == "128");
@@ -489,9 +487,9 @@ void test_variant_1()
     std::printf("\n");
 
     {
-        rtti::variant v = A{100};
+        rtti::variant v = TestA{100};
         lambda(v);
-        auto a = new A{100};
+        auto a = new TestA{100};
         v = a;
         lambda(v);
         delete a;
@@ -500,9 +498,9 @@ void test_variant_1()
     std::printf("\n");
 
     {
-        rtti::variant v = B{100};
+        rtti::variant v = TestB{100};
         lambda(v);
-        auto b = new B{100};
+        auto b = new TestB{100};
         v = b;
         lambda(v);
         delete b;
@@ -511,7 +509,7 @@ void test_variant_1()
     std::printf("\n");
 
     {
-        B b{100};
+        TestB b{100};
         rtti::variant v = std::ref(b);
         lambda(v);
     }
@@ -520,7 +518,7 @@ void test_variant_1()
 
     {
         using namespace rtti;
-        auto qpMC = MetaNamespace::global()->getNamespace("anonimous_2")->getClass("TestQPointer"); assert(qpMC);
+        auto qpMC = MetaNamespace::global()->getNamespace("anonimous")->getClass("TestQPointer"); assert(qpMC);
         auto empM = qpMC->getMethod("empty"); assert(empM);
         auto valCM = qpMC->getMethod<const TestQPointer&>("value"); assert(valCM);
         auto chkM = qpMC->getMethod("check"); assert(chkM);

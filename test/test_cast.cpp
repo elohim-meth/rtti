@@ -76,7 +76,7 @@ void register_classes()
 {
     using namespace rtti;
     global_define()
-        ._namespace("anonimous_1")
+        ._namespace("anonimous")
             ._class<A>("A")._end()
             ._class<B>("B")._base<A>()._end()
             ._class<C>("C")._base<B>()._end()
