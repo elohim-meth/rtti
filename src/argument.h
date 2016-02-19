@@ -15,15 +15,15 @@ class DLL_PUBLIC argument final
 {
 public:
     argument() = default;
-    argument(const argument&) = delete;
-    argument& operator=(const argument&) = delete;
+    argument(argument const&) = delete;
+    argument& operator=(argument const&) = delete;
     argument(argument&&) = default;
     argument& operator=(argument&&) = delete;
 
     template<typename T,
              typename = enable_if_t<!std::is_same<decay_t<T>, argument>::value>>
     argument(T &&value) noexcept
-        : m_data{const_cast<void*>(reinterpret_cast<const void*>(std::addressof(value)))},
+        : m_data{const_cast<void*>(reinterpret_cast<void const*>(std::addressof(value)))},
           m_type{metaTypeId<T>()}
     {}
 
@@ -50,12 +50,10 @@ private:
         auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
 
-        if (!MetaType::compatible(fromType, toType))
-            throw bad_argument_cast{std::string{"Incompatible types: "} +
-                                    fromType.typeName() + " -> " + toType.typeName()};
-
-        if (m_type.decayId() == toType.decayId())
+        if (MetaType::compatible(fromType, toType))
         {
+            if (m_type.decayId() == toType.decayId())
+            {
                 Decay *ptr = nullptr;
                 if (fromType.isArray())
                     ptr = static_cast<Decay*>(m_dataptr);
@@ -63,13 +61,13 @@ private:
                     ptr = static_cast<Decay*>(m_data);
 
                 return std::move(*ptr);
+            }
+            else if (isVariant())
+            {
+                auto *ptr = static_cast<variant*>(m_data);
+                return std::move(*ptr).value<Decay>();
+            }
         }
-        else if (isVariant())
-        {
-            auto *ptr = static_cast<variant*>(m_data);
-            return std::move(*ptr).value<Decay>();
-        }
-
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                fromType.typeName() + " -> " + toType.typeName()};
     }
@@ -82,26 +80,24 @@ private:
         auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
 
-        if (!MetaType::compatible(fromType, toType))
-            throw bad_argument_cast{std::string{"Incompatible types: "} +
-                                    fromType.typeName() + " -> " + toType.typeName()};
-
-        if (m_type.decayId() == toType.decayId())
+        if (MetaType::compatible(fromType, toType))
         {
-            Decay *ptr = nullptr;
-            if (fromType.isArray())
-                ptr = static_cast<Decay*>(m_dataptr);
-            else
-                ptr = static_cast<Decay*>(m_data);
+            if (m_type.decayId() == toType.decayId())
+            {
+                Decay *ptr = nullptr;
+                if (fromType.isArray())
+                    ptr = static_cast<Decay*>(m_dataptr);
+                else
+                    ptr = static_cast<Decay*>(m_data);
 
-            return *ptr;
+                return *ptr;
+            }
+            else if (isVariant())
+            {
+                auto *ptr = static_cast<variant*>(m_data);
+                return result_selector<T>(*ptr, is_lvalue_reference_t<T>{});
+            }
         }
-        else if (isVariant())
-        {
-            auto *ptr = static_cast<variant*>(m_data);
-            return result_selector<T>(*ptr, is_lvalue_reference_t<T>{});
-        }
-
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                fromType.typeName() + " -> " + toType.typeName()};
     }

@@ -23,7 +23,9 @@ public:
 private:
     std::string m_value;
     TestQPointer *m_qImpl = nullptr;
+
     friend class TestQPointer;
+    friend void register_classes();
 };
 
 class TestQPointer {
@@ -114,6 +116,7 @@ private:
     PrivatePimpl *m_pImpl = nullptr;
 
     friend class PrivatePimpl;
+    friend void register_classes();
 };
 
 class TestA
@@ -278,12 +281,18 @@ void register_classes()
             ._class<TestB>("TestB")._base<TestA>()
                 ._property("d", &TestB::getD, &TestB::setD)
             ._end()
+            ._class<PrivatePimpl>("PrivatePimpl")
+                ._constructor<char const*>()
+                ._property("m_pImpl", &PrivatePimpl::m_qImpl)
+                ._property("m_value", &PrivatePimpl::m_value)
+            ._end()
             ._class<TestQPointer>("TestQPointer")
                 ._constructor<char const*>()
                 ._method("empty", &TestQPointer::empty)
                 ._method("check", &TestQPointer::check)
                 ._method<std::string& (TestQPointer::*)()>("value", &TestQPointer::value)
                 ._method<std::string const& (TestQPointer::*)() const>("value", &TestQPointer::value)
+                ._property("m_pImpl", &TestQPointer::m_pImpl)
             ._end()
         ._end()
     ;
@@ -443,7 +452,7 @@ void test_variant_1()
 
     auto lambda = [] (rtti::variant &v)
     {
-        auto MC = rtti::MetaClass::findByTypeId(v.classInfo().typeId); assert(MC);
+        auto MC = v.metaClass(); assert(MC);
 
         auto print = MC->getMethod("print"); assert(print);
         print->invoke(v);

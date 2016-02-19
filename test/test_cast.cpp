@@ -291,7 +291,7 @@ void test_cast_1()
     {
         using namespace rtti;
         variant v = std::unique_ptr<int const>{new int(16)};
-        auto mcUptrInt = MetaClass::findByTypeId(v.typeId()); assert(mcUptrInt);
+        auto mcUptrInt = v.metaClass(); assert(mcUptrInt);
         auto mGet = mcUptrInt->getMethod("get"); assert(mGet);
         auto result = mGet->invoke(v);
         auto vallue = result.to<int const*>();

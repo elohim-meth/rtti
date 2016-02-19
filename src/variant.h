@@ -130,7 +130,7 @@ struct function_table_selector<T, true, false>
         noexcept(std::is_nothrow_move_constructible<Decay>::value)
     {
         auto ptr = static_cast<Decay*>(value);
-        new (&storage.buffer) Decay(std::move(*ptr));
+        move_selector(ptr, storage, CanMove{});
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
@@ -144,7 +144,7 @@ struct function_table_selector<T, true, false>
         noexcept(std::is_nothrow_move_constructible<Decay>::value)
     {
         auto ptr = reinterpret_cast<Decay*>(&src.buffer);
-        new (&dst.buffer) Decay(std::move(*ptr));
+        move_selector(ptr, dst, CanMove{});
     }
 
     static void destroy(variant_type_storage &value)
@@ -160,6 +160,7 @@ private:
     using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
 
     using CanCopy = typename std::is_copy_constructible<Decay>::type;
+    using CanMove = typename std::is_move_constructible<Decay>::type;
 
     static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
     {
@@ -169,6 +170,16 @@ private:
     static void copy_selector(Decay const *src, variant_type_storage &storage, std::true_type)
     {
         new (&storage.buffer) Decay(*src);
+    }
+
+    static void move_selector(Decay const*, variant_type_storage&, std::false_type)
+    {
+        throw runtime_error("Trying to move copy only type");
+    }
+
+    static void move_selector(Decay const *src, variant_type_storage &storage, std::true_type)
+    {
+        new (&storage.buffer) Decay(std::move(*src));
     }
 };
 
@@ -544,13 +555,25 @@ public:
 
     MetaType_ID typeId() const
     { return internalTypeId(); }
-    ClassInfo classInfo() const
-    { return manager->f_info(storage); }
+    MetaClass const* metaClass() const
+    {
+        auto const &info = classInfo();
+        return MetaClass::findByTypeId(info.typeId);
+    }
+
 
     template<typename T>
     bool is() const
     {
-        return metafunc_is<T>::invoke(*this);
+        auto typeId = internalTypeId(type_attribute::LREF_CONST);
+        return metafunc_is<T>::invoke(*this, typeId);
+    }
+
+    template<typename T>
+    bool is()
+    {
+        auto typeId = internalTypeId(type_attribute::LREF);
+        return metafunc_is<T>::invoke(*this, typeId);
     }
 
     template<typename T>
@@ -645,6 +668,8 @@ private:
     { return const_cast<void*>(manager->f_access(storage)); }
     MetaType_ID internalTypeId(type_attribute attr = type_attribute::NONE) const
     { return manager->f_type(attr); }
+    ClassInfo classInfo() const
+    { return manager->f_info(storage); }
 
     void constructor_selector(void *value, std::true_type)
     { manager->f_move_construct(value, storage); }
@@ -654,12 +679,12 @@ private:
     template<typename T>
     struct metafunc_is
     {
-        static bool invoke(variant const &self)
+        static bool invoke(variant const &self, MetaType_ID typeId)
         {
             if (self.empty())
                 return false;
 
-            auto from = MetaType{self.typeId()};
+            auto from = MetaType{typeId};
             auto to = MetaType{metaTypeId<T>()};
 
             if (from.decayId() == to.decayId())
