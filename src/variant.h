@@ -172,12 +172,13 @@ private:
         new (&storage.buffer) Decay(*src);
     }
 
-    static void move_selector(Decay const*, variant_type_storage&, std::false_type)
+    static void move_selector(Decay *src, variant_type_storage &storage, std::false_type)
     {
-        throw runtime_error("Trying to move copy only type");
+        //degenerate to copy
+        copy_selector(src, storage, std::true_type{});
     }
 
-    static void move_selector(Decay const *src, variant_type_storage &storage, std::true_type)
+    static void move_selector(Decay *src, variant_type_storage &storage, std::true_type)
     {
         new (&storage.buffer) Decay(std::move(*src));
     }
@@ -285,7 +286,7 @@ struct function_table_selector<T, false, false>
         noexcept(std::is_nothrow_move_constructible<Decay>::value)
     {
         auto ptr = static_cast<Decay*>(value);
-        storage.ptr = new Decay(std::move(*ptr));
+        move_selector(ptr, storage, CanMove{});
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
@@ -314,6 +315,7 @@ private:
     using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
 
     using CanCopy = typename std::is_copy_constructible<Decay>::type;
+    using CanMove = typename std::is_move_constructible<Decay>::type;
 
     static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
     {
@@ -323,6 +325,17 @@ private:
     static void copy_selector(Decay const *src, variant_type_storage &storage, std::true_type)
     {
         storage.ptr = new Decay(*src);
+    }
+
+    static void move_selector(Decay *src, variant_type_storage &storage, std::false_type)
+    {
+        //degenerate to copy
+        copy_selector(src, storage, std::true_type{});
+    }
+
+    static void move_selector(Decay *src, variant_type_storage &storage, std::true_type)
+    {
+        storage.ptr = new Decay(std::move(*src));
     }
 };
 
@@ -361,13 +374,8 @@ struct function_table_selector<T[N], false, false>
     static void move_construct(void *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_move_constructible<Base>::value)
     {
-        constexpr auto length = array_length<T[N]>::value;
-
-        auto alloc = Allocator{};
-        auto to = alloc.allocate(length);
         auto from = static_cast<Base*>(value);
-        std::move(from, from + length, to);
-        storage.ptr = to;
+        move_selector(from, storage, CanMove{});
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
@@ -400,6 +408,7 @@ private:
     using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
 
     using CanCopy = typename std::is_copy_constructible<Base>::type;
+    using CanMove = typename std::is_copy_constructible<Base>::type;
 
     static void copy_selector(Base const*, variant_type_storage&, std::false_type)
     {
@@ -413,6 +422,22 @@ private:
         auto alloc = Allocator{};
         auto to = alloc.allocate(length);
         std::copy(src, src + length, to);
+        storage.ptr = to;
+    }
+
+    static void move_selector(Base const *src, variant_type_storage &storage, std::false_type)
+    {
+        //degenerate to copy
+        copy_selector(src, storage, std::true_type{});
+    }
+
+    static void move_selector(Base const *src, variant_type_storage &storage, std::true_type)
+    {
+        constexpr auto length = array_length<T[N]>::value;
+
+        auto alloc = Allocator{};
+        auto to = alloc.allocate(length);
+        std::move(src, src + length, to);
         storage.ptr = to;
     }
 };
@@ -546,7 +571,6 @@ public:
     }
 
     ~variant() noexcept;
-    void swap(variant &other) noexcept;
 
     void clear() noexcept;
     bool empty() const noexcept;
@@ -661,6 +685,8 @@ public:
     static variant const empty_variant;
 private:
     using type_attribute = internal::type_attribute;
+
+    void swap(variant &other) noexcept;
 
     void const* raw_data_ptr() const
     { return manager->f_access(storage); }
@@ -936,18 +962,19 @@ private:
     storage_t storage;
     table_t* manager = internal::function_table_for<void>();
 
+    friend void swap(variant&, variant&) noexcept;
     friend struct std::hash<rtti::variant>;
     friend class rtti::argument;
 };
 
-} //namespace rtti
-
-namespace std {
-
-inline void swap(rtti::variant &lhs, rtti::variant &rhs) noexcept
+inline void swap(variant &lhs, variant &rhs) noexcept
 {
     lhs.swap(rhs);
 }
+
+} //namespace rtti
+
+namespace std {
 
 template<>
 struct hash<rtti::variant>: public std::__hash_base<std::size_t, rtti::variant>

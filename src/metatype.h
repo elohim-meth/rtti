@@ -273,12 +273,6 @@ To default_convert(From value)
     return value;
 }
 
-template<typename From, typename To>
-To constructor_convert(From value)
-{
-    return To(std::move(value));
-}
-
 struct DLL_LOCAL ConvertFunctionBase
 {
     using converter_t = bool(*)(ConvertFunctionBase const&, void const*, void*);

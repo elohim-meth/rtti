@@ -235,7 +235,8 @@ struct is_converting_constructor<T>: std::false_type
 
 template<typename T, typename Arg>
 struct is_converting_constructor<T, Arg>:
-    std::conditional<!std::is_same<T, full_decay_t<Arg>>::value,
+    std::conditional<!std::is_same<T, full_decay_t<Arg>>::value &&
+                      std::is_convertible<Arg, T>::value,
                      std::true_type, std::false_type>::type
 {};
 

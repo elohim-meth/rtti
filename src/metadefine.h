@@ -1125,8 +1125,8 @@ private:
     template<typename L>
     void register_converting_constructor(std::true_type)
     {
-        using Arg = full_decay_t<typelist_get_t<L, 0>>;
-        MetaType::registerConverter(&internal::constructor_convert<Arg, T>);
+        using Arg = typelist_get_t<L, 0>;
+        MetaType::registerConverter(&internal::default_convert<Arg, T>);
     }
 
     template<typename, typename> friend struct internal::DefinitionCallbackHolder;

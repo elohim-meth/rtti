@@ -33,7 +33,8 @@ public:
     TestQPointer()
     { PRINT_PRETTY_FUNC; }
 
-    explicit TestQPointer(const char *value)
+    //explicit TestQPointer(const char *value)
+    TestQPointer(const char *value)
         : m_pImpl{new PrivatePimpl{value}}
     {
         PRINT_PRETTY_FUNC;

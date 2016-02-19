@@ -35,6 +35,7 @@ variant::~variant() noexcept
 
 void variant::swap(variant &other) noexcept
 {
+    using std::swap;
     auto thisEmpty = this->empty();
     auto otherEmpty = other.empty();
     if (thisEmpty && otherEmpty)
@@ -65,7 +66,7 @@ void variant::swap(variant &other) noexcept
     other.manager->f_move(other.storage, storage);
     manager->f_move(temporary, other.storage);
 
-    std::swap(manager, other.manager);
+    swap(manager, other.manager);
 }
 
 inline void variant::clear() noexcept

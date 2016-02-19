@@ -45,8 +45,12 @@ private:
     mutable std::mutex m_lock;
     std::vector<std::unique_ptr<TypeInfo>> m_items;
     std::unordered_map<CString, std::size_t> m_names;
+
+    static bool Destroyed;
+    friend CustomTypes* customTypes();
 };
 
+bool CustomTypes::Destroyed = false;
 
 #define DEFINE_STATIC_TYPE_MAP(NAME, INDEX) \
 {CString{#NAME}, INDEX},
@@ -65,6 +69,7 @@ CustomTypes::~CustomTypes()
     std::lock_guard<std::mutex> lock{m_lock};
     m_items.clear();
     m_names.clear();
+    Destroyed = true;
 }
 
 TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
@@ -125,10 +130,13 @@ inline TypeInfo const* CustomTypes::addTypeInfo(char const *name, std::size_t si
     return result;
 }
 
-static inline CustomTypes& customTypes()
+inline CustomTypes* customTypes()
 {
+    if (CustomTypes::Destroyed)
+        return nullptr;
+
     static CustomTypes result;
-    return result;
+    return &result;
 }
 
 } // namespace
@@ -138,12 +146,19 @@ static inline CustomTypes& customTypes()
 //--------------------------------------------------------------------------------------------------------------------------------
 
 MetaType::MetaType(MetaType_ID typeId)
-    : m_typeInfo{customTypes().getTypeInfo(typeId)}
-{}
+{
+    auto *types = customTypes();
+    if (types)
+        m_typeInfo = types->getTypeInfo(typeId);
+}
 
 rtti::MetaType::MetaType(char const *name)
-    : m_typeInfo(customTypes().getTypeInfo(name))
-{}
+{
+    auto *types = customTypes();
+    if (types)
+        m_typeInfo = types->getTypeInfo(name);
+
+}
 
 MetaType_ID MetaType::typeId() const
 {
@@ -258,9 +273,13 @@ MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
                                        std::uint16_t const_mask,
                                        MetaType::TypeFlags flags)
 {
-    auto result = customTypes().getTypeInfo(name);
+    auto *types = customTypes();
+    if (!types)
+        return MetaType_ID{};
+
+    auto result = types->getTypeInfo(name);
     if (!result)
-        result = customTypes().addTypeInfo(name, size, decay, arity, const_mask, flags);
+        result = types->addTypeInfo(name, size, decay, arity, const_mask, flags);
     return result->type;
 }
 
