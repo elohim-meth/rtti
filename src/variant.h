@@ -556,7 +556,7 @@ public:
         constexpr bool move = !std::is_reference<T>::value && !std::is_const<T>::value;
         constexpr bool valid = std::is_copy_constructible<Type>::value
             || (move && std::is_move_constructible<Type>::value);
-        static_assert(valid, "The contained type must be at least MoveConstructible");
+        static_assert(valid, "The contained type must be CopyConstructible or MoveConstructible");
         using selector_t = conditional_t<move, std::true_type, std::false_type>;
 
         constructor_selector(std::addressof(value), selector_t{});
