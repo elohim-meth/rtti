@@ -63,9 +63,9 @@ struct return_member_func {};
 
 template<typename F>
 using method_invoker_tag =
-conditional_t<std::is_void<typename function_traits<F>::result_type>::value,
-    conditional_t<std::is_void<typename function_traits<F>::class_type>::value, void_static_func, void_member_func>,
-    conditional_t<std::is_void<typename function_traits<F>::class_type>::value, return_static_func, return_member_func>>;
+conditional_t<std::is_void<typename mpl::function_traits<F>::result_type>::value,
+    conditional_t<std::is_void<typename mpl::function_traits<F>::class_type>::value, void_static_func, void_member_func>,
+    conditional_t<std::is_void<typename mpl::function_traits<F>::class_type>::value, return_static_func, return_member_func>>;
 
 template<typename F, typename Tag> struct method_invoker;
 
@@ -98,9 +98,9 @@ inline argument_array_t pack_arguments(std::size_t count,
 template<typename F>
 struct method_invoker<F, void_static_func>
 {
-    using Args = typename function_traits<F>::args;
+    using Args = typename mpl::function_traits<F>::args;
 
-    static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+    static_assert(mpl::typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic()
@@ -119,7 +119,7 @@ struct method_invoker<F, void_static_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, args, argument_indexes_t{});
@@ -134,17 +134,17 @@ struct method_invoker<F, void_static_func>
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<Args, I>;
-    using argument_indexes_t = index_sequence_for_t<Args>;
+    using argument_get_t = mpl::typelist_get_t<Args, I>;
+    using argument_indexes_t = mpl::index_sequence_for_t<Args>;
 
     template<std::size_t ...I>
-    static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
+    static std::vector<MetaType_ID> parametersTypeId(mpl::index_sequence<I...>)
     {
         return { metaTypeId<argument_get_t<I>>()... };
     }
 
     template<std::size_t ...I>
-    static variant invoke_imp(F func, argument_array_t const &args, index_sequence<I...>)
+    static variant invoke_imp(F func, argument_array_t const &args, mpl::index_sequence<I...>)
     {
         func(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
@@ -154,10 +154,10 @@ private:
 template<typename F>
 struct method_invoker<F, return_static_func>
 {
-    using Args = typename function_traits<F>::args;
-    using Result = typename function_traits<F>::result_type;
+    using Args = typename mpl::function_traits<F>::args;
+    using Result = typename mpl::function_traits<F>::result_type;
 
-    static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+    static_assert(mpl::typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic()
@@ -176,7 +176,7 @@ struct method_invoker<F, return_static_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, args, argument_indexes_t{}, result_is_reference{});
@@ -191,25 +191,25 @@ struct method_invoker<F, return_static_func>
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<Args, I>;
-    using argument_indexes_t = index_sequence_for_t<Args>;
+    using argument_get_t = mpl::typelist_get_t<Args, I>;
+    using argument_indexes_t = mpl::index_sequence_for_t<Args>;
     using result_is_reference = is_reference_t<Result>;
 
     template<std::size_t ...I>
-    static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
+    static std::vector<MetaType_ID> parametersTypeId(mpl::index_sequence<I...>)
     {
         return { metaTypeId<argument_get_t<I>>()... };
     }
 
     template<std::size_t ...I>
     static variant invoke_imp(F func, argument_array_t const &args,
-                              index_sequence<I...>, std::false_type)
+                              mpl::index_sequence<I...>, std::false_type)
     {
         return func(args[I]->value<argument_get_t<I>>()...);
     }
     template<std::size_t ...I>
     static variant invoke_imp(F func, argument_array_t const &args,
-                              index_sequence<I...>, std::true_type)
+                              mpl::index_sequence<I...>, std::true_type)
     {
         return std::ref(func(args[I]->value<argument_get_t<I>>()...));
     }
@@ -218,9 +218,9 @@ private:
 template<typename F>
 struct method_invoker<F, void_member_func>
 {
-    using Args = typename function_traits<F>::args;
+    using Args = typename mpl::function_traits<F>::args;
 
-    static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+    static_assert(mpl::typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic()
@@ -240,7 +240,7 @@ struct method_invoker<F, void_member_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, instance, args, argument_indexes_t{});
@@ -254,7 +254,7 @@ struct method_invoker<F, void_member_func>
                           const argument &arg6, const argument &arg7,
                           const argument &arg8, const argument &arg9)
     {
-        auto const &args = pack_arguments(typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, instance, args, argument_indexes_t{});
@@ -269,17 +269,17 @@ struct method_invoker<F, void_member_func>
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<Args, I>;
-    using argument_indexes_t = index_sequence_for_t<Args>;
+    using argument_get_t = mpl::typelist_get_t<Args, I>;
+    using argument_indexes_t = mpl::index_sequence_for_t<Args>;
     //
-    using C = typename function_traits<F>::class_type;
-    using is_const = typename function_traits<F>::is_const;
+    using C = typename mpl::function_traits<F>::class_type;
+    using is_const = typename mpl::function_traits<F>::is_const;
     using class_t = conditional_t<is_const::value, const C, C>;
     using class_ref_t = add_lvalue_reference_t<class_t>;
     using class_ptr_t = add_pointer_t<class_t>;
 
     template<std::size_t ...I>
-    static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
+    static std::vector<MetaType_ID> parametersTypeId(mpl::index_sequence<I...>)
     {
         return { metaTypeId<argument_get_t<I>>()... };
     }
@@ -287,7 +287,7 @@ private:
     static class_ref_t class_selector(variant const&, std::false_type)
     {
         throw bad_variant_cast{std::string{"Incompatible types: "} +
-                               "const rtti::variant& -> " + type_name<class_ref_t>()};
+                               "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
     }
 
     static class_ref_t class_selector(variant const &instance, std::true_type)
@@ -297,7 +297,7 @@ private:
 
     template<std::size_t ...I>
     static variant invoke_imp(F func, variant const &instance,
-                              argument_array_t const &args, index_sequence<I...>)
+                              argument_array_t const &args, mpl::index_sequence<I...>)
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
@@ -309,7 +309,7 @@ private:
 
     template<std::size_t ...I>
     static variant invoke_imp(F func, variant &instance,
-                              argument_array_t const &args, index_sequence<I...>)
+                              argument_array_t const &args, mpl::index_sequence<I...>)
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
@@ -323,10 +323,10 @@ private:
 template<typename F>
 struct method_invoker<F, return_member_func>
 {
-    using Args = typename function_traits<F>::args;
-    using Result = typename function_traits<F>::result_type;
+    using Args = typename mpl::function_traits<F>::args;
+    using Result = typename mpl::function_traits<F>::result_type;
 
-    static_assert(typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+    static_assert(mpl::typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic()
@@ -346,7 +346,7 @@ struct method_invoker<F, return_member_func>
                           const argument &arg6, const argument &arg7,
                           const argument &arg8, const argument &arg9)
     {
-        auto const &args = pack_arguments(typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, instance, args, argument_indexes_t{});
@@ -360,7 +360,7 @@ struct method_invoker<F, return_member_func>
                           const argument &arg6, const argument &arg7,
                           const argument &arg8, const argument &arg9)
     {
-        auto const &args = pack_arguments(typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, instance, args, argument_indexes_t{});
@@ -375,18 +375,18 @@ struct method_invoker<F, return_member_func>
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<Args, I>;
-    using argument_indexes_t = index_sequence_for_t<Args>;
+    using argument_get_t = mpl::typelist_get_t<Args, I>;
+    using argument_indexes_t = mpl::index_sequence_for_t<Args>;
     using result_is_reference = is_reference_t<Result>;
     //
-    using C = typename function_traits<F>::class_type;
-    using is_const = typename function_traits<F>::is_const;
+    using C = typename mpl::function_traits<F>::class_type;
+    using is_const = typename mpl::function_traits<F>::is_const;
     using class_t = conditional_t<is_const::value, C const, C>;
     using class_ref_t = add_lvalue_reference_t<class_t>;
     using class_ptr_t = add_pointer_t<class_t>;
 
     template<std::size_t ...I>
-    static std::vector<MetaType_ID> parametersTypeId(index_sequence<I...>)
+    static std::vector<MetaType_ID> parametersTypeId(mpl::index_sequence<I...>)
     {
         return { metaTypeId<argument_get_t<I>>()... };
     }
@@ -406,7 +406,7 @@ private:
     static class_ref_t class_selector(variant const&, std::false_type)
     {
         throw bad_variant_cast{std::string{"Incompatible types: "} +
-                               "const rtti::variant& -> " + type_name<class_ref_t>()};
+                               "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
     }
 
     static class_ref_t class_selector(variant const &instance, std::true_type)
@@ -416,7 +416,7 @@ private:
 
     template<std::size_t ...I>
     static variant invoke_imp(F func, variant const &instance, argument_array_t const &args,
-                              index_sequence<I...>)
+                              mpl::index_sequence<I...>)
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
@@ -430,7 +430,7 @@ private:
 
     template<std::size_t ...I>
     static variant invoke_imp(F func, variant &instance, argument_array_t const &args,
-                              index_sequence<I...>)
+                              mpl::index_sequence<I...>)
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
@@ -515,8 +515,8 @@ struct ConstructorInvoker: IConstructorInvoker
                   "Type can not be constructed with given arguments");
 
     template<std::size_t I>
-    using argument_get_t = typelist_get_t<type_list<Args...>, I>;
-    using argument_indexes_t = index_sequence_for_t<Args...>;
+    using argument_get_t = mpl::typelist_get_t<mpl::type_list<Args...>, I>;
+    using argument_indexes_t = mpl::index_sequence_for_t<Args...>;
 
     bool isStatic() const override
     {
@@ -560,12 +560,12 @@ struct ConstructorInvoker: IConstructorInvoker
                           argument, argument, argument, argument, argument) const override
     { assert(false); return variant::empty_variant; }
 private:
-    static constexpr const char* signature_imp(index_sequence<>)
+    static constexpr const char* signature_imp(mpl::index_sequence<>)
     {
         return "default constructor";
     }
 
-    static std::string signature_imp(index_sequence<0>)
+    static std::string signature_imp(mpl::index_sequence<0>)
     {
         using Arg = argument_get_t<0>;
         if (std::is_same<decay_t<Arg>, C>::value)
@@ -579,13 +579,13 @@ private:
     }
 
     template<std::size_t ...I>
-    static std::string signature_imp(index_sequence<I...>)
+    static std::string signature_imp(mpl::index_sequence<I...>)
     {
         return ::rtti::signature<Args...>::get("constructor");
     }
 
     template<std::size_t ...I>
-    static variant invoke_imp(argument_array_t const &args, index_sequence<I...>)
+    static variant invoke_imp(argument_array_t const &args, mpl::index_sequence<I...>)
     {
         return C(args[I]->value<argument_get_t<I>>()...);
     }
@@ -594,11 +594,11 @@ private:
 template<typename P> struct property_type;
 
 template<typename P>
-struct property_type<P*>: identity<P>
+struct property_type<P*>: mpl::identity<P>
 {};
 
 template<typename C, typename T>
-struct property_type<T (C::*)>: identity<T>
+struct property_type<T (C::*)>: mpl::identity<T>
 {};
 
 template<typename P>
@@ -607,7 +607,7 @@ using property_type_t = typename property_type<P>::type;
 template<typename P> struct property_class;
 
 template<typename C, typename T>
-struct property_class<T (C::*)>: identity<C>
+struct property_class<T (C::*)>: mpl::identity<C>
 {};
 
 template<typename P>
@@ -735,7 +735,7 @@ private:
         if (type.isClass())
         {
             throw bad_variant_cast{std::string{"Incompatible types: "} +
-                                   "const rtti::variant& -> " + type_name<class_ref_t>()};
+                                   "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
         }
         else if (type.isClassPtr())
         {
@@ -842,8 +842,8 @@ private:
     ,std::true_type, std::false_type>::value;
     static_assert(valid, "Get and Set methods should be simultaneously static method or pointer to member");
 
-    using GTraits = function_traits<G>;
-    using STraits = function_traits<S>;
+    using GTraits = mpl::function_traits<G>;
+    using STraits = mpl::function_traits<S>;
 
     using T = typename GTraits::result_type;
     static_assert(!std::is_void<T>::value,
@@ -929,7 +929,7 @@ public:
     template<typename C>
     meta_define<C, this_t> _class()
     {
-        return _class<C>(type_name<C>());
+        return _class<C>(mpl::type_name<C>());
     }
 
     template<typename F>
@@ -951,9 +951,9 @@ public:
         static_assert(std::is_class<T>::value, "Base class can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
 
-        addBaseTypeList<type_list<B...>>(
+        addBaseTypeList<mpl::type_list<B...>>(
                     static_cast<MetaClass*>(m_currentContainer),
-                    typename index_sequence_for<B...>::type{});
+                    mpl::index_sequence_for_t<B...>{});
         return std::move(*this);
     }
 
@@ -999,7 +999,7 @@ public:
         MetaConstructor::create(name, *m_currentContainer,
                                 std::unique_ptr<IConstructorInvoker>{
                                     new internal::ConstructorInvoker<T, Args...>{}});
-        register_converting_constructor<type_list<Args...>>(is_converting_constructor_t<T, Args...>{});
+        register_converting_constructor<mpl::type_list<Args...>>(is_converting_constructor_t<T, Args...>{});
         return std::move(*this);
     }
 
@@ -1090,15 +1090,15 @@ private:
     };
 
     template<typename L, std::size_t ...I>
-    static void addBaseTypeList(MetaClass *item, index_sequence<I...>)
+    static void addBaseTypeList(MetaClass *item, mpl::index_sequence<I...>)
     {
         // check that every type is class
-        typename typelist_map<L, check_is_class>::type tmp;
+        typename mpl::typelist_map<L, check_is_class>::type tmp;
         (void) tmp;
 
         EXPAND(
-            item->addBaseClass(metaTypeId<typename typelist_get<L, I>::type>(),
-                               &internal::metacast_to_base<T, typename typelist_get<L, I>::type>)
+            item->addBaseClass(metaTypeId<mpl::typelist_get_t<L, I>>(),
+                               &internal::metacast_to_base<T, mpl::typelist_get_t<L, I>>)
         );
     }
 
@@ -1125,7 +1125,7 @@ private:
     template<typename L>
     void register_converting_constructor(std::true_type)
     {
-        using Arg = typelist_get_t<L, 0>;
+        using Arg = mpl::typelist_get_t<L, 0>;
         MetaType::registerConverter(&internal::default_convert<Arg, T>);
     }
 

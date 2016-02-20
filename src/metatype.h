@@ -181,7 +181,7 @@ class meta_type final
         //register decayed type
         auto decay = decay_selector(std::is_same<T, Decay>{});
 
-        auto const &name = type_name<T>();
+        auto const &name = mpl::type_name<T>();
         auto const flags = type_flags<T>::value;
         auto const size = sizeof(T);
         std::uint16_t const arity = pointer_arity<NoRef>::value;

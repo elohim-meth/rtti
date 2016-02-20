@@ -70,7 +70,7 @@ struct add_pointers: add_pointers<add_pointer_t<T>, I - 1>
 {};
 
 template<typename T>
-struct add_pointers<T, 0>: identity<T>
+struct add_pointers<T, 0>: mpl::identity<T>
 {};
 
 template<typename T, std::size_t I>
@@ -97,7 +97,7 @@ template<typename T, bool = std::is_pointer<T>::value>
 struct remove_all_pointers;
 
 template<typename T>
-struct remove_all_pointers<T, false>: identity<remove_cv_t<T>>
+struct remove_all_pointers<T, false>: mpl::identity<remove_cv_t<T>>
 {};
 
 template<typename T>
@@ -170,7 +170,7 @@ template<typename T, bool = std::is_reference<T>::value,
 struct base_type;
 
 template<typename T>
-struct base_type<T, false, false, false>: identity<remove_cv_t<T>>
+struct base_type<T, false, false, false>: mpl::identity<remove_cv_t<T>>
 {};
 
 template<typename T>
