@@ -25,6 +25,7 @@ struct ConvertFunctionBase;
 struct TypeInfo;
 class MetaClass;
 class variant;
+class argument;
 // end forward
 
 
@@ -131,6 +132,7 @@ private:
     template<typename> friend class internal::meta_type;
     friend class rtti::MetaClass;
     friend class rtti::variant;
+    friend class rtti::argument;
 };
 
 //forward

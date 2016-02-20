@@ -31,19 +31,21 @@ public:
     { return m_data == nullptr; }
     MetaType_ID typeId() const;
 
-    template<typename T>
-    T value() const
+    template<typename T,
+             typename U = conditional_t<is_rvalue_reference_t<T>::value, remove_reference_t<T>, T>>
+    U value() const
     {
         if (empty())
             throw bad_argument_cast{"Empty argument"};
-        return value<T>(is_rvalue_reference_t<T>{});
+        return value<U>(is_lvalue_reference_t<T>{});
     }
 
 private:
     bool isVariant() const;
 
+    // no reference or rvalue reference
     template<typename T>
-    T value(std::true_type) const
+    T value(std::false_type) const
     {
         using Decay = decay_t<T>;
 
@@ -60,20 +62,38 @@ private:
                 else
                     ptr = static_cast<Decay*>(m_data);
 
-                return std::move(*ptr);
+                if (m_type.isLvalueReference())
+                    return *ptr;
+                else
+                    return std::move(*ptr);
             }
             else if (isVariant())
             {
                 auto *ptr = static_cast<variant*>(m_data);
-                return std::move(*ptr).value<Decay>();
+                if (m_type.isLvalueReference())
+                    return ptr->to<Decay>();
+                else
+                    return std::move(*ptr).value<Decay>();
             }
         }
+
+        if (MetaType::hasConverter(fromType, toType))
+        {
+            alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
+            if (MetaType::convert(m_data, fromType, &buffer, toType))
+                return std::move(*reinterpret_cast<T*>(&buffer));
+
+            throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                      fromType.typeName() + " -> " + toType.typeName()};
+        }
+
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                fromType.typeName() + " -> " + toType.typeName()};
     }
 
+    // lvalue reference
     template<typename T>
-    T value(std::false_type) const
+    T value(std::true_type) const
     {
         using Decay = decay_t<T>;
 
@@ -95,23 +115,11 @@ private:
             else if (isVariant())
             {
                 auto *ptr = static_cast<variant*>(m_data);
-                return result_selector<T>(*ptr, is_lvalue_reference_t<T>{});
+                return ptr->value<T>();
             }
         }
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                fromType.typeName() + " -> " + toType.typeName()};
-    }
-
-    template<typename T>
-    T result_selector(variant &v, std::false_type) const
-    {
-        return v.to<T>();
-    }
-
-    template<typename T>
-    T result_selector(variant &v, std::true_type) const
-    {
-        return v.value<T>();
     }
 
     void *m_data = nullptr;

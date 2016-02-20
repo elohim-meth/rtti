@@ -355,6 +355,20 @@ void test_variant_1()
         auto q1 = v.to<TestQPointer>();
         auto q = TestQPointer{"123456"};
         q = v.to<TestQPointer>();
+
+        {
+            v.convert<TestQPointer>();
+            auto *mcQptr = v.metaClass(); assert(mcQptr);
+            auto *pPImpl = mcQptr->getProperty("m_pImpl"); assert(pPImpl);
+            auto vPImpl = pPImpl->get(v); assert(!vPImpl.empty());
+            auto *mcPimpl = vPImpl.metaClass(); assert(mcPimpl);
+            auto *pPImplValue = mcPimpl->getProperty("m_value"); assert(pPImplValue);
+            auto vPImplValue = pPImplValue->get(vPImpl);
+            assert(vPImplValue.cvalue<std::string>() == "Hello, World");
+            pPImplValue->set(vPImpl, "Foo - Bar");
+            assert(vPImplValue.cvalue<std::string>() == "Foo - Bar");
+
+        }
     }
 
     std::printf("\n");
@@ -364,32 +378,32 @@ void test_variant_1()
         auto q = new TestQPointer{"111"};
         variant v = std::ref(q);
 
-        auto c = MetaClass::findByTypeId(metaTypeId<TestQPointer>()); assert(c);
-        auto m = c->getMethod<const TestQPointer&>("value"); assert(m);
-        auto s = m->invoke(v);
+        auto mcQptr = MetaClass::findByTypeId(metaTypeId<TestQPointer>()); assert(mcQptr);
+        auto mValue = mcQptr->getMethod<const TestQPointer&>("value"); assert(mValue);
+        auto s = mValue->invoke(v);
         try {
             s.value<std::string>() = "222"; // shoud throw
             assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
 
-        m = c->getMethod<TestQPointer&>("value"); assert(m);
-        s = m->invoke(v);
+        mValue = mcQptr->getMethod<TestQPointer&>("value"); assert(mValue);
+        s = mValue->invoke(v);
         s.value<std::string>() = "222";
         assert(q->value() == "222");
 
         const auto *q1 = q;
         variant v1 = std::ref(q1);
         try {
-            s = m->invoke(v1); //should throw
+            s = mValue->invoke(v1); //should throw
             assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
 
         variant v2 = q;
-        s = m->invoke(v2); //shouldn't throw
+        s = mValue->invoke(v2); //shouldn't throw
 
         variant v3 = q1;
         try {
-            s = m->invoke(v3); //should throw
+            s = mValue->invoke(v3); //should throw
             assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
         delete q;
