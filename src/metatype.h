@@ -13,7 +13,7 @@
 namespace rtti {
 
 struct meta_type_tag {};
-using MetaType_ID = ID<meta_type_tag, std::uint32_t,
+using MetaType_ID = mpl::ID<meta_type_tag, std::uint32_t,
                        std::numeric_limits<std::uint32_t>::max()>;
 
 // begin forward
