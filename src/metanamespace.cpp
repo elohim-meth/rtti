@@ -7,7 +7,7 @@ namespace rtti {
 //--------------------------------------------------------------------------------------------------------------------------------
 
 MetaNamespace::MetaNamespace()
-    : MetaContainer(*new MetaNamespacePrivate{"global"})
+    : MetaContainer{*new MetaNamespacePrivate{"global"}}
 {}
 
 const MetaNamespace* MetaNamespace::global()
@@ -27,7 +27,7 @@ MetaNamespace* MetaNamespace::create(const char *name, MetaContainer &owner)
     auto result = const_cast<MetaNamespace*>(owner.getNamespace(name));
     if (!result)
     {
-        result = new MetaNamespace(name, owner);
+        result = new MetaNamespace{name, owner};
         static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
     }
     return result;

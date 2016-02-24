@@ -66,7 +66,7 @@ inline const std::string& MetaItemPrivate::qualifiedName() const
 //--------------------------------------------------------------------------------------------------------------------------------
 
 MetaItem::MetaItem(const char *name, const MetaContainer &owner)
-    : d_ptr(new MetaItemPrivate(name, owner))
+    : d_ptr(new MetaItemPrivate{name, owner})
 {}
 
 MetaItem::MetaItem(MetaItemPrivate &value)

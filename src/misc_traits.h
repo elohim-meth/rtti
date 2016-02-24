@@ -64,10 +64,19 @@ template<typename T>
 using remove_reference_t = typename std::remove_reference<T>::type;
 
 template<typename T>
+using is_default_constructible_t = typename std::is_default_constructible<T>::type;
+
+template<typename T>
+using is_trivially_default_constructible_t = typename std::is_trivially_default_constructible<T>::type;
+
+template<typename T>
 using is_move_constructible_t = typename std::is_move_constructible<T>::type;
 
 template<typename T>
 using is_copy_constructible_t = typename std::is_copy_constructible<T>::type;
+
+template<typename T>
+using is_trivially_destructible_t = typename std::is_trivially_destructible<T>::type;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 

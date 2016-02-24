@@ -45,7 +45,7 @@ void variant::swap(variant &other) noexcept
         other.manager->f_move(other.storage, storage);
         manager = other.manager;
 
-        other.manager = internal::function_table_for<void>();
+        other.manager = internal::variant_function_table_for<void>();
         other.storage = storage_t{};
         return;
     }
@@ -55,7 +55,7 @@ void variant::swap(variant &other) noexcept
         manager->f_move(storage, other.storage);
         other.manager = manager;
 
-        manager = internal::function_table_for<void>();
+        manager = internal::variant_function_table_for<void>();
         storage = storage_t{};
         return;
     }
@@ -71,13 +71,13 @@ void variant::swap(variant &other) noexcept
 inline void variant::clear() noexcept
 {
     manager->f_destroy(storage);
-    manager = internal::function_table_for<void>();
+    manager = internal::variant_function_table_for<void>();
     storage = storage_t{};
 }
 
 inline bool variant::empty() const noexcept
 {
-    return manager == internal::function_table_for<void>();
+    return manager == internal::variant_function_table_for<void>();
 }
 
 } // namespace rtti

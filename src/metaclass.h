@@ -11,7 +11,7 @@ namespace rtti {
 
 namespace internal {
 template<typename To, typename From>
-const To* meta_cast_selector(const From*, std::true_type);
+To const* meta_cast(const From*, std::true_type);
 } // namespace internal
 
 class MetaClassPrivate;
@@ -45,7 +45,7 @@ private:
     DECLARE_PRIVATE(MetaClass)
     template<typename, typename> friend class rtti::meta_define;
     template<typename To, typename From>
-    friend const To* internal::meta_cast_selector(const From*, std::true_type);
+    friend const To* internal::meta_cast(const From*, std::true_type);
     friend class rtti::variant;
 };
 
@@ -71,7 +71,7 @@ private: \
 namespace internal {
 
 template<typename To, typename From>
-const To* meta_cast_selector(const From *from, std::true_type)
+const To* meta_cast(const From *from, std::true_type)
 {
     static_assert(std::is_class<From>::value && std::is_class<To>::value,
                   "Both template arguments should be classes");
@@ -91,19 +91,19 @@ const To* meta_cast_selector(const From *from, std::true_type)
 }
 
 template<typename To, typename From>
-To* meta_cast_selector(From *from, std::true_type)
+To* meta_cast(From *from, std::true_type)
 {
-    return const_cast<To*>(meta_cast_selector<To>(const_cast<const From*>(from), std::true_type{}));
+    return const_cast<To*>(meta_cast<To>(const_cast<const From*>(from), std::true_type{}));
 }
 
 template<typename To, typename From>
-const To* meta_cast_selector(const From *from, std::false_type)
+const To* meta_cast(const From *from, std::false_type)
 {
     return from;
 }
 
 template<typename To, typename From>
-To* meta_cast_selector(From *from, std::false_type)
+To* meta_cast(From *from, std::false_type)
 {
     return from;
 }
@@ -116,15 +116,15 @@ HAS_METHOD(classInfo);
 template<typename To, typename From>
 To* meta_cast(From *from)
 {
-    return internal::meta_cast_selector<To, From>(
-                from, typename has_method_classInfo<ClassInfo(From::*)() const>::type{});
+    using has_class_info_t = typename has_method_classInfo<ClassInfo(From::*)() const>::type;
+    return internal::meta_cast<To, From>(from, has_class_info_t{});
 }
 
 template<typename To, typename From>
-const To* meta_cast(const From *from)
+To const* meta_cast(const From *from)
 {
-    return internal::meta_cast_selector<To, From>(
-                from, typename has_method_classInfo<ClassInfo(From::*)() const>::type{});
+    using has_class_info_t = typename has_method_classInfo<ClassInfo(From::*)() const>::type;
+    return internal::meta_cast<To, From>(from, has_class_info_t{});
 }
 
 template<typename To, typename From>

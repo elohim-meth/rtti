@@ -12,7 +12,7 @@ MetaEnum *MetaEnum::create(const char *name, MetaContainer &owner, MetaType_ID t
     auto result = const_cast<MetaEnum*>(owner.getEnum(name));
     if (!result)
     {
-        result = new MetaEnum(name, owner, typeId);
+        result = new MetaEnum{name, owner, typeId};
         static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
     }
     return result;

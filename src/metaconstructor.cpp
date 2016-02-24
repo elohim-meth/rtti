@@ -17,7 +17,7 @@ MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
     auto result = const_cast<MetaConstructor*>(owner.getConstructor(temp.c_str()));
     if (!result)
     {
-        result = new MetaConstructor(std::move(temp), owner, std::move(constructor));
+        result = new MetaConstructor{std::move(temp), owner, std::move(constructor)};
         static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
     }
     return result;

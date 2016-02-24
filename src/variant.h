@@ -5,6 +5,8 @@
 #include "metaerror.h"
 #include "metaclass.h"
 
+#include <finally.h>
+
 #include <cassert>
 
 namespace rtti {
@@ -49,7 +51,7 @@ template<typename T>
 using unwrap_reference_t = typename unwrap_reference<T>::type;
 
 template <typename T>
-inline T copy_or_move(void *source, bool movable, std::true_type, std::false_type)
+inline T move_or_copy(void *source, bool movable, std::true_type, std::false_type)
 {
     if (movable)
         return std::move(*static_cast<T*>(source));
@@ -58,13 +60,13 @@ inline T copy_or_move(void *source, bool movable, std::true_type, std::false_typ
 }
 
 template <typename T>
-inline T copy_or_move(void *source, bool, std::false_type, std::true_type)
+inline T move_or_copy(void *source, bool, std::false_type, std::true_type)
 {
     return *static_cast<T*>(source);
 }
 
 template <typename T>
-inline T copy_or_move(void *source, bool movable, std::true_type, std::true_type)
+inline T move_or_copy(void *source, bool movable, std::true_type, std::true_type)
 {
     if (movable)
         return std::move(*static_cast<T*>(source));
@@ -73,12 +75,12 @@ inline T copy_or_move(void *source, bool movable, std::true_type, std::true_type
 }
 
 template <typename T>
-inline T copy_or_move(void *source, bool movable)
+inline T move_or_copy(void *source, bool movable)
 {
     static_assert(std::is_copy_constructible<T>::value || std::is_move_constructible<T>::value,
                   "Type should be CopyConstructible or MoveConstructible");
 
-    return copy_or_move<T>(source, movable, is_move_constructible_t<T>{}, is_copy_constructible_t<T>{});
+    return move_or_copy<T>(source, movable, is_move_constructible_t<T>{}, is_copy_constructible_t<T>{});
 }
 
 union DLL_PUBLIC variant_type_storage
@@ -127,10 +129,10 @@ struct DLL_PUBLIC variant_function_table
 template<typename T,
          bool = is_inplace<remove_cv_t<T>>::value,
          bool = is_reference_wrapper<remove_cv_t<T>>::value>
-struct function_table_selector;
+struct variant_function_table_impl;
 
 template<typename T>
-struct function_table_selector<T, true, false>
+struct variant_function_table_impl<T, true, false>
 {
     using Decay = full_decay_t<T>;
 
@@ -218,7 +220,7 @@ private:
 };
 
 template<typename T>
-struct function_table_selector<T, true, true>
+struct variant_function_table_impl<T, true, true>
 {
     static MetaType_ID type(type_attribute attr)
     {
@@ -286,7 +288,7 @@ private:
 };
 
 template<typename T>
-struct function_table_selector<T, false, false>
+struct variant_function_table_impl<T, false, false>
 {
     using Decay = full_decay_t<T>;
 
@@ -373,7 +375,7 @@ private:
 };
 
 template<typename T, std::size_t N>
-struct function_table_selector<T[N], false, false>
+struct variant_function_table_impl<T[N], false, false>
 {
     using Decay = remove_all_cv_t<T[N]>;
     using Base = remove_all_extents_t<Decay>;
@@ -458,13 +460,13 @@ private:
         storage.ptr = to;
     }
 
-    static void move_selector(Base const *src, variant_type_storage &storage, std::false_type)
+    static void move_selector(Base *src, variant_type_storage &storage, std::false_type)
     {
         //degenerate to copy
         copy_selector(src, storage, std::true_type{});
     }
 
-    static void move_selector(Base const *src, variant_type_storage &storage, std::true_type)
+    static void move_selector(Base *src, variant_type_storage &storage, std::true_type)
     {
         constexpr auto length = array_length<T[N]>::value;
 
@@ -479,8 +481,8 @@ private:
 // Since two pointer indirections when casting array<T> -> T*
 // we need to use temp storage and have no room for inplace
 template<typename T, std::size_t N>
-struct function_table_selector<T[N], true, false>:
-       function_table_selector<T[N], false, false>
+struct variant_function_table_impl<T[N], true, false>:
+       variant_function_table_impl<T[N], false, false>
 {};
 
 template<typename T>
@@ -493,7 +495,7 @@ struct class_info_get
 private:
     using Unwrap = unwrap_reference_t<remove_cv_t<T>>;
     using Decay = conditional_t<is_array_t<Unwrap>::value, void, full_decay_t<Unwrap>>;
-    using Selector = function_table_selector<T>;
+    using Selector = variant_function_table_impl<T>;
     using IsClass = is_class_t<Decay>;
     using IsClassPtr = is_class_ptr_t<Decay>;
     using C = remove_pointer_t<Decay>;
@@ -536,23 +538,23 @@ private:
 };
 
 template<typename T>
-inline variant_function_table const* function_table_for() noexcept
+inline variant_function_table const* variant_function_table_for() noexcept
 {
     static auto const result = variant_function_table{
-        &function_table_selector<T>::type,
-        &function_table_selector<T>::access,
-        &function_table_selector<T>::copy_construct,
-        &function_table_selector<T>::move_construct,
-        &function_table_selector<T>::copy,
-        &function_table_selector<T>::move,
-        &function_table_selector<T>::destroy,
+        &variant_function_table_impl<T>::type,
+        &variant_function_table_impl<T>::access,
+        &variant_function_table_impl<T>::copy_construct,
+        &variant_function_table_impl<T>::move_construct,
+        &variant_function_table_impl<T>::copy,
+        &variant_function_table_impl<T>::move,
+        &variant_function_table_impl<T>::destroy,
         &class_info_get<T>::info
     };
     return &result;
 }
 
 template<>
-inline variant_function_table const* function_table_for<void>() noexcept
+inline variant_function_table const* variant_function_table_for<void>() noexcept
 {
     static auto const result = variant_function_table{
         [] (type_attribute) noexcept -> MetaType_ID { return MetaType_ID(); },
@@ -582,7 +584,7 @@ public:
     template<typename T,
              typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
     variant(T &&value)
-        : manager{internal::function_table_for<remove_reference_t<T>>()}
+        : manager{internal::variant_function_table_for<remove_reference_t<T>>()}
     {
         using NoRef = remove_reference_t<T>;
         using Type = conditional_t<std::is_array<NoRef>::value, remove_all_extents_t<NoRef>, NoRef>;
@@ -692,8 +694,8 @@ public:
         alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
-         return internal::copy_or_move<T>(&buffer, true);
-        //return *reinterpret_cast<T*>(&buffer);
+        FINALLY { internal::metatype_function_table_impl<T>::destroy(&buffer); };
+        return internal::move_or_copy<T>(&buffer, true);
     }
 
     template<typename T>
@@ -705,7 +707,8 @@ public:
         alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
-        return internal::copy_or_move<T>(&buffer, true);
+        FINALLY { internal::metatype_function_table_impl<T>::destroy(&buffer); };
+        return internal::move_or_copy<T>(&buffer, true);
     }
 
     template<typename T>
@@ -900,8 +903,7 @@ private:
             {
                 if (from.decayId() == to.decayId())
                 {
-                    Decay const *value = static_cast<Decay const *>(self.raw_data_ptr());
-                    new (buffer) Decay(*value);
+                    to.copy_construct(self.raw_data_ptr(), buffer);
                     return;
                 }
                 else if (cast_selector(self, from, buffer, IsClass{}, IsClassPtr{}))
@@ -938,7 +940,7 @@ private:
                 auto ptr = invoke_imp(self);
                 if (ptr)
                 {
-                    new (buffer) C(*static_cast<C const*>(ptr));
+                    internal::metatype_function_table_impl<C>::copy_construct(ptr, buffer);
                     return true;
                 }
                 return false;
@@ -947,14 +949,14 @@ private:
         }
         // class ptr
         static bool cast_selector(variant const &self, MetaType from, void *buffer,
-                                     std::false_type, std::true_type)
+                                  std::false_type, std::true_type)
         {
             if (from.isClassPtr())
             {
                 auto ptr = invoke_imp(self);
                 if (ptr)
                 {
-                    new (buffer) T(static_cast<C*>(const_cast<void*>(ptr)));
+                    internal::metatype_function_table_impl<C*>::copy_construct(&ptr, buffer);
                     return true;
                 }
                 return false;
@@ -983,7 +985,7 @@ private:
     using storage_t = internal::variant_type_storage;
 
     storage_t storage;
-    table_t* manager = internal::function_table_for<void>();
+    table_t* manager = internal::variant_function_table_for<void>();
 
     friend void swap(variant&, variant&) noexcept;
     friend struct std::hash<rtti::variant>;

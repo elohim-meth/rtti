@@ -20,7 +20,7 @@ MetaCategory MetaProperty::category() const
 
 MetaProperty::MetaProperty(const char *name, MetaContainer &owner,
                            std::unique_ptr<IPropertyInvoker> invoker)
-    : MetaItem(*new MetaPropertyPrivate{name, owner, std::move(invoker)})
+    : MetaItem{*new MetaPropertyPrivate{name, owner, std::move(invoker)}}
 {}
 
 MetaProperty* MetaProperty::create(const char *name, MetaContainer &owner,
@@ -32,7 +32,7 @@ MetaProperty* MetaProperty::create(const char *name, MetaContainer &owner,
     auto result = const_cast<MetaProperty*>(owner.getProperty(name));
     if (!result)
     {
-        result = new MetaProperty(name, owner, std::move(invoker));
+        result = new MetaProperty{name, owner, std::move(invoker)};
         static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
     }
     return result;

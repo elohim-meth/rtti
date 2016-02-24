@@ -33,7 +33,7 @@ MetaMethod* MetaMethod::create(const char *name, MetaContainer &owner,
     auto result = const_cast<MetaMethod*>(owner.getMethod(signature.c_str()));
     if (!result)
     {
-        result = new MetaMethod(std::move(signature), owner, std::move(invoker));
+        result = new MetaMethod{std::move(signature), owner, std::move(invoker)};
         static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
     }
     return result;

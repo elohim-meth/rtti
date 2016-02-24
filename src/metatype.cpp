@@ -18,10 +18,12 @@ TypeInfo{CString{#NAME}, sizeof(NAME), \
          MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, \
          pointer_arity<NAME>::value, \
          const_bitset<NAME>::value, \
-         internal::type_flags<NAME>::value},
+         internal::type_flags<NAME>::value, \
+         internal::metatype_function_table_for<NAME>() \
+        },
 
-static constexpr std::array<TypeInfo, 38> fundamentalTypes = {{
-    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, 0, 0, internal::type_flags<void>::value},
+static std::array<TypeInfo, 38> const fundamentalTypes = {{
+    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, 0, 0, internal::type_flags<void>::value, nullptr},
     FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
     }};
 
@@ -40,7 +42,8 @@ public:
     TypeInfo const*  getTypeInfo(char const *name) const;
     TypeInfo const* addTypeInfo(char const *name, std::size_t size,
                                 MetaType_ID decay, std::uint16_t arity,
-                                std::uint16_t const_mask, MetaType::TypeFlags flags);
+                                std::uint16_t const_mask, MetaType::TypeFlags flags,
+                                metatype_manager_t const *manager);
 private:
     mutable std::mutex m_lock;
     std::vector<std::unique_ptr<TypeInfo>> m_items;
@@ -112,7 +115,8 @@ const TypeInfo* CustomTypes::getTypeInfo(char const *name) const
 
 inline TypeInfo const* CustomTypes::addTypeInfo(char const *name, std::size_t size,
                                             MetaType_ID decay, uint16_t arity,
-                                            uint16_t const_mask, MetaType::TypeFlags flags)
+                                            uint16_t const_mask, MetaType::TypeFlags flags,
+                                            metatype_manager_t const *manager)
 {
     std::lock_guard<std::mutex> lock{m_lock};
     auto type = static_cast<MetaType_ID::type>(
@@ -124,7 +128,8 @@ inline TypeInfo const* CustomTypes::addTypeInfo(char const *name, std::size_t si
 
     auto temp = CString{name};
     auto result = new TypeInfo{temp, size, MetaType_ID{type},
-                               decay, arity, const_mask, flags};
+                               decay, arity, const_mask, flags,
+                               manager};
     m_items.emplace_back(result);
     m_names.emplace(std::move(temp), type);
     return result;
@@ -271,7 +276,8 @@ bool MetaType::compatible(MetaType fromType, MetaType toType)
 MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
                                        MetaType_ID decay, std::uint16_t arity,
                                        std::uint16_t const_mask,
-                                       MetaType::TypeFlags flags)
+                                       MetaType::TypeFlags flags,
+                                       metatype_manager_t const *manager)
 {
     auto *types = customTypes();
     if (!types)
@@ -279,8 +285,43 @@ MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
 
     auto result = types->getTypeInfo(name);
     if (!result)
-        result = types->addTypeInfo(name, size, decay, arity, const_mask, flags);
+        result = types->addTypeInfo(name, size, decay, arity,
+                                    const_mask, flags, manager);
     return result->type;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------
+// Low level construction
+//--------------------------------------------------------------------------------------------------------------------------------
+
+void* MetaType::allocate() const
+{
+    return m_typeInfo->manager->f_allocate();
+}
+
+void MetaType::deallocate(void *ptr) const
+{
+    return m_typeInfo->manager->f_deallocate(ptr);
+}
+
+void MetaType::default_construct(void *where) const
+{
+    m_typeInfo->manager->f_default_construct(where);
+}
+
+void MetaType::copy_construct(void const *source, void *where) const
+{
+    m_typeInfo->manager->f_copy_construct(source, where);
+}
+
+void MetaType::move_construct(void *source, void *where) const
+{
+    m_typeInfo->manager->f_move_construct(source, where);
+}
+
+void MetaType::destroy(void *ptr) const noexcept
+{
+    m_typeInfo->manager->f_destroy(ptr);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------

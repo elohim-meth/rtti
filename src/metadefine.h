@@ -233,7 +233,7 @@ struct method_invoker<F, void_member_func>
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
-                          const variant &instance,
+                          variant const &instance,
                           argument const &arg0, argument const &arg1,
                           argument const &arg2, argument const &arg3,
                           argument const &arg4, argument const &arg5,
@@ -274,7 +274,7 @@ private:
     //
     using C = typename mpl::function_traits<F>::class_type;
     using is_const = typename mpl::function_traits<F>::is_const;
-    using class_t = conditional_t<is_const::value, const C, C>;
+    using class_t = conditional_t<is_const::value, add_const_t<C>, C>;
     using class_ref_t = add_lvalue_reference_t<class_t>;
     using class_ptr_t = add_pointer_t<class_t>;
 
@@ -284,13 +284,13 @@ private:
         return { metaTypeId<argument_get_t<I>>()... };
     }
 
-    static class_ref_t class_selector(variant const&, std::false_type)
+    static class_ref_t class_get(variant const&, std::false_type)
     {
         throw bad_variant_cast{std::string{"Incompatible types: "} +
                                "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
     }
 
-    static class_ref_t class_selector(variant const &instance, std::true_type)
+    static class_ref_t class_get(variant const &instance, std::true_type)
     {
         return instance.value<class_t>();
     }
@@ -301,7 +301,7 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            (class_selector(instance, is_const{}).*func)(args[I]->value<argument_get_t<I>>()...);
+            (class_get(instance, is_const{}).*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.isClassPtr())
             (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
         return variant::empty_variant;
@@ -392,24 +392,24 @@ private:
     }
 
     template<typename R>
-    static variant reference_selector(R &&result, std::false_type)
+    static variant reference_get(R &&result, std::false_type)
     {
         return std::forward<R>(result);
     }
 
     template<typename R>
-    static variant reference_selector(R &&result, std::true_type)
+    static variant reference_get(R &&result, std::true_type)
     {
         return std::ref(std::forward<R>(result));
     }
 
-    static class_ref_t class_selector(variant const&, std::false_type)
+    static class_ref_t class_get(variant const&, std::false_type)
     {
         throw bad_variant_cast{std::string{"Incompatible types: "} +
                                "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
     }
 
-    static class_ref_t class_selector(variant const &instance, std::true_type)
+    static class_ref_t class_get(variant const &instance, std::true_type)
     {
         return instance.value<class_t>();
     }
@@ -420,11 +420,13 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            return reference_selector((class_selector(instance, is_const{}).*func)(args[I]->value<argument_get_t<I>>()...),
-                                      result_is_reference{});
+            return reference_get((class_get(instance, is_const{}).*func)(
+                                     args[I]->value<argument_get_t<I>>()...),
+                                 result_is_reference{});
         else if (type.isClassPtr())
-            return reference_selector((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...),
-                                      result_is_reference{});
+            return reference_get((instance.to<class_ptr_t>()->*func)(
+                                     args[I]->value<argument_get_t<I>>()...),
+                                 result_is_reference{});
         return variant::empty_variant;
     }
 
@@ -434,10 +436,10 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            return reference_selector((instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...),
+            return reference_get((instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...),
                                       result_is_reference{});
         else if (type.isClassPtr())
-            return reference_selector((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...),
+            return reference_get((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...),
                                       result_is_reference{});
         return variant::empty_variant;
     }
@@ -641,7 +643,7 @@ struct property_invoker<P, static_pointer>
 
     static void set_static(P property, const argument &arg)
     {
-        set_static_selector(property, arg, IsReadOnly{});
+        set_static(property, arg, IsReadOnly{});
     }
 
     static variant get_field(P, const variant&)
@@ -657,12 +659,12 @@ private:
     using T = property_type_t<P>;
     using IsReadOnly = is_const_t<T>;
 
-    static void set_static_selector(P, const argument&, std::true_type)
+    static void set_static(P, const argument&, std::true_type)
     {
         throw invoke_error{"Write to readonly property"};
     }
 
-    static void set_static_selector(P property, const argument &arg, std::false_type)
+    static void set_static(P property, const argument &arg, std::false_type)
     {
         *property = arg.value<T>();
     }
@@ -701,12 +703,12 @@ struct property_invoker<P, member_pointer>
 
     static void set_field(P property, variant const &instance, argument const &arg)
     {
-        set_field_selector(property, instance, arg, IsReadOnly{});
+        set_field(property, instance, arg, IsReadOnly{});
     }
 
     static void set_field(P property, variant &instance, argument const &arg)
     {
-        set_field_selector(property, instance, arg, IsReadOnly{});
+        set_field(property, instance, arg, IsReadOnly{});
     }
 private:
     using C = property_class_t<P>;
@@ -714,17 +716,17 @@ private:
     using IsReadOnly = is_const_t<T>;
     using class_ref_t = add_lvalue_reference_t<C>;
 
-    static void set_field_selector(P, variant&, argument const&, std::true_type)
+    static void set_field(P, variant&, argument const&, std::true_type)
     {
         throw invoke_error{"Write to readonly property"};
     }
 
-    static void set_field_selector(P, variant const&, argument const&, std::true_type)
+    static void set_field(P, variant const&, argument const&, std::true_type)
     {
         throw invoke_error{"Write to readonly property"};
     }
 
-    static void set_field_selector(P property, variant const &instance, argument const &arg, std::false_type)
+    static void set_field(P property, variant const &instance, argument const &arg, std::false_type)
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
@@ -738,7 +740,7 @@ private:
         }
     }
 
-    static void set_field_selector(P property, variant &instance, argument const &arg, std::false_type)
+    static void set_field(P property, variant &instance, argument const &arg, std::false_type)
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
@@ -895,9 +897,9 @@ public:
         m_currentItem = m_currentContainer;
 
         meta_define<C, this_t> result {m_currentItem, m_currentContainer, m_containerStack};
-        result.default_constructor_selector(std::is_default_constructible<C>{});
-        result.copy_constructor_selector(std::is_copy_constructible<C>{});
-        result.move_constructor_selector(std::is_move_constructible<C>{});
+        result.define_default_constructor(std::is_default_constructible<C>{});
+        result.define_copy_constructor(std::is_copy_constructible<C>{});
+        result.define_move_constructor(std::is_move_constructible<C>{});
         return std::move(result);
     }
 
@@ -1083,20 +1085,20 @@ private:
         );
     }
 
-    void default_constructor_selector(std::false_type) {}
-    void default_constructor_selector(std::true_type)
+    void define_default_constructor(std::false_type) {}
+    void define_default_constructor(std::true_type)
     {
         _constructor();
     }
 
-    void copy_constructor_selector(std::false_type) {}
-    void copy_constructor_selector(std::true_type)
+    void define_copy_constructor(std::false_type) {}
+    void define_copy_constructor(std::true_type)
     {
         _constructor<const T&>();
     }
 
-    void move_constructor_selector(std::false_type) {}
-    void move_constructor_selector(std::true_type)
+    void define_move_constructor(std::false_type) {}
+    void define_move_constructor(std::true_type)
     {
         _constructor<T&&>();
     }

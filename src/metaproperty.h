@@ -31,14 +31,14 @@ public:
     variant get(Args&&... args) const
     {
         using argument_indexes_t = mpl::index_sequence_for_t<Args...>;
-        return get_selector(argument_indexes_t{}, std::forward<Args>(args)...);
+        return get_impl(argument_indexes_t{}, std::forward<Args>(args)...);
     }
 
     template<typename ...Args>
     void set(Args&&... args) const
     {
         using argument_indexes_t = mpl::index_sequence_for_t<Args...>;
-        set_selector(argument_indexes_t{}, std::forward<Args>(args)...);
+        set_impl(argument_indexes_t{}, std::forward<Args>(args)...);
     }
 
     bool readOnly() const
@@ -53,7 +53,7 @@ protected:
 private:
     const IPropertyInvoker* invoker() const;
 
-    variant get_selector(mpl::index_sequence<>) const
+    variant get_impl(mpl::index_sequence<>) const
     {
         auto interface = invoker();
         if (!interface->isStatic())
@@ -62,7 +62,7 @@ private:
         return interface->get_static();
     }
 
-    variant get_selector(mpl::index_sequence<0>, const variant &instance) const
+    variant get_impl(mpl::index_sequence<0>, const variant &instance) const
     {
         auto interface = invoker();
         if (interface->isStatic())
@@ -72,7 +72,7 @@ private:
     }
 
     template<typename Arg>
-    void set_selector(mpl::index_sequence<0>, Arg &&arg) const
+    void set_impl(mpl::index_sequence<0>, Arg &&arg) const
     {
         auto interface = invoker();
         if (!interface->isStatic())
@@ -82,7 +82,7 @@ private:
     }
 
     template<typename Arg>
-    void set_selector(mpl::index_sequence<0, 1>, variant const &instance, Arg &&arg) const
+    void set_impl(mpl::index_sequence<0, 1>, variant const &instance, Arg &&arg) const
     {
         auto interface = invoker();
         if (interface->isStatic())
@@ -92,7 +92,7 @@ private:
     }
 
     template<typename Arg>
-    void set_selector(mpl::index_sequence<0, 1>, variant &instance, Arg &&arg) const
+    void set_impl(mpl::index_sequence<0, 1>, variant &instance, Arg &&arg) const
     {
         auto interface = invoker();
         if (interface->isStatic())
