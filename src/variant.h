@@ -48,6 +48,39 @@ struct unwrap_reference<T, true>: mpl::identity<typename T::type>
 template<typename T>
 using unwrap_reference_t = typename unwrap_reference<T>::type;
 
+template <typename T>
+inline T copy_or_move(void *source, bool movable, std::true_type, std::false_type)
+{
+    if (movable)
+        return std::move(*static_cast<T*>(source));
+    else
+        throw runtime_error("Unable to copy move only type");
+}
+
+template <typename T>
+inline T copy_or_move(void *source, bool, std::false_type, std::true_type)
+{
+    return *static_cast<T*>(source);
+}
+
+template <typename T>
+inline T copy_or_move(void *source, bool movable, std::true_type, std::true_type)
+{
+    if (movable)
+        return std::move(*static_cast<T*>(source));
+    else
+        return *static_cast<T*>(source);
+}
+
+template <typename T>
+inline T copy_or_move(void *source, bool movable)
+{
+    static_assert(std::is_copy_constructible<T>::value || std::is_move_constructible<T>::value,
+                  "Type should be CopyConstructible or MoveConstructible");
+
+    return copy_or_move<T>(source, movable, is_move_constructible_t<T>{}, is_copy_constructible_t<T>{});
+}
+
 union DLL_PUBLIC variant_type_storage
 {
     void *ptr;
@@ -655,13 +688,12 @@ public:
     {
         static_assert(!std::is_reference<T>::value,
                       "Type cannot be reference");
-        static_assert(std::is_move_constructible<T>::value,
-                      "Type should be MoveConstructible");
 
         alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
-        return std::move(*reinterpret_cast<T*>(&buffer));
+         return internal::copy_or_move<T>(&buffer, true);
+        //return *reinterpret_cast<T*>(&buffer);
     }
 
     template<typename T>
@@ -669,13 +701,11 @@ public:
     {
         static_assert(!std::is_reference<T>::value,
                       "Type cannot be reference");
-        static_assert(std::is_move_constructible<T>::value,
-                      "Type should be MoveConstructible");
 
         alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
-        return std::move(*reinterpret_cast<T*>(&buffer));
+        return internal::copy_or_move<T>(&buffer, true);
     }
 
     template<typename T>

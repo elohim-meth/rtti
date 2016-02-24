@@ -140,6 +140,88 @@ template <typename T> MetaType_ID metaTypeId();
 
 namespace internal {
 
+struct DLL_LOCAL metatype_function_table
+{
+    using allocate_t = void* (*) (std::size_t n);
+    using deallocate_t = void (*) (void*);
+    using default_construct_t = void (*) (void*);
+    using copy_construct_t = void (*) (void const*, void*);
+    using move_construct_t = void (*) (void*, void*);
+    using destroy_t = void (*) (void*);
+
+    allocate_t const f_allocate = nullptr;
+    deallocate_t const f_deallocate = nullptr;
+    default_construct_t const f_default_construct = nullptr;
+    copy_construct_t const f_copy_construct = nullptr;
+    move_construct_t const f_move_construct = nullptr;
+    destroy_t const f_destroy = nullptr;
+
+    metatype_function_table(allocate_t allocate, deallocate_t deallocate,
+                            default_construct_t default_construct,
+                            copy_construct_t copy_construct,
+                            move_construct_t move_construct,
+                            destroy_t destroy) noexcept
+        : f_allocate{allocate}, f_deallocate{deallocate},
+          f_default_construct{default_construct},
+          f_copy_construct{copy_construct},
+          f_move_construct{move_construct},
+          f_destroy{destroy}
+    {}
+};
+
+template<typename T>
+struct metatype_function_table_impl
+{
+    using Allocator = std::allocator<T>;
+
+    static void* allocate(std::size_t n)
+    {
+        return Allocator{}.allocate(n);
+    }
+
+    static void deallocate(void *ptr)
+    {
+        Allocator{}.deallocate(static_cast<T*>(ptr));
+        return;
+    }
+
+    static void default_construct (void *where)
+    {
+        Allocator{}.construct(static_cast<T*>(where));
+    }
+
+    static void copy_construct (void const *source, void *where)
+    {
+        Allocator{}.construct(static_cast<T*>(where), *static_cast<T const*>(source));
+    }
+
+    static void move_construct (void *source, void *where)
+    {
+        Allocator{}.construct(static_cast<T*>(where), std::move(*static_cast<T const*>(source)));
+    }
+
+    static void destroy(void *ptr) noexcept
+    {
+        Allocator{}.destroy(static_cast<T*>(ptr));
+        return;
+    }
+};
+
+
+template<typename T>
+inline metatype_function_table const* metatype_function_table_for() noexcept
+{
+    static auto const result = metatype_function_table{
+        &metatype_function_table_impl<T>::allocate,
+        &metatype_function_table_impl<T>::deallocate,
+        &metatype_function_table_impl<T>::default_construct,
+        &metatype_function_table_impl<T>::copy_construct,
+        &metatype_function_table_impl<T>::move_construct,
+        &metatype_function_table_impl<T>::destroy
+    };
+    return &result;
+}
+
 template <typename T>
 struct type_flags {
     using Flags = MetaType::TypeFlags;

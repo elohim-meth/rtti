@@ -63,6 +63,12 @@ using remove_pointer_t = typename std::remove_pointer<T>::type;
 template<typename T>
 using remove_reference_t = typename std::remove_reference<T>::type;
 
+template<typename T>
+using is_move_constructible_t = typename std::is_move_constructible<T>::type;
+
+template<typename T>
+using is_copy_constructible_t = typename std::is_copy_constructible<T>::type;
+
 //-----------------------------------------------------------------------------------------------------------------------------
 
 template<typename T, std::size_t I>
@@ -242,6 +248,15 @@ struct is_converting_constructor<T, Arg>:
 
 template<typename T, typename ...Args>
 using is_converting_constructor_t = typename is_converting_constructor<T, Args...>::type;
+
+
+template<typename T>
+struct is_lvalue_const_reference:
+    conditional_t<is_lvalue_reference_t<T>::value && is_const_t<remove_reference_t<T>>::value, std::true_type, std::false_type>
+{};
+
+template<typename T>
+using is_lvalue_const_reference_t = typename is_lvalue_const_reference<T>::type;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 

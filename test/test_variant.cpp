@@ -14,7 +14,7 @@ public:
         : m_value{other.m_value}
     { PRINT_PRETTY_FUNC; }
     PrivatePimpl& operator=(const PrivatePimpl&) = delete;
-    PrivatePimpl(PrivatePimpl &&) = delete;
+    //PrivatePimpl(PrivatePimpl &&) = delete;
     PrivatePimpl& operator=(PrivatePimpl&&) = delete;
     explicit PrivatePimpl(const char *value)
         : m_value{value}
@@ -309,13 +309,8 @@ inline void swap(TestQPointer &lhs, TestQPointer &rhs) noexcept
 }
 } //std
 
-
-void test(int &&) {}
-
-
 void test_variant_1()
 {
-
     {
         auto q1 = TestQPointer{"Hello, World"};
         auto q2 = TestQPointer{"qwerty"};
@@ -365,6 +360,7 @@ void test_variant_1()
             auto *pPImplValue = mcPimpl->getProperty("m_value"); assert(pPImplValue);
             auto vPImplValue = pPImplValue->get(vPImpl);
             assert(vPImplValue.cvalue<std::string>() == "Hello, World");
+            vPImplValue.metaClass()->forceDeferredDefine();
             pPImplValue->set(vPImpl, "Foo - Bar");
             assert(vPImplValue.cvalue<std::string>() == "Foo - Bar");
 
@@ -562,10 +558,8 @@ void test_variant_1()
         assert(valCM->invoke(obj).cvalue<std::string>() == "Hello, World");
 
         auto copyC = qpMC->copyConstructor(); assert(copyC);
-        try {
-            auto copy = copyC->invoke("1234"); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); };
-        auto copy = copyC->invoke(obj); assert(copy);
+        auto copy = copyC->invoke("1234");
+        copy = copyC->invoke(obj); assert(copy);
         chkM->invoke(obj); chkM->invoke(copy);
         assert(!empM->invoke(copy).to<bool>());
         assert(valCM->invoke(copy).cvalue<std::string>() == "Hello, World");

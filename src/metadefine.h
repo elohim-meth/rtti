@@ -664,11 +664,7 @@ private:
 
     static void set_static_selector(P property, const argument &arg, std::false_type)
     {
-        auto argType = MetaType{arg.typeId()};
-        if (argType.isLvalueReference())
-            *property = arg.value<const T&>();
-        else
-            *property = arg.value<T&&>();
+        *property = arg.value<T>();
     }
 };
 
@@ -703,12 +699,12 @@ struct property_invoker<P, member_pointer>
         return variant::empty_variant;
     }
 
-    static void set_field(P property, variant const &instance, const argument &arg)
+    static void set_field(P property, variant const &instance, argument const &arg)
     {
         set_field_selector(property, instance, arg, IsReadOnly{});
     }
 
-    static void set_field(P property, variant &instance, const argument &arg)
+    static void set_field(P property, variant &instance, argument const &arg)
     {
         set_field_selector(property, instance, arg, IsReadOnly{});
     }
@@ -731,7 +727,6 @@ private:
     static void set_field_selector(P property, variant const &instance, argument const &arg, std::false_type)
     {
         auto type = MetaType{instance.typeId()};
-        auto argType = MetaType{arg.typeId()};
         if (type.isClass())
         {
             throw bad_variant_cast{std::string{"Incompatible types: "} +
@@ -739,31 +734,17 @@ private:
         }
         else if (type.isClassPtr())
         {
-            if (argType.isLvalueReference())
-                instance.to<C*>()->*property = arg.value<const T&>();
-            else
-                instance.to<C*>()->*property = arg.value<T&&>();
+            instance.to<C*>()->*property = arg.value<T>();
         }
     }
 
     static void set_field_selector(P property, variant &instance, argument const &arg, std::false_type)
     {
         auto type = MetaType{instance.typeId()};
-        auto argType = MetaType{arg.typeId()};
         if (type.isClass())
-        {
-            if (argType.isLvalueReference())
-                instance.value<C>().*property = arg.value<const T&>();
-            else
-                instance.value<C>().*property = arg.value<T&&>();
-        }
+            instance.value<C>().*property = arg.value<T>();
         else if (type.isClassPtr())
-        {
-            if (argType.isLvalueReference())
-                instance.to<C*>()->*property = arg.value<const T&>();
-            else
-                instance.to<C*>()->*property = arg.value<T&&>();
-        }
+            instance.to<C*>()->*property = arg.value<T>();
     }
 };
 

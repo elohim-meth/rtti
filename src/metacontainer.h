@@ -80,7 +80,7 @@ public:
     std::size_t enumCount() const;
     const MetaEnum* getEnum(std::size_t index) const;
 
-    void forceDeferredDefine(ForceDeferred type) const;
+    void forceDeferredDefine(ForceDeferred type = ForceDeferred::SelfOnly) const;
 protected:
     explicit MetaContainer(const char *name, const MetaContainer &owner);
     explicit MetaContainer(MetaContainerPrivate &value);
