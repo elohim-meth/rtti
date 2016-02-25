@@ -178,7 +178,7 @@ private:
 
     mutable void *m_data = nullptr;
     mutable void *m_buffer = nullptr;
-    MetaType const m_type;
+    MetaType const m_type = {};
 };
 
 }
