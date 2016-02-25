@@ -19,11 +19,15 @@ using MetaType_ID = mpl::ID<meta_type_tag, std::uint32_t,
 
 // begin forward
 namespace internal {
-struct metatype_function_table;
+struct type_function_table;
+template<typename T> struct type_function_table_impl;
 template<typename T> class meta_type;
 struct ConvertFunctionBase;
 } // namespace internal
-using metatype_manager_t = internal::metatype_function_table;
+
+using metatype_manager_t = internal::type_function_table;
+template<typename T>
+using type_manager_t = internal::type_function_table_impl<remove_all_cv_t<remove_reference_t<T>>>;
 
 struct TypeInfo;
 class MetaClass;
@@ -66,38 +70,38 @@ public:
         Destructible         = 1 << 21,
     };
 
-    MetaType() = default;
-    explicit MetaType(MetaType_ID typeId);
-    explicit MetaType(char const *name);
+    MetaType() noexcept = default;
+    explicit MetaType(MetaType_ID typeId) noexcept;
+    explicit MetaType(char const *name) noexcept;
 
-    bool valid() const
+    bool valid() const noexcept
     {
         return m_typeInfo != nullptr;
     }
-    MetaType_ID typeId() const;
-    MetaType_ID decayId() const;
-    bool decayed() const
+    MetaType_ID typeId() const noexcept;
+    MetaType_ID decayId() const noexcept;
+    bool decayed() const noexcept
     { return valid() && (typeId() == decayId()); }
     void setTypeId(MetaType_ID typeId);
-    char const* typeName() const;
-    std::size_t typeSize() const;
-    MetaType::TypeFlags typeFlags() const;
+    char const* typeName() const noexcept;
+    std::size_t typeSize() const noexcept;
+    MetaType::TypeFlags typeFlags() const noexcept;
 
-    bool isConst() const;
-    bool isLvalueReference() const;
-    bool isRvalueReference() const;
-    bool isReference() const;
-    bool isClass() const;
-    bool isPointer() const;
-    bool isClassPtr() const;
-    bool isArray() const;
-    uint16_t pointerArity() const;
-    static bool compatible(MetaType fromType, MetaType toType);
+    bool isConst() const noexcept;
+    bool isLvalueReference() const noexcept;
+    bool isRvalueReference() const noexcept;
+    bool isReference() const noexcept;
+    bool isClass() const noexcept;
+    bool isPointer() const noexcept;
+    bool isClassPtr() const noexcept;
+    bool isArray() const noexcept;
+    uint16_t pointerArity() const noexcept;
+    static bool compatible(MetaType fromType, MetaType toType) noexcept;
 
-    static bool hasConverter(MetaType fromType, MetaType toType);
-    static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
+    static bool hasConverter(MetaType fromType, MetaType toType) noexcept;
+    static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId) noexcept;
     template<typename From, typename To>
-    static bool hasConverter();
+    static bool hasConverter() noexcept;
 
     template<typename From, typename To, typename Func>
     static bool registerConverter(Func &&func);
@@ -123,6 +127,7 @@ private:
     void default_construct(void *where) const;
     void copy_construct(void const *source, void *where) const;
     void move_construct(void *source, void *where) const;
+    void move_or_copy(void *source, bool movable, void *where) const;
     void destroy(void *ptr) const noexcept;
 
     template<typename From, typename To, typename Func>
@@ -149,13 +154,47 @@ template <typename T> MetaType_ID metaTypeId();
 
 namespace internal {
 
-struct DLL_LOCAL metatype_function_table
+template <typename T>
+inline T move_or_copy(void *source, bool movable, std::true_type, std::false_type)
+{
+    if (movable)
+        return std::move(*static_cast<T*>(source));
+
+    throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't CopyConstructible");
+}
+
+template <typename T>
+inline T move_or_copy(void *source, bool, std::false_type, std::true_type)
+{
+    return *static_cast<T*>(source);
+}
+
+template <typename T>
+inline T move_or_copy(void *source, bool movable, std::true_type, std::true_type)
+{
+    if (movable)
+        return std::move(*static_cast<T*>(source));
+    else
+        return *static_cast<T*>(source);
+}
+
+template <typename T>
+inline T move_or_copy(void *source, bool movable)
+{
+    static_assert(std::is_copy_constructible<T>::value || std::is_move_constructible<T>::value,
+                  "Type should be CopyConstructible or MoveConstructible");
+
+    return move_or_copy<T>(source, movable, is_move_constructible_t<T>{}, is_copy_constructible_t<T>{});
+}
+
+struct DLL_LOCAL type_function_table
 {
     using allocate_t = void* (*) ();
     using deallocate_t = void (*) (void*);
     using default_construct_t = void (*) (void*);
     using copy_construct_t = void (*) (void const*, void*);
     using move_construct_t = void (*) (void*, void*);
+    using move_or_copy_t = void (*) (void*, bool, void*);
     using destroy_t = void (*) (void*);
 
     allocate_t const f_allocate = nullptr;
@@ -163,104 +202,188 @@ struct DLL_LOCAL metatype_function_table
     default_construct_t const f_default_construct = nullptr;
     copy_construct_t const f_copy_construct = nullptr;
     move_construct_t const f_move_construct = nullptr;
+    move_or_copy_t const f_move_or_copy = nullptr;
     destroy_t const f_destroy = nullptr;
 
-    constexpr metatype_function_table(
+    constexpr type_function_table(
                             allocate_t allocate, deallocate_t deallocate,
                             default_construct_t default_construct,
                             copy_construct_t copy_construct,
                             move_construct_t move_construct,
+                            move_or_copy_t move_or_copy,
                             destroy_t destroy) noexcept
         : f_allocate{allocate}, f_deallocate{deallocate},
           f_default_construct{default_construct},
           f_copy_construct{copy_construct},
           f_move_construct{move_construct},
+          f_move_or_copy{move_or_copy},
           f_destroy{destroy}
     {}
 };
 
 template<typename T>
-struct metatype_function_table_impl
+struct type_function_table_impl
 {
     static void* allocate()
-    { return ::operator new(sizeof(T)); }
+    {
+        return ::operator new(sizeof(T));
+    }
 
     static void deallocate(void *ptr)
-    { if (ptr) ::operator delete(ptr); }
+    {
+        if (ptr)
+            ::operator delete(ptr);
+    }
 
     static void default_construct(void *where)
         noexcept(std::is_nothrow_default_constructible<T>::value)
-    { default_construct(where, is_default_constructible_t<T>{}); }
+    {
+        default_construct(where, is_default_constructible_t<T>{});
+    }
 
     static void copy_construct(void const *source, void *where)
         noexcept(std::is_nothrow_copy_constructible<T>::value)
-    { copy_construct(source, where, is_copy_constructible_t<T>{}); }
+    {
+        copy_construct(source, where, is_copy_constructible_t<T>{});
+    }
 
     static void move_construct(void *source, void *where)
         noexcept(std::is_nothrow_move_constructible<T>::value)
-    { move_construct(source, where, is_move_constructible_t<T>{}); }
+    {
+        move_construct(source, where, is_move_constructible_t<T>{});
+    }
+
+    static void move_or_copy (void *source, bool movable, void *where)
+    {
+        move_or_copy(source, movable, where,
+                     is_move_constructible_t<T>{},
+                     is_copy_constructible_t<T>{});
+    }
 
     static void destroy(void *ptr) noexcept
-    { destroy(ptr, is_trivially_destructible_t<T>{}); }
+    {
+        destroy(ptr, is_trivially_destructible_t<T>{});
+    }
 private:
     static void default_construct(void *where, std::true_type)
-    { default_construct_imp(where, is_trivially_default_constructible_t<T>{}); }
+    {
+        default_construct_imp(where, is_trivially_default_constructible_t<T>{});
+    }
     static void default_construct(void *, std::false_type)
-    { throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't DefaultConstructible"); }
+    {
+        throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't DefaultConstructible");
+    }
+    static void default_construct_imp(void *where, std::false_type)
+    {
+        if (where)
+            new (where) T();
+    }
     static void default_construct_imp(void*, std::true_type)
     { /* do nothing */ }
-    static void default_construct_imp(void *where, std::false_type)
-    { if (where) new (where) T(); }
 
     static void move_construct(void *source, void *where, std::true_type)
-    { if (source && where) new (where) T(std::move(*static_cast<T*>(source))); }
+    {
+        if (source && where)
+            new (where) T(std::move(*static_cast<T*>(source)));
+    }
     static void move_construct(void*, void*, std::false_type)
-    { throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't MoveConstructible"); }
+    {
+        throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't MoveConstructible");
+    }
 
     static void copy_construct(void const *source, void *where, std::true_type)
-    { if (source && where) new (where) T(*static_cast<T const*>(source)); }
+    {
+        if (source && where)
+            new (where) T(*static_cast<T const*>(source));
+    }
     static void copy_construct(void const*, void*, std::false_type)
-    { throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't CopyConstructible"); }
+    {
+        throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't CopyConstructible");
+    }
+
+    static void move_or_copy (void*, bool, void*, std::false_type, std::false_type)
+    {
+        throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't Copy or MoveConstructible");
+    }
+    static void move_or_copy (void *source, bool movable, void *where, std::true_type, std::false_type)
+    {
+        movable ? move_construct(source, where, std::true_type{})
+                : copy_construct(source, where, std::false_type{});
+    }
+    static void move_or_copy (void *source, bool, void *where, std::false_type, std::true_type)
+    {
+        copy_construct(source, where, std::true_type{});
+    }
+    static void move_or_copy (void *source, bool movable, void *where, std::true_type, std::true_type)
+    {
+        movable ? move_construct(source, where, std::true_type{})
+                : copy_construct(source, where, std::true_type{});
+    }
 
     static void destroy(void *ptr, std::false_type) noexcept
-    { if (ptr) static_cast<T*>(ptr)->~T(); }
+    {
+        if (ptr)
+            static_cast<T*>(ptr)->~T();
+    }
     static void destroy(void*, std::true_type) noexcept
     { /* do nothing */ }
 };
 
 template<typename T, std::size_t N>
-struct metatype_function_table_impl<T[N]>
+struct type_function_table_impl<T[N]>
 {
     using Base = remove_all_extents_t<T[N]>;
     static constexpr auto Length = array_length<T[N]>::value;
 
     static void* allocate()
-    { return ::operator new(sizeof(Base)*Length); }
+    {
+        return ::operator new(Length*sizeof(Base));
+    }
 
     static void deallocate(void *ptr)
-    { if (ptr) ::operator delete(ptr); }
+    {
+        if (ptr)
+            ::operator delete(ptr);
+    }
 
     static void default_construct(void *where)
         noexcept(std::is_nothrow_default_constructible<Base>::value)
-    { default_construct(where, is_default_constructible_t<Base>{}); }
+    {
+        default_construct(where, is_default_constructible_t<Base>{});
+    }
 
     static void copy_construct(void const *source, void *where)
         noexcept(std::is_nothrow_copy_constructible<Base>::value)
-    { copy_construct(source, where, is_copy_constructible_t<Base>{}); }
+    {
+        copy_construct(source, where, is_copy_constructible_t<Base>{});
+    }
 
     static void move_construct(void *source, void *where)
         noexcept(std::is_nothrow_move_constructible<Base>::value)
-    { move_construct(source, where, is_move_constructible_t<Base>{}); }
+    {
+        move_construct(source, where, is_move_constructible_t<Base>{});
+    }
+
+    static void move_or_copy (void *source, bool movable, void *where)
+    {
+        move_or_copy(source, movable, where,
+                     is_move_constructible_t<Base>{},
+                     is_copy_constructible_t<Base>{});
+    }
 
     static void destroy(void *ptr) noexcept
-    { destroy(ptr, is_trivially_destructible_t<Base>{}); }
+    {
+        destroy(ptr, is_trivially_destructible_t<Base>{});
+    }
 private:
     static void default_construct(void *where, std::true_type)
-    { default_construct_imp(where, is_trivially_default_constructible_t<Base>{}); }
+    {
+        default_construct_imp(where, is_trivially_default_constructible_t<Base>{});
+    }
     static void default_construct(void *, std::false_type)
-    { throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't DefaultConstructible"); }
-    static void default_construct_imp(void*, std::true_type)
-    { /* do nothing */ }
+    {
+        throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't DefaultConstructible");
+    }
     static void default_construct_imp(void *where, std::false_type)
     {
         if (where)
@@ -272,6 +395,8 @@ private:
                 new (begin) Base();
         }
     }
+    static void default_construct_imp(void*, std::true_type)
+    { /* do nothing */ }
 
     static void move_construct(void *source, void *where, std::true_type)
     {
@@ -282,7 +407,9 @@ private:
         }
     }
     static void move_construct(void*, void*, std::false_type)
-    { throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't MoveConstructible"); }
+    {
+        throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't MoveConstructible");
+    }
 
     static void copy_construct(void const *source, void *where, std::true_type)
     {
@@ -293,7 +420,28 @@ private:
         }
     }
     static void copy_construct(void const*, void*, std::false_type)
-    { throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't CopyConstructible"); }
+    {
+        throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't CopyConstructible");
+    }
+
+    static void move_or_copy (void*, bool, void*, std::false_type, std::false_type)
+    {
+        throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't Copy or MoveConstructible");
+    }
+    static void move_or_copy (void *source, bool movable, void *where, std::true_type, std::false_type)
+    {
+        movable ? move_construct(source, where, std::true_type{})
+                : copy_construct(source, where, std::false_type{});
+    }
+    static void move_or_copy (void *source, bool, void *where, std::false_type, std::true_type)
+    {
+        copy_construct(source, where, std::true_type{});
+    }
+    static void move_or_copy (void *source, bool movable, void *where, std::true_type, std::true_type)
+    {
+        movable ? move_construct(source, where, std::true_type{})
+                : copy_construct(source, where, std::true_type{});
+    }
 
     static void destroy(void *ptr, std::false_type) noexcept
     {
@@ -311,15 +459,16 @@ private:
 };
 
 template<typename T>
-inline metatype_function_table const* metatype_function_table_for() noexcept
+inline type_function_table const* type_function_table_for() noexcept
 {
-    static auto const result = metatype_function_table{
-        &metatype_function_table_impl<T>::allocate,
-        &metatype_function_table_impl<T>::deallocate,
-        &metatype_function_table_impl<T>::default_construct,
-        &metatype_function_table_impl<T>::copy_construct,
-        &metatype_function_table_impl<T>::move_construct,
-        &metatype_function_table_impl<T>::destroy
+    static auto const result = type_function_table{
+        &type_function_table_impl<T>::allocate,
+        &type_function_table_impl<T>::deallocate,
+        &type_function_table_impl<T>::default_construct,
+        &type_function_table_impl<T>::copy_construct,
+        &type_function_table_impl<T>::move_construct,
+        &type_function_table_impl<T>::move_or_copy,
+        &type_function_table_impl<T>::destroy
     };
     return &result;
 }
@@ -361,6 +510,7 @@ class meta_type final
 {
     using Decay = full_decay_t<T>;
     using NoRef = remove_reference_t<T>;
+    using U = remove_all_cv_t<NoRef>;
 
     meta_type()
     {
@@ -372,7 +522,7 @@ class meta_type final
         auto const size = sizeof(T);
         std::uint16_t const arity = pointer_arity<NoRef>::value;
         std::uint16_t const const_mask = const_bitset<NoRef>::value;
-        auto *manager = metatype_function_table_for<remove_all_cv_t<NoRef>>();
+        auto *manager = type_function_table_for<remove_all_cv_t<U>>();
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags,
                                              manager);
@@ -402,39 +552,39 @@ inline MetaType_ID metaTypeId()
 // Traits
 //--------------------------------------------------------------------------------------------------------------------------------
 
-inline bool MetaType::isConst() const
+inline bool MetaType::isConst() const noexcept
 {
     return ((typeFlags() & Const) == Const);
 }
 
-inline bool MetaType::isLvalueReference() const
+inline bool MetaType::isLvalueReference() const noexcept
 {
     return ((typeFlags() & LvalueReference) == LvalueReference);
 }
 
-inline bool MetaType::isRvalueReference() const
+inline bool MetaType::isRvalueReference() const noexcept
 {
     return ((typeFlags() & RvalueReference) == RvalueReference);
 }
 
-inline bool MetaType::isReference() const
+inline bool MetaType::isReference() const noexcept
 {
     return (isLvalueReference() || isRvalueReference());
 }
 
-inline bool MetaType::isClass() const
+inline bool MetaType::isClass() const noexcept
 {
     auto flags = typeFlags();
     return ((flags & Class) == Class) &&
            ((flags & Pointer) == None);
 }
 
-inline bool MetaType::isPointer() const
+inline bool MetaType::isPointer() const noexcept
 {
     return ((typeFlags() & Pointer) == Pointer);
 }
 
-inline bool MetaType::isClassPtr() const
+inline bool MetaType::isClassPtr() const noexcept
 {
     auto flags = typeFlags();
     return (pointerArity() == 1) &&
@@ -442,7 +592,7 @@ inline bool MetaType::isClassPtr() const
             ((flags & Pointer) == Pointer);
 }
 
-inline bool MetaType::isArray() const
+inline bool MetaType::isArray() const noexcept
 {
     auto flags = typeFlags();
     return ((flags & Array) == Array) &&
@@ -570,7 +720,7 @@ private:
 
 
 template<typename From, typename To>
-inline bool MetaType::hasConverter()
+inline bool MetaType::hasConverter() noexcept
 {
     return hasConverter(metaTypeId<From>(), metaTypeId<To>());
 }

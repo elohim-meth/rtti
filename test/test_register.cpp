@@ -13,19 +13,47 @@ void define_test_namespace(rtti::meta_define<void> define)
             ._element("Green", test::Color::Green)
             ._element("Blue", test::Color::Blue)
 
-        ._class<test::Absolute>("Absolute")
-            ._attribute("Description", "Absolutly empty class: Absolute{}")
+        ._class<test::Test1>("Test1")
+            ._attribute("Description", "Absolutly empty class")
         ._end()
 
-        ._class<test::Empty>("Empty")
-            ._attribute("Description", "Class without any fields")
-            ._attribute("Polymorphic", false)
+        ._class<test::Test2>("Test2")
+            ._attribute("Description", "Has only default virtual destructor")
         ._end()
 
-        ._class<test::Small>("Small")
-            ._attribute("Polymorphic", true)
-            ._constructor<std::int8_t>()
+        ._class<test::Test3>("Test3")
+            ._attribute("Description", "Has only user defined virtual destructor")
         ._end()
+
+//This class is impossible to register cause variant requires CopyConstructible or MoveConstructible
+//      ._class<test::Test4>("Test4")
+//          ._attribute("Description", "Unmovable default constructible class")
+//      ._end()
+
+        ._class<test::Test5>("Test5")
+            ._attribute("Description", "Default defined copy and explicitly deleted move")
+        ._end()
+
+        ._class<test::Test6>("Test6")
+            ._attribute("Description", "User defined copy and not defined move")
+        ._end()
+
+        ._class<test::Test7>("Test7")
+            ._attribute("Description", "Default defined copy and not defined move")
+        ._end()
+
+        ._class<test::Test8>("Test8")
+            ._attribute("Description", "User defined move and not defined copy")
+        ._end()
+
+        ._class<test::Test9>("Test9")
+            ._attribute("Description", "Default defined move and not defined copy")
+        ._end()
+
+//This class is impossible to register cause variant requires CopyConstructible or MoveConstructible
+//      ._class<test::Test10>("Test10")
+//          ._attribute("Description", "Not defined copy and explicitly deleted move")
+//      ._end()
     ;
 }
 
@@ -85,7 +113,7 @@ bool register_fromString_converter()
 }
 
 std::string global_string = "";
-const std::string global_readonly_string = "Hello, World";
+std::string const global_readonly_string = "Hello, World";
 
 std::string intToStr(int value, bool &ok)
 {

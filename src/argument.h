@@ -24,7 +24,10 @@ public:
     ~argument() noexcept
     {
         if (m_buffer)
-            ::operator delete(m_buffer);
+        {
+            m_type.destroy(m_buffer);
+            m_type.deallocate(m_buffer);
+        }
     }
 
     template<typename T,
@@ -72,10 +75,32 @@ private:
             else if (isVariant())
             {
                 auto *v = static_cast<variant*>(ptr);
-                return std::move(*v).value<Decay>();
+                if (v->is<Decay>())
+                    return std::move(*v).value<Decay>();
             }
         }
 
+        if (MetaType::hasConverter(fromType, toType))
+        {
+            assert(!m_buffer);
+            m_buffer = toType.allocate();
+            FINALLY_NAME(freeOnExcept) {
+                toType.deallocate(m_buffer);
+            };
+
+            void *ptr = m_type.isArray() ? &m_data : m_data;
+            if (isVariant())
+                ptr = static_cast<variant*>(ptr)->raw_data_ptr();
+            if (MetaType::convert(ptr, fromType, m_buffer, toType))
+            {
+                m_type = toType;
+                freeOnExcept.dismiss();
+                return std::move(*static_cast<Decay*>(m_buffer));
+            }
+
+            throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                      m_type.typeName() + " -> " + toType.typeName()};
+        }
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                fromType.typeName() + " -> " + toType.typeName()};
     }
@@ -91,26 +116,34 @@ private:
 
         if (MetaType::compatible(fromType, toType))
         {
-            auto *ptr = m_type.isArray() ? &m_data : m_data;
+            void *ptr = m_type.isArray() ? &m_data : m_data;
             if (m_type.decayId() == toType.decayId())
                 return *static_cast<Decay*>(ptr);
             else if (isVariant())
             {
                 auto *v = static_cast<variant const*>(ptr);
-                return v->value<T>();
+                if (v->is<T>())
+                    return v->value<T>();
             }
         }
 
-        if (MetaType::hasConverter(m_type, toType))
+        if (MetaType::hasConverter(fromType, toType))
         {
             assert(!m_buffer);
-            m_buffer = internal::metatype_function_table_impl<Decay>::allocate();
+            m_buffer = toType.allocate();
+            FINALLY_NAME(freeOnExcept) {
+                toType.deallocate(m_buffer);
+            };
 
-            auto *ptr = m_type.isArray() ? &m_data : m_data;
+            void *ptr = m_type.isArray() ? &m_data : m_data;
             if (isVariant())
                 ptr = static_cast<variant*>(ptr)->raw_data_ptr();
             if (MetaType::convert(ptr, fromType, m_buffer, toType))
+            {
+                m_type = toType;
+                freeOnExcept.dismiss();
                 return *static_cast<Decay*>(m_buffer);
+            }
 
             throw bad_variant_convert{std::string{"Conversion failed: "} +
                                       m_type.typeName() + " -> " + toType.typeName()};
@@ -151,7 +184,7 @@ private:
         using Decay = decay_t<T>;
 
         auto toType = MetaType{metaTypeId<T>()};
-        auto *ptr = m_type.isArray() ? &m_data : m_data;
+        void *ptr = m_type.isArray() ? &m_data : m_data;
 
         if (MetaType::compatible(m_type, toType) && (m_type.decayId() == toType.decayId()))
             return internal::move_or_copy<Decay>(ptr, !m_type.isLvalueReference());
@@ -178,7 +211,7 @@ private:
 
     mutable void *m_data = nullptr;
     mutable void *m_buffer = nullptr;
-    MetaType const m_type = {};
+    mutable MetaType m_type = {};
 };
 
 }

@@ -12,63 +12,70 @@ enum class Color {
     Blue
 };
 
-class Absolute {};
 
-class Empty
+class Test1 {};
+class Test2
 {
 public:
-    Empty()
-    { PRINT_PRETTY_FUNC; }
-    Empty(const Empty&)
-    { PRINT_PRETTY_FUNC; }
-    Empty& operator=(const Empty&)
-    {
-        PRINT_PRETTY_FUNC;
-        return *this;
-    }
-    Empty(Empty&&) noexcept
-    { PRINT_PRETTY_FUNC; }
-    Empty& operator=(Empty&&) noexcept
-    {
-        PRINT_PRETTY_FUNC;
-        return *this;
-    }
-    ~Empty()
-    { PRINT_PRETTY_FUNC; }
+    virtual ~Test2() noexcept = default;
 };
-
-class Small{
+class Test3
+{
 public:
-    explicit Small() : i{-1}
-    { PRINT_PRETTY_FUNC; }
-    explicit Small(std::int8_t v) : i{v}
-    { PRINT_PRETTY_FUNC; }
-    Small(const Small &v) : i{v.i}
-    { PRINT_PRETTY_FUNC; }
-    Small& operator=(const Small&v)
-    {
-        PRINT_PRETTY_FUNC;
-        i = v.i;
-        return *this;
-    }
-    Small(Small&&v) noexcept : i{v.i}
-    {
-        PRINT_PRETTY_FUNC;
-        v.i = -1;
-    }
-    Small& operator=(Small &&v) noexcept
-    {
-        PRINT_PRETTY_FUNC;
-        i = v.i;
-        v.i = -1;
-        return *this;
-    }
-    virtual ~Small()
-    {
-        PRINT_PRETTY_FUNC;
-    }
-
-    std::int8_t i;
+    virtual ~Test3() noexcept {}
+};
+class Test4
+{
+public:
+    Test4() = default;
+    Test4(Test4 const&) = delete;
+    Test4& operator= (Test4 const&) = delete;
+    Test4(Test4 &&) = delete;
+    Test4& operator= (Test4 &&) = delete;
+};
+class Test5
+{
+public:
+    Test5() = default;
+    Test5(Test5 const&) = default;
+    Test5& operator= (Test5 const&) = default;
+    Test5(Test5 &&) = delete;
+    Test5& operator= (Test5 &&) = delete;
+};
+class Test6
+{
+public:
+    Test6() = default;
+    Test6(Test6 const&) {}
+    Test6& operator= (Test6 const&) { return *this; }
+};
+class Test7
+{
+public:
+    Test7() = default;
+    Test7(Test7 const&) = default;
+    Test7& operator= (Test7 const&) = default;
+};
+class Test8
+{
+public:
+    Test8() = default;
+    Test8(Test8 &&) {}
+    Test8& operator= (Test8 &&) { return *this; }
+};
+class Test9
+{
+public:
+    Test9() = default;
+    Test9(Test9 &&) = default;
+    Test9& operator= (Test9 &&) = default;
+};
+class Test10
+{
+public:
+    Test10() = default;
+    Test10(Test10 &&) = delete;
+    Test10& operator= (Test10 &&) = delete;
 };
 
 } // namespace test

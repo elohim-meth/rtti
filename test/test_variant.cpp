@@ -19,7 +19,12 @@ public:
     explicit PrivatePimpl(const char *value)
         : m_value{value}
     { PRINT_PRETTY_FUNC; }
-
+    explicit PrivatePimpl(std::string const &value)
+        : m_value{value}
+    { PRINT_PRETTY_FUNC; }
+    explicit PrivatePimpl(std::string &&value)
+        : m_value{std::move(value)}
+    { PRINT_PRETTY_FUNC; }
 private:
     std::string m_value;
     TestQPointer *m_qImpl = nullptr;
@@ -34,8 +39,22 @@ public:
     { PRINT_PRETTY_FUNC; }
 
     //explicit TestQPointer(const char *value)
-    TestQPointer(const char *value)
+    TestQPointer(char const *value)
         : m_pImpl{new PrivatePimpl{value}}
+    {
+        PRINT_PRETTY_FUNC;
+        m_pImpl->m_qImpl = this;
+    }
+
+    TestQPointer(std::string const &value)
+        : m_pImpl{new PrivatePimpl{value}}
+    {
+        PRINT_PRETTY_FUNC;
+        m_pImpl->m_qImpl = this;
+    }
+
+    TestQPointer(std::string &&value)
+        : m_pImpl{new PrivatePimpl{std::move(value)}}
     {
         PRINT_PRETTY_FUNC;
         m_pImpl->m_qImpl = this;
@@ -284,6 +303,8 @@ void register_classes()
             ._end()
             ._class<PrivatePimpl>("PrivatePimpl")
                 ._constructor<char const*>()
+                ._constructor<std::string const&>()
+                ._constructor<std::string &&>()
                 ._property("m_pImpl", &PrivatePimpl::m_qImpl)
                 ._property("m_value", &PrivatePimpl::m_value)
             ._end()
@@ -301,16 +322,22 @@ void register_classes()
 
 } // namespace
 
-namespace std {
-template<>
-inline void swap(TestQPointer &lhs, TestQPointer &rhs) noexcept
-{
-    lhs.swap(rhs);
-}
-} //std
+void test1(TestQPointer const &) {};
+void test1(TestQPointer &&) {};
+void test1(TestQPointer &) {};
+void test2(TestQPointer &) {};
 
 void test_variant_1()
 {
+    test1("123");
+    auto q1 = TestQPointer{"Hello, World"};
+    test1(q1);
+    auto const q2 = TestQPointer{"Hello, World"};
+    test1(q2);
+    auto s = std::string("1232323");
+    test1(s);
+    rtti::variant qwer = &test2;
+
     {
         auto q1 = TestQPointer{"Hello, World"};
         auto q2 = TestQPointer{"qwerty"};

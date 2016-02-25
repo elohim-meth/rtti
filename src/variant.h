@@ -50,39 +50,6 @@ struct unwrap_reference<T, true>: mpl::identity<typename T::type>
 template<typename T>
 using unwrap_reference_t = typename unwrap_reference<T>::type;
 
-template <typename T>
-inline T move_or_copy(void *source, bool movable, std::true_type, std::false_type)
-{
-    if (movable)
-        return std::move(*static_cast<T*>(source));
-    else
-        throw runtime_error("Unable to copy move only type");
-}
-
-template <typename T>
-inline T move_or_copy(void *source, bool, std::false_type, std::true_type)
-{
-    return *static_cast<T*>(source);
-}
-
-template <typename T>
-inline T move_or_copy(void *source, bool movable, std::true_type, std::true_type)
-{
-    if (movable)
-        return std::move(*static_cast<T*>(source));
-    else
-        return *static_cast<T*>(source);
-}
-
-template <typename T>
-inline T move_or_copy(void *source, bool movable)
-{
-    static_assert(std::is_copy_constructible<T>::value || std::is_move_constructible<T>::value,
-                  "Type should be CopyConstructible or MoveConstructible");
-
-    return move_or_copy<T>(source, movable, is_move_constructible_t<T>{}, is_copy_constructible_t<T>{});
-}
-
 union DLL_PUBLIC variant_type_storage
 {
     void *ptr;
@@ -134,7 +101,7 @@ struct variant_function_table_impl;
 template<typename T>
 struct variant_function_table_impl<T, true, false>
 {
-    using Decay = full_decay_t<T>;
+    using Decay = remove_all_cv_t<T>;
 
     static MetaType_ID type(type_attribute attr)
     {
@@ -157,66 +124,36 @@ struct variant_function_table_impl<T, true, false>
     static void copy_construct(void const *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto ptr = static_cast<Decay const*>(value);
-        copy_selector(ptr, storage, CanCopy{});
+        type_manager_t<Decay>::copy_construct(value, &storage.buffer);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_move_constructible<Decay>::value)
     {
-        auto ptr = static_cast<Decay*>(value);
-        move_selector(ptr, storage, CanMove{});
+        type_manager_t<Decay>::move_or_copy(value, true, &storage.buffer);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto ptr = reinterpret_cast<Decay const*>(&src.buffer);
-        copy_selector(ptr, dst, CanCopy{});
+        type_manager_t<Decay>::copy_construct(&src.buffer, &dst.buffer);
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_move_constructible<Decay>::value)
     {
-        auto ptr = reinterpret_cast<Decay*>(&src.buffer);
-        move_selector(ptr, dst, CanMove{});
+        type_manager_t<Decay>::move_or_copy(&src.buffer, true, &dst.buffer);
     }
 
-    static void destroy(variant_type_storage &value)
-        noexcept(std::is_nothrow_destructible<Decay>::value)
+    static void destroy(variant_type_storage &value) noexcept
     {
-        auto ptr = reinterpret_cast<Decay const*>(&value.buffer);
-        ptr->~Decay();
+        type_manager_t<Decay>::destroy(&value.buffer);
     }
 private:
     using U = remove_cv_t<T>;
     using ULref = add_lvalue_reference_t<U>;
     using URref = add_rvalue_reference_t<U>;
     using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
-
-    using CanCopy = typename std::is_copy_constructible<Decay>::type;
-    using CanMove = typename std::is_move_constructible<Decay>::type;
-
-    static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
-    {
-        throw runtime_error("Trying to copy move only type");
-    }
-
-    static void copy_selector(Decay const *src, variant_type_storage &storage, std::true_type)
-    {
-        new (&storage.buffer) Decay(*src);
-    }
-
-    static void move_selector(Decay *src, variant_type_storage &storage, std::false_type)
-    {
-        //degenerate to copy
-        copy_selector(src, storage, std::true_type{});
-    }
-
-    static void move_selector(Decay *src, variant_type_storage &storage, std::true_type)
-    {
-        new (&storage.buffer) Decay(std::move(*src));
-    }
 };
 
 template<typename T>
@@ -237,7 +174,7 @@ struct variant_function_table_impl<T, true, true>
 
     static void const* access(variant_type_storage const &value) noexcept
     {
-        return access_selector(value, IsArray{});
+        return access(value, IsArray{});
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage) noexcept
@@ -263,9 +200,7 @@ struct variant_function_table_impl<T, true, true>
     }
 
     static void destroy(variant_type_storage&) noexcept
-    {
-        // do nothing
-    }
+    { /* do nothing */ }
 private:
     using Wrapper = remove_all_cv_t<T>;
     using U = unwrap_reference_t<Wrapper>;
@@ -276,12 +211,12 @@ private:
     using IsArray = is_array_t<U>;
     using Decay = conditional_t<IsArray::value, remove_all_cv_t<U>, full_decay_t<U>>;
 
-    static void const* access_selector(variant_type_storage const &value, std::false_type) noexcept
+    static void const* access(variant_type_storage const &value, std::false_type) noexcept
     {
         return value.ptr;
     }
 
-    static void const* access_selector(variant_type_storage const &value, std::true_type) noexcept
+    static void const* access(variant_type_storage const &value, std::true_type) noexcept
     {
         return &value.ptr;
     }
@@ -290,7 +225,7 @@ private:
 template<typename T>
 struct variant_function_table_impl<T, false, false>
 {
-    using Decay = full_decay_t<T>;
+    using Decay = remove_all_cv_t<T>;
 
     static MetaType_ID type(type_attribute attr)
     {
@@ -313,22 +248,22 @@ struct variant_function_table_impl<T, false, false>
     static void copy_construct(void const *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto ptr = static_cast<Decay const*>(value);
-        copy_selector(ptr, storage, CanCopy{});
+        storage.ptr = type_manager_t<Decay>::allocate();
+        type_manager_t<Decay>::copy_construct(value, storage.ptr);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_move_constructible<Decay>::value)
     {
-        auto ptr = static_cast<Decay*>(value);
-        move_selector(ptr, storage, CanMove{});
+        storage.ptr = type_manager_t<Decay>::allocate();
+        type_manager_t<Decay>::move_or_copy(value, true, storage.ptr);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Decay>::value)
     {
-        auto ptr = static_cast<Decay const*>(src.ptr);
-        copy_selector(ptr, dst, CanCopy{});
+        dst.ptr = type_manager_t<Decay>::allocate();
+        type_manager_t<Decay>::copy_construct(src.ptr, dst.ptr);
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst) noexcept
@@ -336,11 +271,10 @@ struct variant_function_table_impl<T, false, false>
         std::swap(src.ptr, dst.ptr);
     }
 
-    static void destroy(variant_type_storage &value)
-        noexcept(std::is_nothrow_destructible<Decay>::value)
+    static void destroy(variant_type_storage &value) noexcept
     {
-        auto ptr = static_cast<Decay const*>(value.ptr);
-        delete ptr;
+        type_manager_t<Decay>::destroy(value.ptr);
+        type_manager_t<Decay>::deallocate(value.ptr);
     }
 
 private:
@@ -348,30 +282,6 @@ private:
     using ULref = add_lvalue_reference_t<U>;
     using URref = add_rvalue_reference_t<U>;
     using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
-
-    using CanCopy = typename std::is_copy_constructible<Decay>::type;
-    using CanMove = typename std::is_move_constructible<Decay>::type;
-
-    static void copy_selector(Decay const*, variant_type_storage&, std::false_type)
-    {
-        throw runtime_error("Trying to copy move-only type");
-    }
-
-    static void copy_selector(Decay const *src, variant_type_storage &storage, std::true_type)
-    {
-        storage.ptr = new Decay(*src);
-    }
-
-    static void move_selector(Decay *src, variant_type_storage &storage, std::false_type)
-    {
-        //degenerate to copy
-        copy_selector(src, storage, std::true_type{});
-    }
-
-    static void move_selector(Decay *src, variant_type_storage &storage, std::true_type)
-    {
-        storage.ptr = new Decay(std::move(*src));
-    }
 };
 
 template<typename T, std::size_t N>
@@ -379,7 +289,6 @@ struct variant_function_table_impl<T[N], false, false>
 {
     using Decay = remove_all_cv_t<T[N]>;
     using Base = remove_all_extents_t<Decay>;
-    using Allocator = std::allocator<Base>;
 
     static MetaType_ID type(type_attribute attr)
     {
@@ -402,22 +311,22 @@ struct variant_function_table_impl<T[N], false, false>
     static void copy_construct(void const *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_copy_constructible<Base>::value)
     {
-        auto from = static_cast<Base const*>(value);
-        copy_selector(from, storage, CanCopy{});
+        storage.ptr = type_manager_t<Decay>::allocate();
+        type_manager_t<Decay>::copy_construct(value, storage.ptr);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_move_constructible<Base>::value)
     {
-        auto from = static_cast<Base*>(value);
-        move_selector(from, storage, CanMove{});
+        storage.ptr = type_manager_t<Decay>::allocate();
+        type_manager_t<Decay>::move_or_copy(value, true, storage.ptr);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_copy_constructible<Base>::value)
     {
-        auto from = static_cast<Base const*>(src.ptr);
-        copy_selector(from, dst, CanCopy{});
+        dst.ptr = type_manager_t<Decay>::allocate();
+        type_manager_t<Decay>::copy_construct(src.ptr, dst.ptr);
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst) noexcept
@@ -425,15 +334,10 @@ struct variant_function_table_impl<T[N], false, false>
         std::swap(src.ptr, dst.ptr);
     }
 
-    static void destroy(variant_type_storage &value)
-        noexcept(std::is_nothrow_destructible<Base>::value)
+    static void destroy(variant_type_storage &value) noexcept
     {
-        constexpr auto length = array_length<T[N]>::value;
-
-        auto alloc = Allocator{};
-        auto ptr = static_cast<Base*>(value.ptr);
-        std::_Destroy(ptr, ptr + length);
-        alloc.deallocate(ptr, length);
+        type_manager_t<Decay>::destroy(value.ptr);
+        type_manager_t<Decay>::deallocate(value.ptr);
     }
 
 private:
@@ -441,40 +345,6 @@ private:
     using ULref = add_lvalue_reference_t<U>;
     using URref = add_rvalue_reference_t<U>;
     using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
-
-    using CanCopy = typename std::is_copy_constructible<Base>::type;
-    using CanMove = typename std::is_copy_constructible<Base>::type;
-
-    static void copy_selector(Base const*, variant_type_storage&, std::false_type)
-    {
-        throw runtime_error("Trying to copy move-only type");
-    }
-
-    static void copy_selector(Base const *src, variant_type_storage &storage, std::true_type)
-    {
-        constexpr auto length = array_length<T[N]>::value;
-
-        auto alloc = Allocator{};
-        auto to = alloc.allocate(length);
-        std::copy(src, src + length, to);
-        storage.ptr = to;
-    }
-
-    static void move_selector(Base *src, variant_type_storage &storage, std::false_type)
-    {
-        //degenerate to copy
-        copy_selector(src, storage, std::true_type{});
-    }
-
-    static void move_selector(Base *src, variant_type_storage &storage, std::true_type)
-    {
-        constexpr auto length = array_length<T[N]>::value;
-
-        auto alloc = Allocator{};
-        auto to = alloc.allocate(length);
-        std::move(src, src + length, to);
-        storage.ptr = to;
-    }
 };
 
 
@@ -694,7 +564,7 @@ public:
         alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
-        FINALLY { internal::metatype_function_table_impl<T>::destroy(&buffer); };
+        FINALLY { type_manager_t<T>::destroy(&buffer); };
         return internal::move_or_copy<T>(&buffer, true);
     }
 
@@ -707,7 +577,7 @@ public:
         alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
-        FINALLY { internal::metatype_function_table_impl<T>::destroy(&buffer); };
+        FINALLY { type_manager_t<T>::destroy(&buffer); };
         return internal::move_or_copy<T>(&buffer, true);
     }
 
@@ -940,7 +810,7 @@ private:
                 auto ptr = invoke_imp(self);
                 if (ptr)
                 {
-                    internal::metatype_function_table_impl<C>::copy_construct(ptr, buffer);
+                    type_manager_t<C>::copy_construct(ptr, buffer);
                     return true;
                 }
                 return false;
@@ -956,7 +826,7 @@ private:
                 auto ptr = invoke_imp(self);
                 if (ptr)
                 {
-                    internal::metatype_function_table_impl<C*>::copy_construct(&ptr, buffer);
+                    type_manager_t<C*>::copy_construct(&ptr, buffer);
                     return true;
                 }
                 return false;

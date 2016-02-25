@@ -19,7 +19,7 @@ TypeInfo{CString{#NAME}, sizeof(NAME), \
          pointer_arity<NAME>::value, \
          const_bitset<NAME>::value, \
          internal::type_flags<NAME>::value, \
-         internal::metatype_function_table_for<NAME>() \
+         internal::type_function_table_for<NAME>() \
         },
 
 static std::array<TypeInfo, 38> const fundamentalTypes = {{
@@ -150,14 +150,14 @@ inline CustomTypes* customTypes()
 // MetaType
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaType::MetaType(MetaType_ID typeId)
+MetaType::MetaType(MetaType_ID typeId) noexcept
 {
     auto *types = customTypes();
     if (types)
         m_typeInfo = types->getTypeInfo(typeId);
 }
 
-rtti::MetaType::MetaType(char const *name)
+rtti::MetaType::MetaType(char const *name) noexcept
 {
     auto *types = customTypes();
     if (types)
@@ -165,14 +165,14 @@ rtti::MetaType::MetaType(char const *name)
 
 }
 
-MetaType_ID MetaType::typeId() const
+MetaType_ID MetaType::typeId() const noexcept
 {
     if (m_typeInfo)
         return m_typeInfo->type;
     return MetaType_ID{};
 }
 
-MetaType_ID MetaType::decayId() const
+MetaType_ID MetaType::decayId() const noexcept
 {
     if (m_typeInfo)
         return m_typeInfo->decay;
@@ -184,21 +184,21 @@ void MetaType::setTypeId(MetaType_ID typeId)
     *this = MetaType{typeId};
 }
 
-char const* MetaType::typeName() const
+char const* MetaType::typeName() const noexcept
 {
     if (m_typeInfo)
         return m_typeInfo->name.data();
     return nullptr;
 }
 
-std::size_t MetaType::typeSize() const
+std::size_t MetaType::typeSize() const noexcept
 {
     if (m_typeInfo)
         return m_typeInfo->size;
     return 0;
 }
 
-MetaType::TypeFlags MetaType::typeFlags() const
+MetaType::TypeFlags MetaType::typeFlags() const noexcept
 {
     MetaType::TypeFlags result = TypeFlags::None;
     if (m_typeInfo)
@@ -206,14 +206,14 @@ MetaType::TypeFlags MetaType::typeFlags() const
     return result;
 }
 
-std::uint16_t MetaType::pointerArity() const
+std::uint16_t MetaType::pointerArity() const noexcept
 {
     if (m_typeInfo)
         return m_typeInfo->arity;
     return 0;
 }
 
-bool MetaType::compatible(MetaType fromType, MetaType toType)
+bool MetaType::compatible(MetaType fromType, MetaType toType) noexcept
 {
     if (!fromType.valid() || !toType.valid())
         return false;
@@ -319,6 +319,11 @@ void MetaType::move_construct(void *source, void *where) const
     m_typeInfo->manager->f_move_construct(source, where);
 }
 
+void MetaType::move_or_copy(void *source, bool movable, void *where) const
+{
+    m_typeInfo->manager->f_move_or_copy(source, movable, where);
+}
+
 void MetaType::destroy(void *ptr) const noexcept
 {
     m_typeInfo->manager->f_destroy(ptr);
@@ -411,7 +416,7 @@ inline MetaTypeFunctionList<internal::ConvertFunctionBase>* customConverters()
 
 } //namespace
 
-bool MetaType::hasConverter(MetaType fromType, MetaType toType)
+bool MetaType::hasConverter(MetaType fromType, MetaType toType) noexcept
 {
     if (fromType.valid() && toType.valid())
     {
@@ -423,7 +428,7 @@ bool MetaType::hasConverter(MetaType fromType, MetaType toType)
     return false;
 }
 
-bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
+bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId) noexcept
 {
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
