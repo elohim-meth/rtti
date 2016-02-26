@@ -485,7 +485,7 @@ struct MethodInvoker: IMethodInvoker
                           argument arg2 = argument{}, argument arg3 = argument{},
                           argument arg4 = argument{}, argument arg5 = argument{},
                           argument arg6 = argument{}, argument arg7 = argument{},
-                          argument arg8 = argument{}, argument arg9 = argument{}) const
+                          argument arg8 = argument{}, argument arg9 = argument{}) const override
     {
         return invoker_t::invoke(m_func, instance,
                                          arg0, arg1, arg2, arg3, arg4,
@@ -497,7 +497,7 @@ struct MethodInvoker: IMethodInvoker
                           argument arg2 = argument{}, argument arg3 = argument{},
                           argument arg4 = argument{}, argument arg5 = argument{},
                           argument arg6 = argument{}, argument arg7 = argument{},
-                          argument arg8 = argument{}, argument arg9 = argument{}) const
+                          argument arg8 = argument{}, argument arg9 = argument{}) const override
     {
         return invoker_t::invoke(m_func, instance,
                                          arg0, arg1, arg2, arg3, arg4,

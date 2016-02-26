@@ -522,7 +522,7 @@ class meta_type final
         auto const size = sizeof(T);
         std::uint16_t const arity = pointer_arity<NoRef>::value;
         std::uint16_t const const_mask = const_bitset<NoRef>::value;
-        auto *manager = type_function_table_for<remove_all_cv_t<U>>();
+        auto *manager = type_function_table_for<U>();
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags,
                                              manager);

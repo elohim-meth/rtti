@@ -329,14 +329,16 @@ void test2(TestQPointer &) {};
 
 void test_variant_1()
 {
-    test1("123");
-    auto q1 = TestQPointer{"Hello, World"};
-    test1(q1);
-    auto const q2 = TestQPointer{"Hello, World"};
-    test1(q2);
-    auto s = std::string("1232323");
-    test1(s);
-    rtti::variant qwer = &test2;
+    {
+        test1("123");
+        auto q1 = TestQPointer{"Hello, World"};
+        test1(q1);
+        auto const q2 = TestQPointer{"Hello, World"};
+        test1(q2);
+        auto s = std::string("1232323");
+        test1(s);
+        rtti::variant qwer = &test2;
+    }
 
     {
         auto q1 = TestQPointer{"Hello, World"};

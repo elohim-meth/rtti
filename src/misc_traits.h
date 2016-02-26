@@ -66,8 +66,13 @@ using remove_reference_t = typename std::remove_reference<T>::type;
 template<typename T>
 using is_default_constructible_t = typename std::is_default_constructible<T>::type;
 
+#if __GNUC__ < 5
+template<typename T>
+using is_trivially_default_constructible_t = typename std::has_trivial_default_constructor<T>::type;
+#else
 template<typename T>
 using is_trivially_default_constructible_t = typename std::is_trivially_default_constructible<T>::type;
+#endif
 
 template<typename T>
 using is_move_constructible_t = typename std::is_move_constructible<T>::type;
