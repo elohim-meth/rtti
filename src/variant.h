@@ -490,6 +490,12 @@ public:
         return MetaClass::findByTypeId(info.typeId);
     }
 
+    template<typename T>
+    bool is()
+    {
+        auto typeId = internalTypeId(type_attribute::LREF);
+        return metafunc_is<T>::invoke(*this, typeId);
+    }
 
     template<typename T>
     bool is() const
@@ -499,10 +505,13 @@ public:
     }
 
     template<typename T>
-    bool is()
+    T& value() &
     {
-        auto typeId = internalTypeId(type_attribute::LREF);
-        return metafunc_is<T>::invoke(*this, typeId);
+        using U = remove_reference_t<T>;
+        auto fromId = internalTypeId(type_attribute::LREF);
+        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
+        return *result;
     }
 
     template<typename T>
@@ -516,13 +525,13 @@ public:
     }
 
     template<typename T>
-    T& value() &
+    T&& value() &&
     {
-        using U = remove_reference_t<T>;
-        auto fromId = internalTypeId(type_attribute::LREF);
-        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        using U = remove_cv_t<remove_reference_t<T>>;
+        auto fromId = internalTypeId(type_attribute::NONE);
+        auto toId = metaTypeId<U>();
         auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
-        return *result;
+        return std::move(*result);
     }
 
     template<typename T>
@@ -546,13 +555,29 @@ public:
     }
 
     template<typename T>
-    T&& value() &&
+    T* data()
     {
-        using U = remove_cv_t<remove_reference_t<T>>;
-        auto fromId = internalTypeId(type_attribute::NONE);
-        auto toId = metaTypeId<U>();
-        auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
-        return std::move(*result);
+        using U = remove_reference_t<T>;
+        auto fromId = internalTypeId(type_attribute::LREF);
+        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        try {
+            return metafunc_cast<U>::invoke(*this, fromId, toId);
+        } catch (runtime_error const&) {
+            return nullptr;
+        }
+    }
+
+    template<typename T>
+    T const* data() const
+    {
+        using U = add_const_t<remove_reference_t<T>>;
+        auto fromId = internalTypeId(type_attribute::LREF_CONST);
+        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        try {
+            return metafunc_cast<U>::invoke(*this, fromId, toId);
+        } catch (runtime_error const&) {
+            return nullptr;
+        }
     }
 
     template<typename T>
@@ -582,8 +607,44 @@ public:
     }
 
     template<typename T>
+    bool canConvert()
+    {
+        static_assert(!std::is_reference<T>::value,
+                      "Type cannot be reference");
+        return is<T>() ||
+               MetaType::hasConverter(
+                    internalTypeId(type_attribute::LREF),
+                    metaTypeId<T>());
+    }
+
+    template<typename T>
+    bool canConvert() const
+    {
+        static_assert(!std::is_reference<T>::value,
+                      "Type cannot be reference");
+        return is<T>() ||
+               MetaType::hasConverter(
+                    internalTypeId(type_attribute::LREF_CONST),
+                    metaTypeId<T>());
+    }
+
+    template<typename T>
     void convert()
     { *this = to<T>(); }
+
+    template<typename T>
+    bool tryConvert()
+    {
+        try
+        {
+            *this = to<T>();
+            return true;
+        }
+        catch (runtime_error const&)
+        {
+            return false;
+        };
+    }
 
     static variant const empty_variant;
 private:

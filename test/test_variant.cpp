@@ -325,7 +325,6 @@ void register_classes()
 void test1(TestQPointer const &) {};
 void test1(TestQPointer &&) {};
 void test1(TestQPointer &) {};
-void test2(TestQPointer &) {};
 
 void test_variant_1()
 {
@@ -337,7 +336,6 @@ void test_variant_1()
         test1(q2);
         auto s = std::string("1232323");
         test1(s);
-        rtti::variant qwer = &test2;
     }
 
     {
@@ -352,7 +350,7 @@ void test_variant_1()
     std::printf("\n");
 
     {
-        std::printf("Size of rtti::variant = %llu\n", sizeof(rtti::variant));
+        //std::printf("Size of rtti::variant = %llu\n", sizeof(rtti::variant));
         rtti::variant v1 = TestQPointer{"asdfgh"};
         rtti::variant v2 = TestQPointer{"qwerty"};
         v2 = TestQPointer{"123456"};
@@ -403,9 +401,12 @@ void test_variant_1()
         auto q = new TestQPointer{"111"};
         variant v = std::ref(q);
 
-        auto mcQptr = MetaClass::findByTypeId(metaTypeId<TestQPointer>()); assert(mcQptr);
-        auto mValue = mcQptr->getMethod<const TestQPointer&>("value"); assert(mValue);
+        auto mcQptr = v.metaClass(); assert(mcQptr);
+        auto mValue = mcQptr->getMethod<TestQPointer const&>("value"); assert(mValue);
         auto s = mValue->invoke(v);
+        assert(s.value<std::string const>() == "111");
+        assert(s.cvalue<std::string>() == "111");
+        assert(*s.data<std::string const>() == "111");
         try {
             s.value<std::string>() = "222"; // shoud throw
             assert(false);
@@ -569,7 +570,7 @@ void test_variant_1()
         using namespace rtti;
         auto qpMC = MetaNamespace::global()->getNamespace("anonimous")->getClass("TestQPointer"); assert(qpMC);
         auto empM = qpMC->getMethod("empty"); assert(empM);
-        auto valCM = qpMC->getMethod<const TestQPointer&>("value"); assert(valCM);
+        auto valCM = qpMC->getMethod<TestQPointer const&>("value"); assert(valCM);
         auto chkM = qpMC->getMethod("check"); assert(chkM);
 
         auto defC = qpMC->defaultConstructor(); assert(defC);
@@ -748,21 +749,40 @@ void test_variant_1()
         using namespace rtti;
         int i[7] = {1, 2, 3, 4, 5, 6, 7};
         variant v = i;
+
+        int *t1 = i; (void) t1;
         assert(v.to<int*>()[0] == 1);
-        assert(v.to<const int*>()[1] == 2);
+
+        int const *t2 = i; (void) t2;
+        assert(v.to<int const*>()[1] == 2);
+
+        // int *&t3 = i;
         try {
             v.value<int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
 
+
+        //int const *&t4 = i;
         try {
-            v.value<const int*>(); assert(false);
+            v.value<int const*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        int * const &t5 = i; (void) t5;
         assert(v.cvalue<int*>()[2] == 3);
+
+        int const * const &t6 = i; (void) t6;
         assert(v.cvalue<const int*>()[3] == 4);
 
+        int (&t7) [7] = i; (void) t7;
         assert(v.value<int[7]>()[4] == 5);
+
+        int const (&t8) [7] = i; (void) t8;
         assert(v.value<const int[7]>()[5] == 6);
-        assert(v.value<int[3]>()[1] == 2);
+
+        //int (&t9) [3] = i; (void) t9;
+        assert(v.value<int[3]>()[1] == 2); // not strictly correct but safe
+
+        //int (&t10) [10] = i; (void) t10;
         try {
             v.value<int[10]>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
@@ -771,23 +791,43 @@ void test_variant_1()
     {
         using namespace rtti;
         int i[7] = {1, 2, 3, 4, 5, 6, 7};
+        int const j[7] = {1, 2, 3, 4, 5, 6, 7};
         variant const v = i;
+
+        //int *t1 = j; (void) t1;
         try {
             v.to<int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        int const *t2 = j; (void) t2;
         assert(v.to<int const*>()[1] == 2);
+
+        //int * const &t3 = j;
         try {
             v.value<int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        int const * const &t4 = j; (void) t4;
         assert(v.value<int const*>()[1] == 2);
+
+        //int * const &t5 = j; (void) t5;
         try {
             v.cvalue<int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        int const * const &t6 = j; (void) t6;
         assert(v.cvalue<int const*>()[3] == 4);
 
+        int const (&t7) [7] = j; (void) t7;
         assert(v.value<int[7]>()[4] == 5);
+
+        int const (&t8) [7] = j; (void) t8;
         assert(v.value<const int[7]>()[5] == 6);
-        assert(v.value<int[3]>()[1] == 2);
+
+        //int const (&t9) [3] = j; (void) t9;
+        assert(v.value<int[3]>()[1] == 2); // not strictly correct but safe
+
+        //int const (&t10) [10] = j; (void) t10;
         try {
             v.value<int[10]>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
@@ -821,32 +861,56 @@ void test_variant_1()
         using namespace rtti;
         int i[7] = {1, 2, 3, 4, 5, 6, 7};
         variant v = std::cref(i);
+        int const (&j) [7] = i;
+
+        //int *t1 = j; (void) t1;
         try {
             v.to<int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
-        assert(v.to<const int*>()[1] == 2);
+
+        int const *t2 = j; (void) t2;
+        assert(v.to<int const*>()[1] == 2);
+
+        //int *&t3 = j;
         try {
             v.value<int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        //int const *&t4 = j; (void) t4;
         try {
             v.value<const int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        //int * const &t5 = j; (void) t5;
         try {
             v.cvalue<int*>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        int const * const &t6 = j; (void) t6;
         assert(v.cvalue<const int*>()[3] == 4);
 
+        //int (&t7) [7] = j; (void) t7;
         try {
             v.value<int[7]>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        int const (&t8) [7] = j; (void) t8;
         assert(v.value<const int[7]>()[5] == 6);
+
+        //int (&t9) [3] = j; (void) t9;
         try {
             v.value<int[3]>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
-        assert(v.value<int const[3]>()[1] == 2);
+
+        //int const (&t10) [3] = j; (void) t10;
+        assert(v.value<int const[3]>()[1] == 2); // not strictly correct but safe
+
+        //int (&t11) [10] = j; (void) t11;
         try {
             v.value<int[10]>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
+
+        //int const (&t12) [10] = j; (void) t12;
         try {
             v.value<int const[10]>(); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); }
@@ -856,43 +920,52 @@ void test_variant_1()
         using namespace rtti;
         int i[2][3] = {{1, 2, 3}, {4, 5, 6}};
         variant v = i;
+
         {
+            int (*t1)[3] = i; (void) t1;
             auto t = v.to<int(*)[3]>();
             assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
         }
         {
+            int const (*t1)[3] = i; (void) t1;
             auto t = v.to<int const(*)[3]>();
             assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
         }
         {
+            //int (*&t1)[3] = i; (void) t1;
             try {
                 v.value<int(*)[3]>(); assert(false);
             } catch (const rtti::bad_cast &e) { LOG_RED(e.what()); }
 
         }
         {
+            int (* const &t1)[3] = i; (void) t1;
             auto &t = v.cvalue<int(*)[3]>();
             assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
         }
         {
+            //int const (*&t1)[3] = i; (void) t1;
             try {
                 v.value<int const(*)[3]>(); assert(false);
             } catch (const rtti::bad_cast &e) { LOG_RED(e.what()); }
         }
         {
+            int const (* const &t1)[3] = i; (void) t1;
             auto &t = v.cvalue<int const(*)[3]>();
             assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
         }
         {
+            int (&t1)[2][3] = i; (void) t1;
             auto &t = v.value<int[2][3]>();
             assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);
         }
         {
+            int const (&t1)[2][3] = i; (void) t1;
             auto &t = v.value<int const[2][3]>();
             assert(t[0][0] == 1 && t[0][1] == 2 && t[0][2] == 3 &&
                    t[1][0] == 4 && t[1][1] == 5 && t[1][2] == 6);

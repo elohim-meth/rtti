@@ -17,7 +17,7 @@ struct meta_type_tag {};
 using MetaType_ID = mpl::ID<meta_type_tag, std::uint32_t,
                        std::numeric_limits<std::uint32_t>::max()>;
 
-// begin forward
+/* begin forward */
 namespace internal {
 struct type_function_table;
 template<typename T> struct type_function_table_impl;
@@ -33,7 +33,7 @@ struct TypeInfo;
 class MetaClass;
 class variant;
 class argument;
-// end forward
+/* end forward */
 
 class DLL_PUBLIC MetaType final {
 public:
