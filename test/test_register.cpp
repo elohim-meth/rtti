@@ -54,6 +54,13 @@ void define_test_namespace(rtti::meta_define<void> define)
 //      ._class<test::Test10>("Test10")
 //          ._attribute("Description", "Not defined copy and explicitly deleted move")
 //      ._end()
+        ._class<test::CopyAndMove>("CopyAndMove")
+        ._end()
+        ._class<test::CopyOnly>("CopyOnly")
+        ._end()
+        ._class<test::MoveOnly>("MoveOnly")
+        ._end()
+
     ;
 }
 

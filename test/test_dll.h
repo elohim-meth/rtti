@@ -1,4 +1,4 @@
-﻿#include "test_register.h"
+﻿ #include "test_register.h"
 #include "test_variant.h"
 #include "test_cast.h"
 
@@ -77,5 +77,42 @@ public:
     Test10(Test10 &&) = delete;
     Test10& operator= (Test10 &&) = delete;
 };
+
+class CopyAndMove
+{
+public:
+    CopyAndMove() = default;
+    CopyAndMove(CopyAndMove const&) = default;
+    CopyAndMove& operator= (CopyAndMove const&) = default;
+    CopyAndMove(CopyAndMove &&) = default;
+    CopyAndMove& operator= (CopyAndMove &&) = default;
+
+private:
+    std::vector<std::size_t> m_v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+};
+
+class CopyOnly
+{
+public:
+    CopyOnly() = default;
+    CopyOnly(CopyOnly const&) = default;
+    CopyOnly& operator= (CopyOnly const&) = default;
+
+private:
+    std::vector<std::size_t> m_v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+};
+
+class MoveOnly
+{
+public:
+    MoveOnly() = default;
+    MoveOnly(MoveOnly &&) = default;
+    MoveOnly& operator= (MoveOnly &&) = default;
+
+private:
+    std::vector<std::size_t> m_v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+};
+
+
 
 } // namespace test
