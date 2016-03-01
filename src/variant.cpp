@@ -68,14 +68,14 @@ void variant::swap(variant &other) noexcept
     std::swap(manager, other.manager);
 }
 
-inline void variant::clear() noexcept
+void variant::clear() noexcept
 {
     manager->f_destroy(storage);
     manager = internal::variant_function_table_for<void>();
     storage = storage_t{};
 }
 
-inline bool variant::empty() const noexcept
+bool variant::empty() const noexcept
 {
     return manager == internal::variant_function_table_for<void>();
 }

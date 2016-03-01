@@ -18,7 +18,7 @@ MetaType_ID argument::typeId() const
     return m_type.typeId();
 }
 
-inline bool argument::isVariant() const
+bool argument::isVariant() const
 {
     return (m_type.decayId() == metaTypeId<variant>());
 }

@@ -14,7 +14,6 @@ public:
         : m_value{other.m_value}
     { PRINT_PRETTY_FUNC; }
     PrivatePimpl& operator=(const PrivatePimpl&) = delete;
-    //PrivatePimpl(PrivatePimpl &&) = delete;
     PrivatePimpl& operator=(PrivatePimpl&&) = delete;
     explicit PrivatePimpl(const char *value)
         : m_value{value}
@@ -38,7 +37,6 @@ public:
     TestQPointer()
     { PRINT_PRETTY_FUNC; }
 
-    //explicit TestQPointer(const char *value)
     TestQPointer(char const *value)
         : m_pImpl{new PrivatePimpl{value}}
     {
@@ -117,14 +115,12 @@ public:
 
     const std::string& value() const
     {
-        PRINT_PRETTY_FUNC;
         assert(m_pImpl);
         return m_pImpl->m_value;
     }
 
     std::string& value()
     {
-        PRINT_PRETTY_FUNC;
         assert(m_pImpl);
         return m_pImpl->m_value;
     }
