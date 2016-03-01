@@ -15,6 +15,7 @@ set(HEADERS
 add_executable(TestDll ${SOURCES} ${HEADERS})
 target_include_directories(TestDll PRIVATE "../include")
 target_compile_definitions(TestDll PRIVATE -DBUILD_SHARED)
+target_compile_options(TestDll PRIVATE "-Wa,-mbig-obj")
 target_link_libraries (TestDll  rtti)
 set_property(TARGET TestDll PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BIN_DIRECTORY})
 

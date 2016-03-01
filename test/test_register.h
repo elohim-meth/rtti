@@ -10,12 +10,52 @@ template<typename T>
 void define_std_vector(rtti::meta_define<std::vector<T>> define)
 {
     using V = std::vector<T>;
+    using size_type = typename V::size_type;
+    using value_type = typename V::value_type;
+    using pointer = typename V::pointer;
+    using reference = typename V::reference;
+    using const_reference = typename V::const_reference;
+    using iterator = typename V::iterator;
+    using const_iterator = typename V::const_iterator;
+    using initializer_list = std::initializer_list<value_type>;
+
     define
-        .template _constructor<typename V::size_type>()
-        .template _constructor<typename V::size_type, const typename V::value_type&>()
-        .template _constructor<std::initializer_list<typename V::value_type>>()
-        .template _constructor<typename V::pointer, typename V::pointer>("range1")
-        .template _constructor<typename V::iterator, typename V::iterator>("range2")
+        .template _constructor<size_type>()
+        .template _constructor<size_type, const_reference>()
+        .template _constructor<initializer_list>()
+        .template _constructor<pointer, pointer>("range1")
+        .template _constructor<iterator, iterator>("range2")
+
+        .template _method("size", &V::size)
+        .template _method<void (V::*)(size_type)>("resize", &V::resize)
+        .template _method<void (V::*)(size_type, const_reference)>("resize", &V::resize)
+        .template _method("capacity", &V::capacity)
+        .template _method("empty", &V::empty)
+        .template _method("clear", &V::clear)
+        .template _method("reserve", &V::reserve)
+
+        .template _method<iterator (V::*)()>("begin", &V::begin)
+        .template _method<const_iterator (V::*)() const>("begin", &V::begin)
+        .template _method("cbegin", &V::cbegin)
+
+        .template _method<reference (V::*)()>("front", &V::front)
+        .template _method<const_reference(V::*)() const>("front", &V::front)
+
+        .template _method<iterator (V::*)()>("end", &V::end)
+        .template _method<const_iterator (V::*)() const>("end", &V::end)
+        .template _method("cend", &V::cend)
+
+        .template _method<reference (V::*)()>("back", &V::back)
+        .template _method<const_reference(V::*)() const>("back", &V::back)
+
+        .template _method<reference (V::*)(size_type)>("[]", &V::operator[])
+        .template _method<const_reference (V::*)(size_type) const>("[]", &V::operator[])
+        .template _method<reference (V::*)(size_type)>("at", &V::at)
+        .template _method<const_reference (V::*)(size_type) const>("at", &V::at)
+
+        .template _method<void (V::*)(value_type const&)>("push_back", &V::push_back)
+        .template _method<void (V::*)(value_type &&)>("push_back", &V::push_back)
+        .template _method("pop_back", &V::pop_back)
     ;
 }
 
@@ -59,4 +99,3 @@ void register_std_unique_ptr()
 void register_rtti();
 
 #endif // TEST_REGISTER_H
-

@@ -555,27 +555,27 @@ public:
     }
 
     template<typename T>
-    T* data()
+    T* data() noexcept
     {
         using U = remove_reference_t<T>;
         auto fromId = internalTypeId(type_attribute::LREF);
         auto toId = metaTypeId<add_lvalue_reference_t<U>>();
         try {
             return metafunc_cast<U>::invoke(*this, fromId, toId);
-        } catch (runtime_error const&) {
+        } catch (...) {
             return nullptr;
         }
     }
 
     template<typename T>
-    T const* data() const
+    T const* data() const noexcept
     {
         using U = add_const_t<remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
         auto toId = metaTypeId<add_lvalue_reference_t<U>>();
         try {
             return metafunc_cast<U>::invoke(*this, fromId, toId);
-        } catch (runtime_error const&) {
+        } catch (...) {
             return nullptr;
         }
     }
@@ -607,7 +607,7 @@ public:
     }
 
     template<typename T>
-    bool canConvert()
+    bool canConvert() noexcept
     {
         static_assert(!std::is_reference<T>::value,
                       "Type cannot be reference");
@@ -618,7 +618,7 @@ public:
     }
 
     template<typename T>
-    bool canConvert() const
+    bool canConvert() const noexcept
     {
         static_assert(!std::is_reference<T>::value,
                       "Type cannot be reference");
@@ -633,14 +633,14 @@ public:
     { *this = to<T>(); }
 
     template<typename T>
-    bool tryConvert()
+    bool tryConvert() noexcept
     {
         try
         {
             *this = to<T>();
             return true;
         }
-        catch (runtime_error const&)
+        catch (...)
         {
             return false;
         };
@@ -652,9 +652,9 @@ private:
 
     void swap(variant &other) noexcept;
 
-    void const* raw_data_ptr() const
+    void const* raw_data_ptr() const noexcept
     { return manager->f_access(storage); }
-    void * raw_data_ptr()
+    void * raw_data_ptr() noexcept
     { return const_cast<void*>(manager->f_access(storage)); }
     MetaType_ID internalTypeId(type_attribute attr = type_attribute::NONE) const
     { return manager->f_type(attr); }

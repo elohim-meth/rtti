@@ -17,12 +17,12 @@ void define_test_namespace(rtti::meta_define<void> define)
             ._attribute("Description", "Absolutly empty class")
         ._end()
 
-        ._class<test::Test2>("Test2")
-            ._attribute("Description", "Has only default virtual destructor")
+        ._class<test::Test2>("Test2") // warning! no implicitly declared move and deprecated copy!
+            ._attribute("Description", "Has only user delared virtual destructor defined as default")
         ._end()
 
         ._class<test::Test3>("Test3")
-            ._attribute("Description", "Has only user defined virtual destructor")
+            ._attribute("Description", "Has user declared copy and move defined as default")
         ._end()
 
 //This class is impossible to register cause variant requires CopyConstructible or MoveConstructible
@@ -30,29 +30,21 @@ void define_test_namespace(rtti::meta_define<void> define)
 //          ._attribute("Description", "Unmovable default constructible class")
 //      ._end()
 
-        ._class<test::Test5>("Test5")
-            ._attribute("Description", "Default defined copy and explicitly deleted move")
+        ._class<test::Test5>("Test5") // warning! move participates in overload and not degenerate to copy!
+            ._attribute("Description", "Has user declared copy defined as default and user declared move defined as delete")
         ._end()
 
         ._class<test::Test6>("Test6")
-            ._attribute("Description", "User defined copy and not defined move")
+            ._attribute("Description", "Has user declared copy defined as default and not declared move")
         ._end()
 
         ._class<test::Test7>("Test7")
-            ._attribute("Description", "Default defined copy and not defined move")
-        ._end()
-
-        ._class<test::Test8>("Test8")
-            ._attribute("Description", "User defined move and not defined copy")
-        ._end()
-
-        ._class<test::Test9>("Test9")
-            ._attribute("Description", "Default defined move and not defined copy")
+            ._attribute("Description", "Has user declared move defined as default and not declared copy")
         ._end()
 
 //This class is impossible to register cause variant requires CopyConstructible or MoveConstructible
-//      ._class<test::Test10>("Test10")
-//          ._attribute("Description", "Not defined copy and explicitly deleted move")
+//      ._class<test::Test8>("Test8")
+//          ._attribute("Description", "Has user declared move defined as delete and not declared copy")
 //      ._end()
         ._class<test::CopyAndMove>("CopyAndMove")
         ._end()
@@ -66,11 +58,53 @@ void define_test_namespace(rtti::meta_define<void> define)
 
 struct define_std_namespace
 {
-    static void define_std_string(rtti::meta_define<std::string> define)
+    template<typename T>
+    static void define_std_string(rtti::meta_define<T> define)
     {
+        using size_type = typename T::size_type;
+        using value_type = typename T::value_type;
+        using reference = typename T::reference;
+        using const_reference = typename T::const_reference;
+        using iterator = typename T::iterator;
+        using const_iterator = typename T::const_iterator;
+
         define
-            ._constructor<const char*>()
-            ._constructor<const char*, std::size_t>()
+            . template _constructor<value_type const*>()
+            . template _constructor<value_type const*, size_type>()
+
+            . template _method("size", &T::size)
+            . template _method<void (T::*)(size_type)>("resize", &T::resize)
+            . template _method("capacity", &T::capacity)
+            . template _method("empty", &T::empty)
+            . template _method("clear", &T::clear)
+            . template _method("reserve", &T::reserve)
+
+            . template _method("c_str", &T::c_str)
+
+            . template _method<iterator (T::*)()>("begin", &T::begin)
+            . template _method<const_iterator (T::*)() const>("begin", &T::begin)
+            . template _method("cbegin", &T::cbegin)
+
+            . template _method<iterator (T::*)()>("end", &T::end)
+            . template _method<const_iterator (T::*)() const>("end", &T::end)
+            . template _method("cend", &T::cend)
+
+            . template _method<reference (T::*)(size_type)>("[]", &T::operator[])
+            . template _method<const_reference (T::*)(size_type) const>("[]", &T::operator[])
+            . template _method<reference (T::*)(size_type)>("at", &T::at)
+            . template _method<const_reference (T::*)(size_type) const>("at", &T::at)
+
+            . template _method<T& (T::*)(T const&)>("+=", &T::operator+=)
+            . template _method<T& (T::*)(value_type const*)>("+=", &T::operator+=)
+            . template _method<T& (T::*)(value_type)>("+=", &T::operator+=)
+
+            . template _method<size_type (T::*)(value_type const*, size_type) const>("find", &T::find)
+            . template _method<size_type (T::*)(T const&, size_type) const>("find", &T::find)
+            . template _method<size_type (T::*)(value_type, size_type) const>("find", &T::find)
+
+            . template _method<size_type (T::*)(value_type const*, size_type) const>("rfind", &T::rfind)
+            . template _method<size_type (T::*)(T const&, size_type) const>("rfind", &T::rfind)
+            . template _method<size_type (T::*)(value_type, size_type) const>("rfind", &T::rfind)
         ;
     }
 
@@ -79,8 +113,17 @@ struct define_std_namespace
         define
             ._attribute("Description", "Standard C++ library")
             ._class<std::string>("string")
-                ._lazy(define_std_string)
+                ._lazy(define_std_string<std::string>)
             ._end()
+//            ._class<std::wstring>("wstring")
+//                ._lazy(define_std_string<std::wstring>)
+//            ._end()
+//            ._class<std::u16string>("u16string")
+//                ._lazy(define_std_string<std::u16string>)
+//            ._end()
+//            ._class<std::u32string>("u32string")
+//                ._lazy(define_std_string<std::u32string>)
+//            ._end()
         ;
     }
 };

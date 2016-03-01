@@ -12,7 +12,6 @@ enum class Color {
     Blue
 };
 
-
 class Test1 {};
 class Test2
 {
@@ -22,7 +21,11 @@ public:
 class Test3
 {
 public:
-    virtual ~Test3() noexcept {}
+    Test3() = default;
+    Test3(Test3 const&) = default;
+    Test3& operator= (Test3 const&) = default;
+    Test3(Test3 &&) = default;
+    Test3& operator= (Test3 &&) = default;
 };
 class Test4
 {
@@ -46,36 +49,22 @@ class Test6
 {
 public:
     Test6() = default;
-    Test6(Test6 const&) {}
-    Test6& operator= (Test6 const&) { return *this; }
+    Test6(Test6 const&) = default;
+    Test6& operator= (Test6 const&) = default;
 };
 class Test7
 {
 public:
     Test7() = default;
-    Test7(Test7 const&) = default;
-    Test7& operator= (Test7 const&) = default;
+    Test7(Test7 &&) = default;
+    Test7& operator= (Test7 &&) = default;
 };
 class Test8
 {
 public:
     Test8() = default;
-    Test8(Test8 &&) {}
-    Test8& operator= (Test8 &&) { return *this; }
-};
-class Test9
-{
-public:
-    Test9() = default;
-    Test9(Test9 &&) = default;
-    Test9& operator= (Test9 &&) = default;
-};
-class Test10
-{
-public:
-    Test10() = default;
-    Test10(Test10 &&) = delete;
-    Test10& operator= (Test10 &&) = delete;
+    Test8(Test8 &&) = delete;
+    Test8& operator= (Test8 &&) = delete;
 };
 
 class CopyAndMove

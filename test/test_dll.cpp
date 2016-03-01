@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
     (void) argc; (void) argv;
     try {
         register_rtti();
-        auto lambda = [](const std::string &name, const rtti::variant &value)
+        auto lambda = [](std::string const &name, const rtti::variant &value)
         {
             std::cout << name << " = " << value.to<std::string>() << std::endl;
             return true;
