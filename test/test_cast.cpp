@@ -11,6 +11,9 @@ namespace {
 struct A
 {
     int a = 1;
+    A() = default;
+    A(A const &) = default;
+    A& operator=(A const&) = default;
     virtual ~A() = default;
     DECLARE_CLASSINFO
 };
@@ -31,6 +34,9 @@ struct C: B
 struct D
 {
     int d = 4;
+    D() = default;
+    D(D const &) = default;
+    D& operator=(D const&) = default;
     virtual ~D() = default;
     DECLARE_CLASSINFO
 };
@@ -115,7 +121,7 @@ void test_cast_1()
 
     {
         using namespace rtti;
-        auto a = unique_ptr<const A>(new B());
+        auto a = unique_ptr<A const>(new B());
 
         auto b1 = meta_cast<B>(a.get());
         assert(b1 && b1->b == 2);
@@ -215,6 +221,12 @@ void test_cast_1()
 
     }
 
+    //void test_param_1(B *)
+    //void test_param_2(B *&)
+    //void test_param_3(B *const &)
+    //void test_param_4(B &)
+    //void test_param_5(B const &)
+
     {
         E e;
         test_param_1(&e);
@@ -253,6 +265,7 @@ void test_cast_1()
 
         using namespace rtti;
         auto nsGlobal = MetaNamespace::global();
+
         auto mTestParam1 = nsGlobal->getMethod("test_param_1"); assert(mTestParam1);
         auto mTestParam2 = nsGlobal->getMethod("test_param_2"); assert(mTestParam2);
         auto mTestParam3 = nsGlobal->getMethod("test_param_3"); assert(mTestParam3);

@@ -664,7 +664,7 @@ private:
         throw invoke_error{"Write to readonly property"};
     }
 
-    static void set_static(P property, const argument &arg, std::false_type)
+    static void set_static(P property, argument const &arg, std::false_type)
     {
         *property = arg.value<T>();
     }

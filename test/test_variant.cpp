@@ -301,7 +301,7 @@ void register_classes()
                 ._constructor<char const*>()
                 ._constructor<std::string const&>()
                 ._constructor<std::string &&>()
-                ._property("m_pImpl", &PrivatePimpl::m_qImpl)
+                ._property("m_qImpl", &PrivatePimpl::m_qImpl)
                 ._property("m_value", &PrivatePimpl::m_value)
             ._end()
             ._class<TestQPointer>("TestQPointer")
@@ -564,41 +564,41 @@ void test_variant_1()
 
     {
         using namespace rtti;
-        auto qpMC = MetaNamespace::global()->getNamespace("anonimous")->getClass("TestQPointer"); assert(qpMC);
-        auto empM = qpMC->getMethod("empty"); assert(empM);
-        auto valCM = qpMC->getMethod<TestQPointer const&>("value"); assert(valCM);
-        auto chkM = qpMC->getMethod("check"); assert(chkM);
+        auto mcQptr = MetaNamespace::global()->getNamespace("anonimous")->getClass("TestQPointer"); assert(mcQptr);
+        auto mEmpty = mcQptr->getMethod("empty"); assert(mEmpty);
+        auto mValue = mcQptr->getMethod<TestQPointer const&>("value"); assert(mValue);
+        auto mCheck = mcQptr->getMethod("check"); assert(mCheck);
 
-        auto defC = qpMC->defaultConstructor(); assert(defC);
+        auto constructor = mcQptr->defaultConstructor(); assert(constructor);
         try {
-            auto obj = defC->invoke(0); assert(false);
+            auto obj = constructor->invoke(0); assert(false);
         } catch (const invoke_error &e) { LOG_RED(e.what()); };
-        auto obj = defC->invoke(); assert(obj);
-        chkM->invoke(obj);
-        assert(empM->invoke(obj).to<bool>());
+        auto obj = constructor->invoke(); assert(obj);
+        mCheck->invoke(obj);
+        assert(mEmpty->invoke(obj).to<bool>());
 
-        auto cusC = qpMC->getConstructor<char const*>(); assert(cusC);
-        obj = cusC->invoke("Hello, World");
-        chkM->invoke(obj);
-        assert(!empM->invoke(obj).to<bool>());
-        assert(valCM->invoke(obj).cvalue<std::string>() == "Hello, World");
+        constructor = mcQptr->getConstructor<char const*>(); assert(constructor);
+        obj = constructor->invoke("Hello, World");
+        mCheck->invoke(obj);
+        assert(!mEmpty->invoke(obj).to<bool>());
+        assert(mValue->invoke(obj).cvalue<std::string>() == "Hello, World");
 
-        auto copyC = qpMC->copyConstructor(); assert(copyC);
-        auto copy = copyC->invoke("1234");
-        copy = copyC->invoke(obj); assert(copy);
-        chkM->invoke(obj); chkM->invoke(copy);
-        assert(!empM->invoke(copy).to<bool>());
-        assert(valCM->invoke(copy).cvalue<std::string>() == "Hello, World");
+        constructor = mcQptr->copyConstructor(); assert(constructor);
+        auto copy = constructor->invoke("1234");
+        copy = constructor->invoke(obj); assert(copy);
+        mCheck->invoke(obj); mCheck->invoke(copy);
+        assert(!mEmpty->invoke(copy).to<bool>());
+        assert(mValue->invoke(copy).cvalue<std::string>() == "Hello, World");
 
-        auto moveC = qpMC->moveConstructor(); assert(moveC);
+        constructor = mcQptr->moveConstructor(); assert(constructor);
         try {
-            auto move = moveC->invoke(copy); assert(false);
+            auto move = constructor->invoke(copy); assert(false);
         } catch (const bad_cast &e) { LOG_RED(e.what()); };
-        auto move = moveC->invoke(std::move(copy));
-        chkM->invoke(move);
-        assert(empM->invoke(copy).to<bool>());
-        assert(!empM->invoke(move).to<bool>());
-        assert(valCM->invoke(move).cvalue<std::string>() == "Hello, World");
+        auto move = constructor->invoke(std::move(copy));
+        mCheck->invoke(move);
+        assert(mEmpty->invoke(copy).to<bool>());
+        assert(!mEmpty->invoke(move).to<bool>());
+        assert(mValue->invoke(move).cvalue<std::string>() == "Hello, World");
 
     }
 

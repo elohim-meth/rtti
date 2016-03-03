@@ -16,27 +16,27 @@ int main(int argc, char* argv[])
             return true;
         };
 
-        auto gNS = rtti::MetaNamespace::global(); assert(gNS);
+        auto nsGlobal = rtti::MetaNamespace::global(); assert(nsGlobal);
         //gNS->forceDeferredDefine(rtti::MetaContainer::ForceDeferred::Recursive);
-        std::cout << "namespace " << gNS->name() << std::endl;
-        std::cout << "Attribute count: " << gNS->attributeCount() << std::endl;
-        gNS->for_each_attribute(lambda);
+        std::cout << "namespace " << nsGlobal->name() << std::endl;
+        std::cout << "Attribute count: " << nsGlobal->attributeCount() << std::endl;
+        nsGlobal->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto stdNS = gNS->getNamespace("std"); assert(stdNS);
-        std::cout << "namespace " << stdNS->qualifiedName() << std::endl;
-        std::cout << "Attribute count: " << stdNS->attributeCount() << std::endl;
-        stdNS->for_each_attribute(lambda);
+        auto nsStd = nsGlobal->getNamespace("std"); assert(nsStd);
+        std::cout << "namespace " << nsStd->qualifiedName() << std::endl;
+        std::cout << "Attribute count: " << nsStd->attributeCount() << std::endl;
+        nsStd->for_each_attribute(lambda);
         std::cout << std::endl;
 
-        auto testNS = gNS->getNamespace("test"); assert(testNS);
-        std::cout << "namespace " << testNS->qualifiedName() << std::endl;
-        std::cout << "Attribute count: " << testNS->attributeCount() << std::endl;
-        testNS->for_each_attribute(lambda);
+        auto nsTest = nsGlobal->getNamespace("test"); assert(nsTest);
+        std::cout << "namespace " << nsTest->qualifiedName() << std::endl;
+        std::cout << "Attribute count: " << nsTest->attributeCount() << std::endl;
+        nsTest->for_each_attribute(lambda);
         std::cout << std::endl;
 
         {
-            auto prop = gNS->getProperty("global_string"); assert(prop);
+            auto prop = nsGlobal->getProperty("global_string"); assert(prop);
             std::cout << prop->qualifiedName() << std::endl;
             prop->set(std::string{"Qwerty"});
             assert(prop->get().cvalue<std::string>() == "Qwerty");
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
         }
 
         {
-            auto prop = gNS->getProperty("global_readonly_string"); assert(prop);
+            auto prop = nsGlobal->getProperty("global_readonly_string"); assert(prop);
             std::cout << prop->qualifiedName() << std::endl;
             const auto v = prop->get();
             assert(v.value<std::string>() == "Hello, World");
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
         }
 
         {
-            auto itosM = gNS->getMethod("intToStr"); assert(itosM);
+            auto itosM = nsGlobal->getMethod("intToStr"); assert(itosM);
             {
                 bool ok = false;
                 auto r = itosM->invoke(123, ok);
