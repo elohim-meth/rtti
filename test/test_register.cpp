@@ -69,42 +69,42 @@ struct define_std_namespace
         using const_iterator = typename T::const_iterator;
 
         define
-            . template _constructor<value_type const*>()
-            . template _constructor<value_type const*, size_type>()
+            .template _constructor<value_type const*>()
+            .template _constructor<value_type const*, size_type>()
 
-            . template _method("size", &T::size)
-            . template _method<void (T::*)(size_type)>("resize", &T::resize)
-            . template _method("capacity", &T::capacity)
-            . template _method("empty", &T::empty)
-            . template _method("clear", &T::clear)
-            . template _method("reserve", &T::reserve)
+            .template _method("size", &T::size)
+            .template _method<void (T::*)(size_type)>("resize", &T::resize)
+            .template _method("capacity", &T::capacity)
+            .template _method("empty", &T::empty)
+            .template _method("clear", &T::clear)
+            .template _method("reserve", &T::reserve)
 
-            . template _method("c_str", &T::c_str)
+            .template _method("c_str", &T::c_str)
 
-            . template _method<iterator (T::*)()>("begin", &T::begin)
-            . template _method<const_iterator (T::*)() const>("begin", &T::begin)
-            . template _method("cbegin", &T::cbegin)
+            .template _method<iterator (T::*)()>("begin", &T::begin)
+            .template _method<const_iterator (T::*)() const>("begin", &T::begin)
+            .template _method("cbegin", &T::cbegin)
 
-            . template _method<iterator (T::*)()>("end", &T::end)
-            . template _method<const_iterator (T::*)() const>("end", &T::end)
-            . template _method("cend", &T::cend)
+            .template _method<iterator (T::*)()>("end", &T::end)
+            .template _method<const_iterator (T::*)() const>("end", &T::end)
+            .template _method("cend", &T::cend)
 
-            . template _method<reference (T::*)(size_type)>("[]", &T::operator[])
-            . template _method<const_reference (T::*)(size_type) const>("[]", &T::operator[])
-            . template _method<reference (T::*)(size_type)>("at", &T::at)
-            . template _method<const_reference (T::*)(size_type) const>("at", &T::at)
+            .template _method<reference (T::*)(size_type)>("[]", &T::operator[])
+            .template _method<const_reference (T::*)(size_type) const>("[]", &T::operator[])
+            .template _method<reference (T::*)(size_type)>("at", &T::at)
+            .template _method<const_reference (T::*)(size_type) const>("at", &T::at)
 
-            . template _method<T& (T::*)(T const&)>("+=", &T::operator+=)
-            . template _method<T& (T::*)(value_type const*)>("+=", &T::operator+=)
-            . template _method<T& (T::*)(value_type)>("+=", &T::operator+=)
+            .template _method<T& (T::*)(T const&)>("+=", &T::operator+=)
+            .template _method<T& (T::*)(value_type const*)>("+=", &T::operator+=)
+            .template _method<T& (T::*)(value_type)>("+=", &T::operator+=)
 
-            . template _method<size_type (T::*)(value_type const*, size_type) const>("find", &T::find)
-            . template _method<size_type (T::*)(T const&, size_type) const>("find", &T::find)
-            . template _method<size_type (T::*)(value_type, size_type) const>("find", &T::find)
+            .template _method<size_type (T::*)(value_type const*, size_type) const>("find", &T::find)
+            .template _method<size_type (T::*)(T const&, size_type) const>("find", &T::find)
+            .template _method<size_type (T::*)(value_type, size_type) const>("find", &T::find)
 
-            . template _method<size_type (T::*)(value_type const*, size_type) const>("rfind", &T::rfind)
-            . template _method<size_type (T::*)(T const&, size_type) const>("rfind", &T::rfind)
-            . template _method<size_type (T::*)(value_type, size_type) const>("rfind", &T::rfind)
+            .template _method<size_type (T::*)(value_type const*, size_type) const>("rfind", &T::rfind)
+            .template _method<size_type (T::*)(T const&, size_type) const>("rfind", &T::rfind)
+            .template _method<size_type (T::*)(value_type, size_type) const>("rfind", &T::rfind)
         ;
     }
 
