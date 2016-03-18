@@ -809,7 +809,7 @@ struct PropertyInvokerEx: IPropertyInvoker
     void set_static(argument arg) const override
     { MethodInvoker<S>{m_set}.invoke_static(std::move(arg)); }
 
-    variant get_field(const variant &instance) const override
+    variant get_field(variant const &instance) const override
     { return MethodInvoker<G>{m_get}.invoke_method(instance); }
 
     void set_field(variant const &instance, argument arg) const override

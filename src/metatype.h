@@ -253,7 +253,7 @@ struct type_function_table_impl
         move_construct(source, where, is_move_constructible_t<T>{});
     }
 
-    static void move_or_copy (void *source, bool movable, void *where)
+    static void move_or_copy(void *source, bool movable, void *where)
     {
         move_or_copy(source, movable, where,
                      is_move_constructible_t<T>{},
@@ -301,20 +301,20 @@ private:
         throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't CopyConstructible");
     }
 
-    static void move_or_copy (void*, bool, void*, std::false_type, std::false_type)
+    static void move_or_copy(void*, bool, void*, std::false_type, std::false_type)
     {
         throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't Copy or MoveConstructible");
     }
-    static void move_or_copy (void *source, bool movable, void *where, std::true_type, std::false_type)
+    static void move_or_copy(void *source, bool movable, void *where, std::true_type, std::false_type)
     {
         movable ? move_construct(source, where, std::true_type{})
                 : copy_construct(source, where, std::false_type{});
     }
-    static void move_or_copy (void *source, bool, void *where, std::false_type, std::true_type)
+    static void move_or_copy(void *source, bool, void *where, std::false_type, std::true_type)
     {
         copy_construct(source, where, std::true_type{});
     }
-    static void move_or_copy (void *source, bool movable, void *where, std::true_type, std::true_type)
+    static void move_or_copy(void *source, bool movable, void *where, std::true_type, std::true_type)
     {
         movable ? move_construct(source, where, std::true_type{})
                 : copy_construct(source, where, std::true_type{});
@@ -364,7 +364,7 @@ struct type_function_table_impl<T[N]>
         move_construct(source, where, is_move_constructible_t<Base>{});
     }
 
-    static void move_or_copy (void *source, bool movable, void *where)
+    static void move_or_copy(void *source, bool movable, void *where)
     {
         move_or_copy(source, movable, where,
                      is_move_constructible_t<Base>{},
@@ -424,20 +424,20 @@ private:
         throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't CopyConstructible");
     }
 
-    static void move_or_copy (void*, bool, void*, std::false_type, std::false_type)
+    static void move_or_copy(void*, bool, void*, std::false_type, std::false_type)
     {
         throw runtime_error("Type T = " + mpl::type_name<Base>() + "isn't Copy or MoveConstructible");
     }
-    static void move_or_copy (void *source, bool movable, void *where, std::true_type, std::false_type)
+    static void move_or_copy(void *source, bool movable, void *where, std::true_type, std::false_type)
     {
         movable ? move_construct(source, where, std::true_type{})
                 : copy_construct(source, where, std::false_type{});
     }
-    static void move_or_copy (void *source, bool, void *where, std::false_type, std::true_type)
+    static void move_or_copy(void *source, bool, void *where, std::false_type, std::true_type)
     {
         copy_construct(source, where, std::true_type{});
     }
-    static void move_or_copy (void *source, bool movable, void *where, std::true_type, std::true_type)
+    static void move_or_copy(void *source, bool movable, void *where, std::true_type, std::true_type)
     {
         movable ? move_construct(source, where, std::true_type{})
                 : copy_construct(source, where, std::true_type{});
