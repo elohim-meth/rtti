@@ -42,7 +42,7 @@ public:
     TypeInfo const*  getTypeInfo(char const *name) const;
     TypeInfo const* addTypeInfo(char const *name, std::size_t size,
                                 MetaType_ID decay, std::uint16_t arity,
-                                std::uint16_t const_mask, MetaType::TypeFlags flags,
+                                std::uint16_t const_mask, TypeFlags flags,
                                 metatype_manager_t const *manager);
 private:
     mutable std::mutex m_lock;
@@ -115,7 +115,7 @@ const TypeInfo* CustomTypes::getTypeInfo(char const *name) const
 
 inline TypeInfo const* CustomTypes::addTypeInfo(char const *name, std::size_t size,
                                             MetaType_ID decay, uint16_t arity,
-                                            uint16_t const_mask, MetaType::TypeFlags flags,
+                                            uint16_t const_mask, TypeFlags flags,
                                             metatype_manager_t const *manager)
 {
     std::lock_guard<std::mutex> lock{m_lock};
@@ -198,9 +198,9 @@ std::size_t MetaType::typeSize() const noexcept
     return 0;
 }
 
-MetaType::TypeFlags MetaType::typeFlags() const noexcept
+TypeFlags MetaType::typeFlags() const noexcept
 {
-    MetaType::TypeFlags result = TypeFlags::None;
+    TypeFlags result = TypeFlags::None;
     if (m_typeInfo)
         result = m_typeInfo->flags;
     return result;
@@ -275,8 +275,7 @@ bool MetaType::compatible(MetaType fromType, MetaType toType) noexcept
 
 MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
                                        MetaType_ID decay, std::uint16_t arity,
-                                       std::uint16_t const_mask,
-                                       MetaType::TypeFlags flags,
+                                       std::uint16_t const_mask, TypeFlags flags,
                                        metatype_manager_t const *manager)
 {
     auto *types = customTypes();
@@ -493,6 +492,6 @@ std::ostream& operator<<(std::ostream &stream, rtti::MetaType const &value)
 {
     return stream << value.typeId().value() << ":"
                   << value.typeName() << ":"
-                  << value.typeFlags();
+                  << static_cast<rtti::underlying_type_t<rtti::TypeFlags>>(value.typeFlags());
 
 }

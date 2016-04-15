@@ -35,39 +35,41 @@ class variant;
 class argument;
 /* end forward */
 
+enum class TypeFlags: std::uint32_t {
+    None                 = 0,
+
+    Const                = 1 << 0,
+    Pointer              = 1 << 1,
+    MemberPointer        = 1 << 2,
+    LvalueReference      = 1 << 3,
+    RvalueReference      = 1 << 4,
+    Array                = 1 << 5,
+
+    Void                 = 1 << 6,
+    Integral             = 1 << 7,
+    FloatPoint           = 1 << 8,
+    Enum                 = 1 << 9,
+    Function             = 1 << 10,
+    Union                = 1 << 11,
+    Class                = 1 << 12,
+
+    Pod                  = 1 << 13,
+    Abstract             = 1 << 14,
+    Polymorphic          = 1 << 15,
+    DefaultConstructible = 1 << 16,
+    CopyConstructible    = 1 << 17,
+    CopyAssignable       = 1 << 18,
+    MoveConstructible    = 1 << 19,
+    MoveAssignable       = 1 << 20,
+    Destructible         = 1 << 21,
+};
+
+BITMASK_ENUM(TypeFlags);
+
 class DLL_PUBLIC MetaType final {
 public:
     enum : MetaType_ID::type {
         InvalidTypeId = MetaType_ID::Default
-    };
-
-    enum TypeFlags: std::uint32_t {
-        None                 = 0,
-
-        Const                = 1 << 0,
-        Pointer              = 1 << 1,
-        MemberPointer        = 1 << 2,
-        LvalueReference      = 1 << 3,
-        RvalueReference      = 1 << 4,
-        Array                = 1 << 5,
-
-        Void                 = 1 << 6,
-        Integral             = 1 << 7,
-        FloatPoint           = 1 << 8,
-        Enum                 = 1 << 9,
-        Function             = 1 << 10,
-        Union                = 1 << 11,
-        Class                = 1 << 12,
-
-        Pod                  = 1 << 13,
-        Abstract             = 1 << 14,
-        Polymorphic          = 1 << 15,
-        DefaultConstructible = 1 << 16,
-        CopyConstructible    = 1 << 17,
-        CopyAssignable       = 1 << 18,
-        MoveConstructible    = 1 << 19,
-        MoveAssignable       = 1 << 20,
-        Destructible         = 1 << 21,
     };
 
     MetaType() noexcept = default;
@@ -85,7 +87,7 @@ public:
     void setTypeId(MetaType_ID typeId);
     char const* typeName() const noexcept;
     std::size_t typeSize() const noexcept;
-    MetaType::TypeFlags typeFlags() const noexcept;
+    TypeFlags typeFlags() const noexcept;
 
     bool isConst() const noexcept;
     bool isLvalueReference() const noexcept;
@@ -120,7 +122,7 @@ public:
 private:
     static MetaType_ID registerMetaType(char const *name, std::size_t size,
                                         MetaType_ID decay, uint16_t arity, uint16_t const_mask,
-                                        MetaType::TypeFlags flags, metatype_manager_t const *manager);
+                                        TypeFlags flags, metatype_manager_t const *manager);
 
     void* allocate() const;
     void deallocate(void *ptr) const;
@@ -475,34 +477,34 @@ inline type_function_table const* type_function_table_for() noexcept
 
 template <typename T>
 struct type_flags {
-    using Flags = MetaType::TypeFlags;
+    using Flags = TypeFlags;
     using no_ref = remove_reference_t<T>;
     using no_ptr = remove_pointer_t<no_ref>;
     using base = base_type_t<T>;
-    static Flags const value = static_cast<Flags>(
-        (std::is_const<no_ref>::value ? Flags::Const : Flags::None) |
-        (std::is_pointer<no_ref>::value ? Flags::Pointer : Flags::None) |
-        (std::is_member_pointer<no_ref>::value ? Flags::MemberPointer : Flags::None) |
-        (std::is_lvalue_reference<T>::value ? Flags::LvalueReference : Flags::None) |
-        (std::is_rvalue_reference<T>::value ? Flags::RvalueReference : Flags::None) |
-        (std::is_array<no_ptr>::value ? Flags::Array : Flags::None) |
-        (std::is_void<base>::value ? Flags::Void : Flags::None) |
-        (std::is_integral<base>::value ? Flags::Integral : Flags::None) |
-        (std::is_floating_point<base>::value ? Flags::FloatPoint : Flags::None) |
-        (std::is_enum<base>::value ? Flags::Enum : Flags::None) |
-        (std::is_function<base>::value ? Flags::Function : Flags::None) |
-        (std::is_union<base>::value ? Flags::Union : Flags::None) |
-        (std::is_class<base>::value ? Flags::Class : Flags::None) |
-        (std::is_pod<base>::value ? Flags::Pod : Flags::None) |
-        (std::is_abstract<base>::value ? Flags::Abstract : Flags::None) |
-        (std::is_polymorphic<base>::value ? Flags::Polymorphic : Flags::None) |
-        (std::is_default_constructible<base>::value ? Flags::DefaultConstructible : Flags::None) |
-        (std::is_copy_constructible<base>::value ? Flags::CopyConstructible : Flags::None) |
-        (std::is_copy_assignable<base>::value ? Flags::CopyAssignable : Flags::None) |
-        (std::is_move_constructible<base>::value ? Flags::MoveConstructible : Flags::None) |
-        (std::is_move_assignable<base>::value ? Flags::MoveAssignable : Flags::None) |
-        (std::is_destructible<base>::value ? Flags::Destructible : Flags::None)
-    );
+    static Flags const value =
+          (std::is_const<no_ref>::value                 ? Flags::Const                  : Flags::None)
+        | (std::is_pointer<no_ref>::value               ? Flags::Pointer                : Flags::None)
+        | (std::is_member_pointer<no_ref>::value        ? Flags::MemberPointer          : Flags::None)
+        | (std::is_lvalue_reference<T>::value           ? Flags::LvalueReference        : Flags::None)
+        | (std::is_rvalue_reference<T>::value           ? Flags::RvalueReference        : Flags::None)
+        | (std::is_array<no_ptr>::value                 ? Flags::Array                  : Flags::None)
+        | (std::is_void<base>::value                    ? Flags::Void                   : Flags::None)
+        | (std::is_integral<base>::value                ? Flags::Integral               : Flags::None)
+        | (std::is_floating_point<base>::value          ? Flags::FloatPoint             : Flags::None)
+        | (std::is_enum<base>::value                    ? Flags::Enum                   : Flags::None)
+        | (std::is_function<base>::value                ? Flags::Function               : Flags::None)
+        | (std::is_union<base>::value                   ? Flags::Union                  : Flags::None)
+        | (std::is_class<base>::value                   ? Flags::Class                  : Flags::None)
+        | (std::is_pod<base>::value                     ? Flags::Pod                    : Flags::None)
+        | (std::is_abstract<base>::value                ? Flags::Abstract               : Flags::None)
+        | (std::is_polymorphic<base>::value             ? Flags::Polymorphic            : Flags::None)
+        | (std::is_default_constructible<base>::value   ? Flags::DefaultConstructible   : Flags::None)
+        | (std::is_copy_constructible<base>::value      ? Flags::CopyConstructible      : Flags::None)
+        | (std::is_copy_assignable<base>::value         ? Flags::CopyAssignable         : Flags::None)
+        | (std::is_move_constructible<base>::value      ? Flags::MoveConstructible      : Flags::None)
+        | (std::is_move_assignable<base>::value         ? Flags::MoveAssignable         : Flags::None)
+        | (std::is_destructible<base>::value            ? Flags::Destructible           : Flags::None)
+    ;
 };
 
 template <typename T>
@@ -554,17 +556,17 @@ inline MetaType_ID metaTypeId()
 
 inline bool MetaType::isConst() const noexcept
 {
-    return ((typeFlags() & Const) == Const);
+    return ((typeFlags() & TypeFlags::Const) == TypeFlags::Const);
 }
 
 inline bool MetaType::isLvalueReference() const noexcept
 {
-    return ((typeFlags() & LvalueReference) == LvalueReference);
+    return ((typeFlags() & TypeFlags::LvalueReference) == TypeFlags::LvalueReference);
 }
 
 inline bool MetaType::isRvalueReference() const noexcept
 {
-    return ((typeFlags() & RvalueReference) == RvalueReference);
+    return ((typeFlags() & TypeFlags::RvalueReference) == TypeFlags::RvalueReference);
 }
 
 inline bool MetaType::isReference() const noexcept
@@ -575,28 +577,28 @@ inline bool MetaType::isReference() const noexcept
 inline bool MetaType::isClass() const noexcept
 {
     auto flags = typeFlags();
-    return ((flags & Class) == Class) &&
-           ((flags & Pointer) == None);
+    return ((flags & TypeFlags::Class) == TypeFlags::Class) &&
+           ((flags & TypeFlags::Pointer) == TypeFlags::None);
 }
 
 inline bool MetaType::isPointer() const noexcept
 {
-    return ((typeFlags() & Pointer) == Pointer);
+    return ((typeFlags() & TypeFlags::Pointer) == TypeFlags::Pointer);
 }
 
 inline bool MetaType::isClassPtr() const noexcept
 {
     auto flags = typeFlags();
     return (pointerArity() == 1) &&
-           ((flags & Class) == Class) &&
-            ((flags & Pointer) == Pointer);
+           ((flags & TypeFlags::Class) == TypeFlags::Class) &&
+            ((flags & TypeFlags::Pointer) == TypeFlags::Pointer);
 }
 
 inline bool MetaType::isArray() const noexcept
 {
     auto flags = typeFlags();
-    return ((flags & Array) == Array) &&
-           ((flags & Pointer) == None);
+    return ((flags & TypeFlags::Array) == TypeFlags::Array) &&
+           ((flags & TypeFlags::Pointer) == TypeFlags::None);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------

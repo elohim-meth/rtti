@@ -83,6 +83,9 @@ using is_copy_constructible_t = typename std::is_copy_constructible<T>::type;
 template<typename T>
 using is_trivially_destructible_t = typename std::is_trivially_destructible<T>::type;
 
+template<typename T>
+using underlying_type_t = typename std::underlying_type<T>::type;
+
 //-----------------------------------------------------------------------------------------------------------------------------
 
 template<typename T, std::size_t I>
@@ -284,6 +287,33 @@ conditional_t<
 
 template<typename T>
 using is_class_ptr_t = typename is_class_ptr<T>::type;
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+template<typename E>
+struct enable_bitmask_enum: std::false_type
+{};
+
+template<typename E,
+         typename = enable_if_t<enable_bitmask_enum<E>::value>>
+constexpr E operator|(E lhs, E rhs)
+{
+  using T = typename std::underlying_type<E>::type;
+  return static_cast<E>(static_cast<T>(lhs) | static_cast<T>(rhs));
+}
+
+template<typename E,
+         typename = enable_if_t<enable_bitmask_enum<E>::value>>
+constexpr E operator&(E lhs, E rhs)
+{
+  using T = typename std::underlying_type<E>::type;
+  return static_cast<E>(static_cast<T>(lhs) & static_cast<T>(rhs));
+}
+
+#define BITMASK_ENUM(NAME) \
+template<> \
+struct enable_bitmask_enum<NAME>: std::true_type \
+{} \
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
