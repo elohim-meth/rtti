@@ -295,7 +295,7 @@ struct enable_bitmask_enum: std::false_type
 {};
 
 template<typename E,
-         typename = enable_if_t<enable_bitmask_enum<E>::value>>
+         typename = enable_if_t<std::is_enum<E>::value & enable_bitmask_enum<E>::value>>
 constexpr E operator|(E lhs, E rhs)
 {
   using T = typename std::underlying_type<E>::type;
@@ -303,7 +303,7 @@ constexpr E operator|(E lhs, E rhs)
 }
 
 template<typename E,
-         typename = enable_if_t<enable_bitmask_enum<E>::value>>
+         typename = enable_if_t<std::is_enum<E>::value & enable_bitmask_enum<E>::value>>
 constexpr E operator&(E lhs, E rhs)
 {
   using T = typename std::underlying_type<E>::type;
