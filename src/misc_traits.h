@@ -298,7 +298,7 @@ template<typename E,
          typename = enable_if_t<std::is_enum<E>::value & enable_bitmask_enum<E>::value>>
 constexpr E operator|(E lhs, E rhs)
 {
-  using T = typename std::underlying_type<E>::type;
+  using T = underlying_type_t<E>;
   return static_cast<E>(static_cast<T>(lhs) | static_cast<T>(rhs));
 }
 
@@ -306,7 +306,7 @@ template<typename E,
          typename = enable_if_t<std::is_enum<E>::value & enable_bitmask_enum<E>::value>>
 constexpr E operator&(E lhs, E rhs)
 {
-  using T = typename std::underlying_type<E>::type;
+  using T = underlying_type_t<E>;
   return static_cast<E>(static_cast<T>(lhs) & static_cast<T>(rhs));
 }
 

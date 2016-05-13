@@ -27,18 +27,18 @@ namespace internal {
 using container_stack_t = std::stack<MetaContainer*>;
 
 template<typename DerivedType, typename BaseType>
-static const void* metacast_to_base(const void *value)
+static void const * metacast_to_base(void const *value)
 {
     return
-        static_cast<const void*>(
-            static_cast<const BaseType*>(
-                static_cast<const DerivedType*>(value)));
+        static_cast<void const *>(
+            static_cast<BaseType const *>(
+                static_cast<DerivedType const *>(value)));
 }
 
 template<typename T, typename F>
 struct DefinitionCallbackHolder: IDefinitionCallbackHolder
 {
-    DefinitionCallbackHolder(const F &func)
+    DefinitionCallbackHolder(F const &func)
         : m_func(func)
     {}
 
@@ -82,7 +82,7 @@ inline argument_array_t pack_arguments(std::size_t count,
         &arg0, &arg1, &arg2, &arg3, &arg4,
         &arg5, &arg6, &arg7, &arg8, &arg9}};
 
-    for (const auto &item: result)
+    for (auto const &item: result)
     {
         if (item->empty())
             break;
@@ -229,7 +229,7 @@ struct method_invoker<F, void_member_func>
     { return metaTypeId<void>(); }
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
-    static std::string signature(const char *name)
+    static std::string signature(char const *name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -248,11 +248,11 @@ struct method_invoker<F, void_member_func>
 
     static variant invoke(F func,
                           variant &instance,
-                          const argument &arg0, const argument &arg1,
-                          const argument &arg2, const argument &arg3,
-                          const argument &arg4, const argument &arg5,
-                          const argument &arg6, const argument &arg7,
-                          const argument &arg8, const argument &arg9)
+                          argument const &arg0, argument const &arg1,
+                          argument const &arg2, argument const &arg3,
+                          argument const &arg4, argument const &arg5,
+                          argument const &arg6, argument const &arg7,
+                          argument const &arg8, argument const &arg9)
     {
         auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
@@ -335,16 +335,16 @@ struct method_invoker<F, return_member_func>
     { return metaTypeId<Result>(); }
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
-    static std::string signature(const char *name)
+    static std::string signature(char const *name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
-                          const variant &instance,
-                          const argument &arg0, const argument &arg1,
-                          const argument &arg2, const argument &arg3,
-                          const argument &arg4, const argument &arg5,
-                          const argument &arg6, const argument &arg7,
-                          const argument &arg8, const argument &arg9)
+                          variant const &instance,
+                          argument const &arg0, argument const &arg1,
+                          argument const &arg2, argument const &arg3,
+                          argument const &arg4, argument const &arg5,
+                          argument const &arg6, argument const &arg7,
+                          argument const &arg8, argument const &arg9)
     {
         auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
@@ -354,11 +354,11 @@ struct method_invoker<F, return_member_func>
 
     static variant invoke(F func,
                           variant &instance,
-                          const argument &arg0, const argument &arg1,
-                          const argument &arg2, const argument &arg3,
-                          const argument &arg4, const argument &arg5,
-                          const argument &arg6, const argument &arg7,
-                          const argument &arg8, const argument &arg9)
+                          argument const &arg0, argument const &arg1,
+                          argument const &arg2, argument const &arg3,
+                          argument const &arg4, argument const &arg5,
+                          argument const &arg6, argument const &arg7,
+                          argument const &arg8, argument const &arg9)
     {
         auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
                                           arg0, arg1, arg2, arg3, arg4,
@@ -367,11 +367,11 @@ struct method_invoker<F, return_member_func>
     }
 
     static variant invoke(F,
-                          const argument&, const argument&,
-                          const argument&, const argument&,
-                          const argument&, const argument&,
-                          const argument&, const argument&,
-                          const argument&, const argument&)
+                          argument const&, argument const&,
+                          argument const&, argument const&,
+                          argument const&, argument const&,
+                          argument const&, argument const&,
+                          argument const&, argument const&)
     { assert(false); return variant::empty_variant; }
 private:
     template<std::size_t I>
@@ -450,7 +450,7 @@ struct MethodInvoker: IMethodInvoker
 {
     using invoker_t = method_invoker<F, method_invoker_tag<F>>;
 
-    MethodInvoker(const F &func) noexcept
+    MethodInvoker(F const &func) noexcept
         : m_func(func)
     {}
     MethodInvoker(F &&func) noexcept
@@ -466,7 +466,7 @@ struct MethodInvoker: IMethodInvoker
     std::vector<MetaType_ID> parametersTypeId() const override
     { return invoker_t::parametersTypeId(); }
 
-    std::string signature(const char *name) const override
+    std::string signature(char const *name) const override
     { return invoker_t::signature(name); }
 
     variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
@@ -504,7 +504,7 @@ struct MethodInvoker: IMethodInvoker
                                          arg5, arg6, arg7, arg8, arg9);
     }
 private:
-    const F m_func;
+    F const m_func;
 };
 
 template<typename C, typename ...Args>
@@ -562,7 +562,7 @@ struct ConstructorInvoker: IConstructorInvoker
                           argument, argument, argument, argument, argument) const override
     { assert(false); return variant::empty_variant; }
 private:
-    static constexpr const char* signature_imp(mpl::index_sequence<>)
+    static constexpr char const* signature_imp(mpl::index_sequence<>)
     {
         return "default constructor";
     }
@@ -641,25 +641,25 @@ struct property_invoker<P, static_pointer>
     static variant get_static(P property)
     { return std::cref(*property); }
 
-    static void set_static(P property, const argument &arg)
+    static void set_static(P property, argument const &arg)
     {
         set_static(property, arg, IsReadOnly{});
     }
 
-    static variant get_field(P, const variant&)
+    static variant get_field(P, variant const&)
     { assert(false); return variant::empty_variant; }
 
-    static void set_field(P, variant const &, const argument&)
+    static void set_field(P, variant const&, argument const&)
     { assert(false); }
 
-    static void set_field(P, variant&, const argument&)
+    static void set_field(P, variant&, argument const&)
     { assert(false); }
 
 private:
     using T = property_type_t<P>;
     using IsReadOnly = is_const_t<T>;
 
-    static void set_static(P, const argument&, std::true_type)
+    static void set_static(P, argument const&, std::true_type)
     {
         throw invoke_error{"Write to readonly property"};
     }
@@ -688,16 +688,16 @@ struct property_invoker<P, member_pointer>
     static variant get_static(P)
     { assert(false); return variant::empty_variant; }
 
-    static void set_static(P, const argument&)
+    static void set_static(P, argument const&)
     { assert(false); }
 
-    static variant get_field(P property, const variant &instance)
+    static variant get_field(P property, variant const &instance)
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            return std::ref(instance.value<const C>().*property);
+            return std::ref(instance.value<C const>().*property);
         else if (type.isClassPtr())
-            return std::ref(instance.to<const C*>()->*property);
+            return std::ref(instance.to<C const *>()->*property);
         return variant::empty_variant;
     }
 
@@ -774,7 +774,7 @@ struct PropertyInvoker: IPropertyInvoker
     void set_static(argument arg) const override
     { invoker_t::set_static(m_prop, arg); }
 
-    variant get_field(const variant &instance) const override
+    variant get_field(variant const &instance) const override
     { return invoker_t::get_field(m_prop, instance); }
 
     void set_field(variant const &instance, argument arg) const override
@@ -853,7 +853,7 @@ public:
     using this_t = meta_define<T, MB>;
 
     template<typename V>
-    this_t _attribute(const char *name, V &&value)
+    this_t _attribute(char const *name, V &&value)
     {
         assert(m_currentItem);
         if (m_currentItem)
@@ -862,12 +862,12 @@ public:
     }
 
     template<typename V>
-    this_t _attribute(const std::string &name, V &&value)
+    this_t _attribute(std::string const &name, V &&value)
     {
         return _attribute(name.c_str(), std::forward<V>(value));
     }
 
-    meta_define<void, this_t> _namespace(const char *name)
+    meta_define<void, this_t> _namespace(char const *name)
     {
         static_assert(std::is_void<T>::value, "Namespace can be defined only in another namespace");
         assert(m_currentContainer && m_currentContainer->category() == mcatNamespace && m_containerStack);
@@ -878,13 +878,13 @@ public:
         return meta_define<void, this_t>{m_currentItem, m_currentContainer, m_containerStack};
     }
 
-    meta_define<void, this_t> _namespace(const std::string &name)
+    meta_define<void, this_t> _namespace(std::string const &name)
     {
         return _namespace(name.c_str());
     }
 
     template<typename C>
-    meta_define<C, this_t> _class(const char *name)
+    meta_define<C, this_t> _class(char const *name)
     {
         static_assert(std::is_class<C>::value, "Template argument <C> must be class");
         static_assert(!std::is_same<T, C>::value, "Recursive class definition");
@@ -904,7 +904,7 @@ public:
     }
 
     template<typename C>
-    meta_define<C, this_t> _class(const std::string &name)
+    meta_define<C, this_t> _class(std::string const &name)
     {
         return _class<C>(name.c_str());
     }
@@ -941,7 +941,7 @@ public:
     }
 
     template<typename E>
-    this_t _enum(const char *name)
+    this_t _enum(char const *name)
     {
         assert(m_currentContainer);
         m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>());
@@ -949,13 +949,13 @@ public:
     }
 
     template<typename E>
-    this_t _enum(const std::string &name)
+    this_t _enum(std::string const &name)
     {
         return _enum<E>(name.c_str());
     }
 
     template<typename V>
-    this_t _element(const char *name, V &&value)
+    this_t _element(char const *name, V &&value)
     {
         assert(m_currentItem);
         auto category = m_currentItem->category();
@@ -969,13 +969,13 @@ public:
     }
 
     template<typename V>
-    this_t _element(const std::string &name, V &&value)
+    this_t _element(std::string const &name, V &&value)
     {
         return _element(name.c_str(), std::forward<V>(value));
     }
 
     template<typename ...Args>
-    this_t _constructor(const char *name = nullptr)
+    this_t _constructor(char const *name = nullptr)
     {
         static_assert(std::is_class<T>::value, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
@@ -987,13 +987,13 @@ public:
     }
 
     template<typename ...Args>
-    this_t _constructor(const std::string &name)
+    this_t _constructor(std::string const &name)
     {
         return _constructor<Args...>(name.c_str());
     }
 
     template<typename F>
-    this_t _method(const char *name, F &&func)
+    this_t _method(char const *name, F &&func)
     {
         static_assert(std::is_void<T>::value || std::is_class<T>::value,
                       "Method can be defined in namespace or class");
@@ -1005,13 +1005,13 @@ public:
     }
 
     template<typename F>
-    this_t _method(const std::string &name, F &&func)
+    this_t _method(std::string const &name, F &&func)
     {
         return _method(name.c_str(), std::forward<F>(func));
     }
 
     template<typename P>
-    this_t _property(const char *name, P &&prop)
+    this_t _property(char const *name, P &&prop)
     {
         static_assert(std::is_void<T>::value || std::is_class<T>::value,
                       "Propery can be defined in namespace or class");
@@ -1023,7 +1023,7 @@ public:
     }
 
     template<typename G, typename S>
-    this_t _property(const char *name, G &&get, S &&set)
+    this_t _property(char const *name, G &&get, S &&set)
     {
         static_assert(std::is_void<T>::value || std::is_class<T>::value,
                       "Propery can be defined in namespace or class");
@@ -1047,8 +1047,8 @@ public:
 
 protected:
     meta_define() = default;
-    meta_define(const meta_define&) = delete;
-    meta_define& operator=(const meta_define&) = delete;
+    meta_define(meta_define const&) = delete;
+    meta_define& operator=(meta_define const&) = delete;
     meta_define(meta_define&&) = default;
     meta_define& operator=(meta_define&&) = default;
 
@@ -1094,7 +1094,7 @@ private:
     void define_copy_constructor(std::false_type) {}
     void define_copy_constructor(std::true_type)
     {
-        _constructor<const T&>();
+        _constructor<T const &>();
     }
 
     void define_move_constructor(std::false_type) {}
