@@ -14,7 +14,7 @@ struct signature
 {
     static std::string get(const char *name)
     {
-        return signature_imp(name, argument_indexes_t{});
+        return get(name, argument_indexes_t{});
     }
 
 private:
@@ -23,7 +23,7 @@ private:
     using argument_indexes_t = mpl::index_sequence_for_t<Args...>;
 
     template<std::size_t ...I>
-    static std::string signature_imp(const char *name, mpl::index_sequence<I...>)
+    static std::string get(const char *name, mpl::index_sequence<I...>)
     {
         constexpr auto size = sizeof...(I);
         std::ostringstream os;

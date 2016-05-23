@@ -118,12 +118,12 @@ struct define_std_namespace
             ._class<std::wstring>("wstring")
                 ._lazy(define_std_string<std::wstring>)
             ._end()
-            ._class<std::u16string>("u16string")
-                ._lazy(define_std_string<std::u16string>)
-            ._end()
-            ._class<std::u32string>("u32string")
-                ._lazy(define_std_string<std::u32string>)
-            ._end()
+//            ._class<std::u16string>("u16string")
+//                ._lazy(define_std_string<std::u16string>)
+//            ._end()
+//            ._class<std::u32string>("u32string")
+//                ._lazy(define_std_string<std::u32string>)
+//            ._end()
         ;
     }
 };
