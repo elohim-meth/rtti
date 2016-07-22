@@ -1,8 +1,4 @@
-﻿ #include "test_register.h"
-#include "test_variant.h"
-#include "test_cast.h"
-
-#include <debug.h>
+﻿#include <vector>
 
 namespace test {
 

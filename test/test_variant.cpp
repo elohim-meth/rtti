@@ -1,5 +1,7 @@
 ﻿#include "test_variant.h"
 
+#include <rtti/rtti.h>
+
 #include <finally.h>
 #include <debug.h>
 

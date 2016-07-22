@@ -5,6 +5,8 @@
     ./test_cast.cpp
     ./rtti_std_vector.cpp
     ./rtti_std_string.cpp
+    ./rtti_std_unique_ptr.cpp
+    ./rtti_test_namespace.cpp
 )
 
 set(HEADERS

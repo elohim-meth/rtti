@@ -1,10 +1,10 @@
 ﻿#ifndef TEST_REGISTER_H
 #define TEST_REGISTER_H
 
-#include <rtti/rtti.h>
-
 #include <vector>
 #include <memory>
+
+#include <rtti/rtti.h>
 
 template<typename T>
 void define_std_vector(rtti::meta_define<std::vector<T>> define)
@@ -128,6 +128,8 @@ void define_std_unique_ptr(rtti::meta_define<std::unique_ptr<T>> define)
     ;
 }
 
+extern template void define_std_unique_ptr<int>(rtti::meta_define<std::unique_ptr<int>>);
+extern template void define_std_unique_ptr<int const>(rtti::meta_define<std::unique_ptr<int const>>);
 
 template<typename T>
 void register_std_vector()
@@ -153,6 +155,7 @@ void register_std_unique_ptr()
     ;
 }
 
+void define_test_namespace(rtti::meta_define<void> define);
 void register_rtti();
 
 #endif // TEST_REGISTER_H

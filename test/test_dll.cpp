@@ -1,4 +1,6 @@
-﻿#include "test_dll.h"
+﻿#include "test_register.h"
+#include "test_cast.h"
+#include "test_variant.h"
 
 #include <iostream>
 #include <vector>
