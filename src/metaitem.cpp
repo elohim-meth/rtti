@@ -4,12 +4,12 @@
 namespace rtti {
 
 namespace {
-const std::string empty_string = {};
+std::string const empty_string = {};
 }
 
 namespace internal {
 
-const variant& NamedVariantList::get(std::size_t index) const
+variant const& NamedVariantList::get(std::size_t index) const
 {
     std::lock_guard<std::mutex> lock{m_lock};
     if (index < m_items.size())
@@ -17,7 +17,7 @@ const variant& NamedVariantList::get(std::size_t index) const
     return variant::empty_variant;
 }
 
-const variant& NamedVariantList::get(const char *name) const
+variant const& NamedVariantList::get(char const *name) const
 {
     if (name)
     {
@@ -34,7 +34,7 @@ const variant& NamedVariantList::get(const char *name) const
     return variant::empty_variant;
 }
 
-const std::string& NamedVariantList::name(std::size_t index) const
+std::string const& NamedVariantList::name(std::size_t index) const
 {
     std::lock_guard<std::mutex> lock{m_lock};
     if (index < m_items.size())
@@ -54,7 +54,7 @@ inline std::string MetaItemPrivate::makeQualifiedName() const
     return std::move(result) + (m_owner ? "::" + m_name : "");
 }
 
-inline const std::string& MetaItemPrivate::qualifiedName() const
+inline std::string const& MetaItemPrivate::qualifiedName() const
 {
     if (m_qualifiedName.empty())
         m_qualifiedName = makeQualifiedName();
@@ -65,7 +65,7 @@ inline const std::string& MetaItemPrivate::qualifiedName() const
 // MetaItem
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaItem::MetaItem(const char *name, const MetaContainer &owner)
+MetaItem::MetaItem(char const *name, MetaContainer const &owner)
     : d_ptr(new MetaItemPrivate{name, owner})
 {}
 
@@ -79,19 +79,19 @@ MetaItem::~MetaItem()
 void MetaItem::checkDeferredDefine() const
 {}
 
-const std::string& MetaItem::name() const
+std::string const& MetaItem::name() const
 {
     auto d = d_func();
     return d->name();
 }
 
-const MetaContainer *MetaItem::owner() const
+MetaContainer const* MetaItem::owner() const
 {
     auto d = d_func();
     return d->owner();
 }
 
-const std::string& MetaItem::qualifiedName() const
+std::string const& MetaItem::qualifiedName() const
 {
     auto d = d_func();
     return d->qualifiedName();
@@ -104,47 +104,47 @@ std::size_t MetaItem::attributeCount() const
     return d->m_attributes.size();
 }
 
-const variant& MetaItem::attribute(std::size_t index) const
+variant const& MetaItem::attribute(std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
     return d->m_attributes.get(index);
 }
 
-const std::string &MetaItem::attributeName(std::size_t index) const
+std::string const& MetaItem::attributeName(std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
     return d->m_attributes.name(index);
 }
 
-const variant& MetaItem::attribute(const char *name) const
+variant const& MetaItem::attribute(char const *name) const
 {
     checkDeferredDefine();
     auto d = d_func();
     return d->m_attributes.get(name);
 }
 
-void MetaItem::for_each_attribute(const enum_attribute_t &func) const
+void MetaItem::for_each_attribute(enum_attribute_t const &func) const
 {
     if (!func)
         return;
 
     checkDeferredDefine();
     auto d = d_func();
-    d->m_attributes.for_each([&func](const std::string &name, const variant &value) -> bool
+    d->m_attributes.for_each([&func](std::string const &name, variant const &value) -> bool
     {
         return func(name, value);
     });
 }
 
-void MetaItem::setAttribute(const char *name, const variant &value)
+void MetaItem::setAttribute(char const *name, variant const &value)
 {
     auto d = d_func();
     d->m_attributes.set(name, value);
 }
 
-void MetaItem::setAttribute(const char *name, variant &&value)
+void MetaItem::setAttribute(char const *name, variant &&value)
 {
     auto d = d_func();
     d->m_attributes.set(name, std::move(value));

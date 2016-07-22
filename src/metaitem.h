@@ -35,30 +35,30 @@ class MetaItemList;
 class DLL_PUBLIC MetaItem
 {
 public:
-    using enum_attribute_t = std::function<bool(const std::string&, const variant&)>;
+    using enum_attribute_t = std::function<bool(std::string const&, variant const&)>;
 
     virtual MetaCategory category() const = 0;
-    const std::string& name() const;
-    const MetaContainer* owner() const;
-    const std::string& qualifiedName() const;
+    std::string const& name() const;
+    MetaContainer const* owner() const;
+    std::string const& qualifiedName() const;
     std::size_t attributeCount() const;
-    const variant& attribute(std::size_t index) const;
-    const std::string& attributeName(std::size_t index) const;
-    const variant& attribute(const char *name) const;
-    void for_each_attribute(const enum_attribute_t &func) const;
+    variant const& attribute(std::size_t index) const;
+    std::string const& attributeName(std::size_t index) const;
+    variant const& attribute(char const *name) const;
+    void for_each_attribute(enum_attribute_t const &func) const;
 protected:
-    explicit MetaItem(const char *name, const MetaContainer &owner);
+    explicit MetaItem(char const *name, MetaContainer const &owner);
     explicit MetaItem(MetaItemPrivate &value);
-    MetaItem(const MetaItem &) = delete;
-    MetaItem& operator=(const MetaItem &) = delete;
+    MetaItem(MetaItem const&) = delete;
+    MetaItem& operator=(MetaItem const&) = delete;
     MetaItem(MetaItem &&) = delete;
     MetaItem& operator=(MetaItem &&) = delete;
     virtual ~MetaItem();
 
     virtual void checkDeferredDefine() const;
 
-    void setAttribute(const char *name, const variant &value);
-    void setAttribute(const char *name, variant &&value);
+    void setAttribute(char const *name, variant const &value);
+    void setAttribute(char const *name, variant &&value);
     std::unique_ptr<MetaItemPrivate> d_ptr;
 
 private:
