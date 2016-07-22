@@ -3,6 +3,8 @@
     ./test_register.cpp
     ./test_variant.cpp
     ./test_cast.cpp
+    ./rtti_std_vector.cpp
+    ./rtti_std_string.cpp
 )
 
 set(HEADERS

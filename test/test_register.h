@@ -59,6 +59,63 @@ void define_std_vector(rtti::meta_define<std::vector<T>> define)
     ;
 }
 
+extern template void define_std_vector<int>(rtti::meta_define<std::vector<int>>);
+extern template void define_std_vector<std::string>(rtti::meta_define<std::vector<std::string>>);
+extern template void define_std_vector<char const*>(rtti::meta_define<std::vector<char const*>>);
+
+template<typename T>
+void define_std_string(rtti::meta_define<T> define)
+{
+    using size_type = typename T::size_type;
+    using value_type = typename T::value_type;
+    using reference = typename T::reference;
+    using const_reference = typename T::const_reference;
+    using iterator = typename T::iterator;
+    using const_iterator = typename T::const_iterator;
+
+    define
+        .template _constructor<value_type const*>()
+        .template _constructor<value_type const*, size_type>()
+
+        .template _method("size", &T::size)
+        .template _method<void (T::*)(size_type)>("resize", &T::resize)
+        .template _method("capacity", &T::capacity)
+        .template _method("empty", &T::empty)
+        .template _method("clear", &T::clear)
+        .template _method("reserve", &T::reserve)
+
+        .template _method("c_str", &T::c_str)
+
+        .template _method<iterator (T::*)()>("begin", &T::begin)
+        .template _method<const_iterator (T::*)() const>("begin", &T::begin)
+        .template _method("cbegin", &T::cbegin)
+
+        .template _method<iterator (T::*)()>("end", &T::end)
+        .template _method<const_iterator (T::*)() const>("end", &T::end)
+        .template _method("cend", &T::cend)
+
+        .template _method<reference (T::*)(size_type)>("[]", &T::operator[])
+        .template _method<const_reference (T::*)(size_type) const>("[]", &T::operator[])
+        .template _method<reference (T::*)(size_type)>("at", &T::at)
+        .template _method<const_reference (T::*)(size_type) const>("at", &T::at)
+
+        .template _method<T& (T::*)(T const&)>("+=", &T::operator+=)
+        .template _method<T& (T::*)(value_type const*)>("+=", &T::operator+=)
+        .template _method<T& (T::*)(value_type)>("+=", &T::operator+=)
+
+        .template _method<size_type (T::*)(value_type const*, size_type) const>("find", &T::find)
+        .template _method<size_type (T::*)(T const&, size_type) const>("find", &T::find)
+        .template _method<size_type (T::*)(value_type, size_type) const>("find", &T::find)
+
+        .template _method<size_type (T::*)(value_type const*, size_type) const>("rfind", &T::rfind)
+        .template _method<size_type (T::*)(T const&, size_type) const>("rfind", &T::rfind)
+        .template _method<size_type (T::*)(value_type, size_type) const>("rfind", &T::rfind)
+    ;
+}
+
+extern template void define_std_string<std::string>(rtti::meta_define<std::string>);
+extern template void define_std_string<std::wstring>(rtti::meta_define<std::wstring>);
+
 template<typename T>
 void define_std_unique_ptr(rtti::meta_define<std::unique_ptr<T>> define)
 {
