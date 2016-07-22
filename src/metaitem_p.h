@@ -18,12 +18,12 @@ namespace internal {
 struct DLL_LOCAL NamedVariant
 {
     template<typename T>
-    NamedVariant(const CString &name, T&& value)
+    NamedVariant(CString const &name, T&& value)
         : name{name.data(), name.length()},
           value{std::forward<T>(value)}
     {}
 
-    const std::string name;
+    std::string const name;
     variant value;
 };
 
@@ -31,10 +31,10 @@ class DLL_LOCAL NamedVariantList
 {
 public:
     template<typename T>
-    void set(const char *name, T &&value);
-    const variant& get(std::size_t index) const;
-    const variant& get(const char *name) const;
-    const std::string& name(std::size_t index) const;
+    void set(char const *name, T &&value);
+    variant const& get(std::size_t index) const;
+    variant const& get(char const *name) const;
+    std::string const& name(std::size_t index) const;
 
     std::size_t size() const
     {
@@ -51,7 +51,7 @@ private:
 };
 
 template<typename T>
-inline void NamedVariantList::set(const char *name, T &&value)
+inline void NamedVariantList::set(char const *name, T &&value)
 {
     if (!name)
         return;
@@ -77,7 +77,7 @@ template<typename F>
 inline void NamedVariantList::for_each(F &&func) const
 {
     std::lock_guard<std::mutex> lock{m_lock};
-    for(const auto &item: m_items)
+    for(auto const &item: m_items)
     {
         if (!func(item.name, item.value))
             break;
@@ -90,37 +90,37 @@ class DLL_LOCAL MetaItemPrivate
 {
 public:
     MetaItemPrivate() = delete;
-    MetaItemPrivate(const MetaItemPrivate&) = delete;
-    MetaItemPrivate& operator=(const MetaItemPrivate&) = delete;
+    MetaItemPrivate(MetaItemPrivate const&) = delete;
+    MetaItemPrivate& operator=(MetaItemPrivate const&) = delete;
     MetaItemPrivate(MetaItemPrivate&&) = delete;
     MetaItemPrivate& operator=(MetaItemPrivate&&) = delete;
 
     // Constructor for global namespace
-    explicit MetaItemPrivate(const char *name)
+    explicit MetaItemPrivate(char const *name)
         : m_name(name)
     {}
 
-    MetaItemPrivate(const char *name, const MetaContainer &owner)
+    MetaItemPrivate(char const *name, MetaContainer const &owner)
         : m_name(name), m_owner(&owner)
     {}
-    MetaItemPrivate(std::string &&name, const MetaContainer &owner)
+    MetaItemPrivate(std::string &&name, MetaContainer const &owner)
         : m_name(std::move(name)), m_owner(&owner)
     {}
 
     virtual ~MetaItemPrivate() = default;
 
 protected:
-    const std::string& name() const
+    std::string const& name() const
     { return m_name; }
-    const MetaContainer* owner() const
+    MetaContainer const* owner() const
     { return m_owner; }
-    const std::string& qualifiedName() const;
+    std::string const& qualifiedName() const;
 
 private:
     std::string makeQualifiedName() const;
 
-    const std::string m_name;
-    const MetaContainer *m_owner = nullptr;
+    std::string const m_name;
+    MetaContainer const *m_owner = nullptr;
     internal::NamedVariantList m_attributes;
     mutable std::string m_qualifiedName;
 
