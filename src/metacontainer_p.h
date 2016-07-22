@@ -33,7 +33,7 @@ public:
 
     bool add(MetaItem *value);
     MetaItem* get(std::size_t index) const;
-    MetaItem* get(const char *name) const;
+    MetaItem* get(char const *name) const;
     std::size_t size() const;
     template<typename F> void for_each(F &&func) const;
 
@@ -65,7 +65,7 @@ public:
     { return m_lists[category]->get(index); }
     std::size_t size(MetaCategory category) const
     { return m_lists[category]->size(); }
-    MetaItem* item(MetaCategory category, const char *name) const
+    MetaItem* item(MetaCategory category, char const *name) const
     { return m_lists[category]->get(name); }
 
 protected:
@@ -78,7 +78,7 @@ private:
     internal::MetaItemList m_methods;
     internal::MetaItemList m_enums;
     internal::MetaItemList m_constructors;
-    const std::array<internal::MetaItemList*, mcatCount> m_lists = {
+    std::array<internal::MetaItemList*, mcatCount> const m_lists = {
         {&m_namespaces, &m_classes, &m_properties,
          &m_methods, &m_enums, &m_constructors}
     };

@@ -34,67 +34,67 @@ public:
         Recursive = 1
     };
 
-    using enum_class_t = std::function<bool(const MetaClass*)>;
-    using enum_method_t = std::function<bool(const MetaMethod*)>;
+    using enum_class_t = std::function<bool(MetaClass const*)>;
+    using enum_method_t = std::function<bool(MetaMethod const*)>;
 
-    const MetaNamespace* getNamespace(const char *name) const;
+    MetaNamespace const* getNamespace(char const *name) const;
     std::size_t namespaceCount() const;
-    const MetaNamespace* getNamespace(std::size_t index) const;
+    MetaNamespace const* getNamespace(std::size_t index) const;
 
-    const MetaClass* getClass(const char *name) const;
+    MetaClass const* getClass(char const *name) const;
     std::size_t classCount() const;
-    const MetaClass* getClass(std::size_t index) const;
-    void for_each_class(const enum_class_t &func) const;
+    MetaClass const* getClass(std::size_t index) const;
+    void for_each_class(enum_class_t const &func) const;
 
-    const MetaConstructor* getConstructor(const char *name) const;
-    const MetaConstructor* getConstructor(const std::string &name) const;
+    MetaConstructor const* getConstructor(char const *name) const;
+    MetaConstructor const* getConstructor(std::string const &name) const;
     template<typename ...Args>
-    const MetaConstructor* getConstructor() const
+    MetaConstructor const* getConstructor() const
     { return getConstructor(signature<Args...>::get("constructor")); }
 
     std::size_t constructorCount() const;
-    const MetaConstructor* getConstructor(std::size_t index) const;
-    const MetaConstructor* defaultConstructor() const;
-    const MetaConstructor* copyConstructor() const;
-    const MetaConstructor* moveConstructor() const;
+    MetaConstructor const* getConstructor(std::size_t index) const;
+    MetaConstructor const* defaultConstructor() const;
+    MetaConstructor const* copyConstructor() const;
+    MetaConstructor const* moveConstructor() const;
 
-    const MetaMethod* getMethod(const char *name) const;
-    const MetaMethod* getMethod(const std::string &name) const;
+    MetaMethod const* getMethod(char const *name) const;
+    MetaMethod const* getMethod(std::string const &name) const;
 
     template<typename ...Args>
-    const MetaMethod* getMethod(const char *name) const
+    MetaMethod const* getMethod(char const *name) const
     { return getMethod(signature<Args...>::get(name)); }
     template<typename ...Args>
-    const MetaMethod* getMethod(const std::string &name) const
+    MetaMethod const* getMethod(std::string const &name) const
     { return getMethod(signature<Args...>::get(name.c_str())); }
 
     std::size_t methodCount() const;
-    const MetaMethod* getMethod(std::size_t index) const;
-    void for_each_method(const enum_method_t &func) const;
+    MetaMethod const* getMethod(std::size_t index) const;
+    void for_each_method(enum_method_t const &func) const;
 
-    const MetaProperty* getProperty(const char *name) const;
+    MetaProperty const* getProperty(char const *name) const;
     std::size_t propertyCount() const;
-    const MetaProperty* getProperty(std::size_t index) const;
+    MetaProperty const* getProperty(std::size_t index) const;
 
-    const MetaEnum* getEnum(const char *name) const;
+    MetaEnum const* getEnum(char const *name) const;
     std::size_t enumCount() const;
-    const MetaEnum* getEnum(std::size_t index) const;
+    MetaEnum const* getEnum(std::size_t index) const;
 
     void forceDeferredDefine(ForceDeferred type = ForceDeferred::SelfOnly) const;
 protected:
-    explicit MetaContainer(const char *name, const MetaContainer &owner);
+    explicit MetaContainer(char const *name, MetaContainer const &owner);
     explicit MetaContainer(MetaContainerPrivate &value);
 
     bool addItem(MetaItem *value);
     std::size_t count(MetaCategory category) const;
-    const MetaItem* item(MetaCategory category, std::size_t index) const;
-    const MetaItem* item(MetaCategory category, const char *name) const;
+    MetaItem const* item(MetaCategory category, std::size_t index) const;
+    MetaItem const* item(MetaCategory category, char const *name) const;
 
     void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);
     void checkDeferredDefine() const override;
 
-    virtual const MetaMethod* getMethodInternal(const char *name) const;
-    virtual const MetaProperty* getPropertyInternal(const char *name) const;
+    virtual MetaMethod const* getMethodInternal(char const *name) const;
+    virtual MetaProperty const* getPropertyInternal(char const *name) const;
 
 private:
     DECLARE_PRIVATE(MetaContainer)

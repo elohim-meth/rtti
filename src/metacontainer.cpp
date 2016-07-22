@@ -27,7 +27,7 @@ bool MetaItemList::add(MetaItem *value)
     std::lock_guard<std::mutex> lock{m_lock};
     auto itemFound = (std::find_if(
                           std::begin(m_items), std::end(m_items),
-                          [value] (const item_t &item) {
+                          [value] (item_t const &item) {
                               return value == item.get();
                           }) != std::end(m_items));
     auto name = CString{value->name()};
@@ -50,7 +50,7 @@ inline MetaItem* MetaItemList::get(std::size_t index) const
     return nullptr;
 }
 
-inline MetaItem* MetaItemList::get(const char *name) const
+inline MetaItem* MetaItemList::get(char const *name) const
 {
     if (!name)
         return nullptr;
@@ -91,7 +91,7 @@ inline bool MetaContainerPrivate::addItem(MetaItem *value)
 // MetaContainer
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaContainer::MetaContainer(const char *name, const MetaContainer &owner)
+MetaContainer::MetaContainer(char const *name, MetaContainer const &owner)
     : MetaItem(*new MetaContainerPrivate(name, owner))
 {}
 
@@ -137,13 +137,13 @@ void MetaContainer::forceDeferredDefine(ForceDeferred type) const
         auto d = d_func();
         d->m_classes.for_each([](MetaItem *item)
         {
-            static_cast<const MetaClass*>(item)->forceDeferredDefine(ForceDeferred::Recursive);
+            static_cast<MetaClass const*>(item)->forceDeferredDefine(ForceDeferred::Recursive);
             return true;
         });
 
-        d->m_namespaces.for_each([](const MetaItem *item)
+        d->m_namespaces.for_each([](MetaItem const *item)
         {
-            static_cast<const MetaContainer*>(item)->forceDeferredDefine(ForceDeferred::Recursive);
+            static_cast<MetaContainer const*>(item)->forceDeferredDefine(ForceDeferred::Recursive);
             return true;
         });
     }
@@ -166,14 +166,14 @@ std::size_t MetaContainer::count(MetaCategory category) const
     return d->size(category);
 }
 
-const MetaItem* MetaContainer::item(MetaCategory category, const char *name) const
+MetaItem const* MetaContainer::item(MetaCategory category, char const *name) const
 {
     checkDeferredDefine();
     auto d = d_func();
     return d->item(category, name);
 }
 
-const MetaItem* MetaContainer::item(MetaCategory category, std::size_t index) const
+MetaItem const* MetaContainer::item(MetaCategory category, std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -184,9 +184,9 @@ const MetaItem* MetaContainer::item(MetaCategory category, std::size_t index) co
 // Namespace
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const MetaNamespace* MetaContainer::getNamespace(const char *name) const
+MetaNamespace const* MetaContainer::getNamespace(char const *name) const
 {
-    return static_cast<const MetaNamespace*>(item(mcatNamespace, name));
+    return static_cast<MetaNamespace const*>(item(mcatNamespace, name));
 }
 
 std::size_t MetaContainer::namespaceCount() const
@@ -194,18 +194,18 @@ std::size_t MetaContainer::namespaceCount() const
     return count(mcatNamespace);
 }
 
-const MetaNamespace *MetaContainer::getNamespace(std::size_t index) const
+MetaNamespace const* MetaContainer::getNamespace(std::size_t index) const
 {
-    return static_cast<const MetaNamespace*>(item(mcatNamespace, index));
+    return static_cast<MetaNamespace const*>(item(mcatNamespace, index));
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // Class
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const MetaClass* MetaContainer::getClass(const char *name) const
+MetaClass const* MetaContainer::getClass(char const *name) const
 {
-    return static_cast<const MetaClass*>(item(mcatClass, name));
+    return static_cast<MetaClass const*>(item(mcatClass, name));
 }
 
 std::size_t MetaContainer::classCount() const
@@ -213,21 +213,21 @@ std::size_t MetaContainer::classCount() const
     return count(mcatClass);
 }
 
-const MetaClass* MetaContainer::getClass(std::size_t index) const
+MetaClass const* MetaContainer::getClass(std::size_t index) const
 {
-    return static_cast<const MetaClass*>(item(mcatClass, index));
+    return static_cast<MetaClass const*>(item(mcatClass, index));
 }
 
-void MetaContainer::for_each_class(const enum_class_t &func) const
+void MetaContainer::for_each_class(enum_class_t const &func) const
 {
     if (!func)
         return;
 
     checkDeferredDefine();
     auto d = d_func();
-    d->m_classes.for_each([&func](const MetaItem *item) -> bool
+    d->m_classes.for_each([&func](MetaItem const *item) -> bool
     {
-        return func(static_cast<const MetaClass*>(item));
+        return func(static_cast<MetaClass const*>(item));
     });
 }
 
@@ -235,12 +235,12 @@ void MetaContainer::for_each_class(const enum_class_t &func) const
 // Constructor
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const MetaConstructor* MetaContainer::getConstructor(const char *name) const
+MetaConstructor const* MetaContainer::getConstructor(char const *name) const
 {
-    return static_cast<const MetaConstructor*>(item(mcatConstructor, name));
+    return static_cast<MetaConstructor const*>(item(mcatConstructor, name));
 }
 
-const MetaConstructor* MetaContainer::getConstructor(const std::string &name) const
+MetaConstructor const* MetaContainer::getConstructor(std::string const &name) const
 {
     return getConstructor(name.c_str());
 }
@@ -250,42 +250,42 @@ std::size_t MetaContainer::constructorCount() const
     return count(mcatConstructor);
 }
 
-const MetaConstructor* MetaContainer::getConstructor(std::size_t index) const
+MetaConstructor const* MetaContainer::getConstructor(std::size_t index) const
 {
-    return static_cast<const MetaConstructor*>(item(mcatConstructor, index));
+    return static_cast<MetaConstructor const*>(item(mcatConstructor, index));
 }
 
-const MetaConstructor *MetaContainer::defaultConstructor() const
+MetaConstructor const* MetaContainer::defaultConstructor() const
 {
-    return static_cast<const MetaConstructor*>(item(mcatConstructor, "default constructor"));
+    return static_cast<MetaConstructor const*>(item(mcatConstructor, "default constructor"));
 }
 
-const MetaConstructor *MetaContainer::copyConstructor() const
+MetaConstructor const* MetaContainer::copyConstructor() const
 {
-    return static_cast<const MetaConstructor*>(item(mcatConstructor, "copy constructor"));
+    return static_cast<MetaConstructor const*>(item(mcatConstructor, "copy constructor"));
 }
 
-const MetaConstructor *MetaContainer::moveConstructor() const
+MetaConstructor const* MetaContainer::moveConstructor() const
 {
 
-    return static_cast<const MetaConstructor*>(item(mcatConstructor, "move constructor"));
+    return static_cast<MetaConstructor const*>(item(mcatConstructor, "move constructor"));
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // Method
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const MetaMethod *MetaContainer::getMethodInternal(const char *name) const
+MetaMethod const* MetaContainer::getMethodInternal(char const *name) const
 {
     checkDeferredDefine();
 
     auto d = d_func();
     auto tmp = CString{name};
-    const MetaMethod *result = nullptr;
-    d->m_methods.for_each([&tmp, &result](const MetaItem *item) -> bool
+    MetaMethod const *result = nullptr;
+    d->m_methods.for_each([&tmp, &result](MetaItem const *item) -> bool
     {
-        auto method = static_cast<const MetaMethod*>(item);
-        const auto &methodName = method->name();
+        auto method = static_cast<MetaMethod const*>(item);
+        auto const &methodName = method->name();
 
         auto pos = methodName.find('(');
         if (pos != std::string::npos)
@@ -314,14 +314,14 @@ const MetaMethod *MetaContainer::getMethodInternal(const char *name) const
     return result;
 }
 
-const MetaMethod* MetaContainer::getMethod(const char *name) const
+MetaMethod const* MetaContainer::getMethod(char const *name) const
 {
     if (!name)
         return nullptr;
     return getMethodInternal(name);
 }
 
-const MetaMethod *MetaContainer::getMethod(const std::string &name) const
+MetaMethod const* MetaContainer::getMethod(std::string const &name) const
 {
     return getMethod(name.c_str());
 }
@@ -331,21 +331,21 @@ std::size_t MetaContainer::methodCount() const
     return count(mcatMethod);
 }
 
-const MetaMethod *MetaContainer::getMethod(std::size_t index) const
+MetaMethod const* MetaContainer::getMethod(std::size_t index) const
 {
-    return static_cast<const MetaMethod*>(item(mcatMethod, index));
+    return static_cast<MetaMethod const*>(item(mcatMethod, index));
 }
 
-void MetaContainer::for_each_method(const enum_method_t &func) const
+void MetaContainer::for_each_method(enum_method_t const &func) const
 {
     if (!func)
         return;
 
     checkDeferredDefine();
     auto d = d_func();
-    d->m_methods.for_each([&func](const MetaItem *item) -> bool
+    d->m_methods.for_each([&func](MetaItem const *item) -> bool
     {
-        return func(static_cast<const MetaMethod*>(item));
+        return func(static_cast<MetaMethod const*>(item));
     });
 }
 
@@ -353,12 +353,12 @@ void MetaContainer::for_each_method(const enum_method_t &func) const
 // Property
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const rtti::MetaProperty* MetaContainer::getPropertyInternal(const char *name) const
+MetaProperty const* MetaContainer::getPropertyInternal(char const *name) const
 {
-    return static_cast<const MetaProperty*>(item(mcatProperty, name));
+    return static_cast<MetaProperty const*>(item(mcatProperty, name));
 }
 
-const MetaProperty* MetaContainer::getProperty(const char *name) const
+MetaProperty const* MetaContainer::getProperty(char const *name) const
 {
     return getPropertyInternal(name);
 }
@@ -368,18 +368,18 @@ std::size_t MetaContainer::propertyCount() const
     return count(mcatProperty);
 }
 
-const MetaProperty *MetaContainer::getProperty(std::size_t index) const
+MetaProperty const* MetaContainer::getProperty(std::size_t index) const
 {
-    return static_cast<const MetaProperty*>(item(mcatProperty, index));
+    return static_cast<MetaProperty const*>(item(mcatProperty, index));
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // Enum
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const MetaEnum *MetaContainer::getEnum(const char *name) const
+MetaEnum const* MetaContainer::getEnum(char const *name) const
 {
-    return static_cast<const MetaEnum*>(item(mcatEnum, name));
+    return static_cast<MetaEnum const*>(item(mcatEnum, name));
 }
 
 std::size_t MetaContainer::enumCount() const
@@ -387,9 +387,9 @@ std::size_t MetaContainer::enumCount() const
     return count(mcatEnum);
 }
 
-const MetaEnum* MetaContainer::getEnum(std::size_t index) const
+MetaEnum const* MetaContainer::getEnum(std::size_t index) const
 {
-    return static_cast<const MetaEnum*>(item(mcatEnum, index));
+    return static_cast<MetaEnum const*>(item(mcatEnum, index));
 }
 
 } // namespace rtti
