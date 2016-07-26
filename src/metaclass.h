@@ -79,8 +79,8 @@ To const* meta_cast(From const *from, std::true_type)
         return nullptr;
 
     auto const &info = from->classInfo();
-    auto fromClass = MetaClass::findByTypeId(info.typeId);
-    auto toClass = MetaClass::findByTypeId(metaTypeId<To>());
+    auto *fromClass = MetaClass::findByTypeId(info.typeId);
+    auto *toClass = MetaClass::findByTypeId(metaTypeId<To>());
     if (!fromClass || !toClass)
         return nullptr;
 

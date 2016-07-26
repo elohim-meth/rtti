@@ -10,7 +10,7 @@ namespace rtti {
 // MetaClass
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaClass::MetaClass(const char *name, const MetaContainer &owner, MetaType_ID typeId)
+MetaClass::MetaClass(char const *name, MetaContainer const &owner, MetaType_ID typeId)
     : MetaContainer{*new MetaClassPrivate{name, owner, typeId}}
 {
     auto type = MetaType{typeId};
@@ -25,7 +25,7 @@ MetaClass::MetaClass(const char *name, const MetaContainer &owner, MetaType_ID t
     metaClass = this;
 }
 
-MetaClass* MetaClass::create(const char *name, MetaContainer &owner, MetaType_ID typeId)
+MetaClass* MetaClass::create(char const *name, MetaContainer &owner, MetaType_ID typeId)
 {
     auto result = const_cast<MetaClass*>(owner.getClass(name));
     if (!result)
@@ -36,7 +36,7 @@ MetaClass* MetaClass::create(const char *name, MetaContainer &owner, MetaType_ID
     return result;
 }
 
-const MetaClass* MetaClass::findByTypeId(MetaType_ID typeId)
+MetaClass const* MetaClass::findByTypeId(MetaType_ID typeId)
 {
     auto type = MetaType{typeId};
     if (type.valid())
@@ -44,7 +44,7 @@ const MetaClass* MetaClass::findByTypeId(MetaType_ID typeId)
     return nullptr;
 }
 
-const MetaClass *MetaClass::findByTypeName(const char *name)
+MetaClass const* MetaClass::findByTypeName(char const *name)
 {
     if (!name)
         return nullptr;
@@ -69,7 +69,7 @@ std::size_t MetaClass::baseClassCount() const
     return d->m_baseClasses.count();
 }
 
-const MetaClass* MetaClass::baseClass(std::size_t index) const
+MetaClass const* MetaClass::baseClass(std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -84,7 +84,7 @@ std::size_t MetaClass::derivedClassCount() const
     return d->m_derivedClasses.count();
 }
 
-const MetaClass *MetaClass::derivedClass(std::size_t index) const
+MetaClass const* MetaClass::derivedClass(std::size_t index) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -125,7 +125,7 @@ void MetaClass::addDerivedClass(MetaType_ID typeId)
     d->m_derivedClasses.add(typeId);
 }
 
-bool MetaClass::inheritedFrom(const MetaClass *base) const
+bool MetaClass::inheritedFrom(MetaClass const *base) const
 {
     if (!base)
         return false;
@@ -135,7 +135,7 @@ bool MetaClass::inheritedFrom(const MetaClass *base) const
     checkDeferredDefine();
     auto d = d_func();
     auto result = false;
-    d->m_baseClasses.for_each([&result, base](const internal::BaseClassList::item_t &item)
+    d->m_baseClasses.for_each([&result, base](internal::BaseClassList::item_t const &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
@@ -149,7 +149,7 @@ bool MetaClass::inheritedFrom(const MetaClass *base) const
     return result;
 }
 
-const void* MetaClass::cast(const MetaClass *base, const void *instance) const
+void const* MetaClass::cast(MetaClass const *base, void const *instance) const
 {
     if (!base)
         return nullptr;
@@ -161,7 +161,7 @@ const void* MetaClass::cast(const MetaClass *base, const void *instance) const
     checkDeferredDefine();
     auto d = d_func();
     auto found = false;
-    d->m_baseClasses.for_each([&result, base, &found](const internal::BaseClassList::item_t &item)
+    d->m_baseClasses.for_each([&result, base, &found](internal::BaseClassList::item_t const &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
@@ -178,12 +178,12 @@ const void* MetaClass::cast(const MetaClass *base, const void *instance) const
     return (found ? result : nullptr);
 }
 
-void* MetaClass::cast(const MetaClass *base, void *instance) const
+void* MetaClass::cast(MetaClass const *base, void *instance) const
 {
-    return const_cast<void*>(cast(base, const_cast<const void*>(instance)));
+    return const_cast<void*>(cast(base, const_cast<void const*>(instance)));
 }
 
-const MetaMethod* MetaClass::getMethodInternal(const char *name) const
+MetaMethod const* MetaClass::getMethodInternal(char const *name) const
 {
     using item_t = internal::BaseClassList::item_t;
 
@@ -195,7 +195,7 @@ const MetaMethod* MetaClass::getMethodInternal(const char *name) const
 
     auto d = d_func();
     auto found = false;
-    d->m_baseClasses.for_each([&result, name, &found](const item_t &item)
+    d->m_baseClasses.for_each([&result, name, &found](item_t const &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
@@ -210,7 +210,7 @@ const MetaMethod* MetaClass::getMethodInternal(const char *name) const
     return (found ? result : nullptr);
 }
 
-const MetaProperty* MetaClass::getPropertyInternal(const char *name) const
+MetaProperty const* MetaClass::getPropertyInternal(char const *name) const
 {
     using item_t = internal::BaseClassList::item_t;
 
@@ -222,7 +222,7 @@ const MetaProperty* MetaClass::getPropertyInternal(const char *name) const
 
     auto d = d_func();
     auto found = false;
-    d->m_baseClasses.for_each([&result, name, &found](const item_t &item)
+    d->m_baseClasses.for_each([&result, name, &found](item_t const &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
