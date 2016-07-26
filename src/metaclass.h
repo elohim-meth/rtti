@@ -11,7 +11,7 @@ namespace rtti {
 
 namespace internal {
 template<typename To, typename From>
-To const* meta_cast(const From*, std::true_type);
+To const* meta_cast(From const*, std::true_type);
 } // namespace internal
 
 class MetaClassPrivate;
@@ -19,43 +19,43 @@ class MetaClassPrivate;
 class DLL_PUBLIC MetaClass final: public MetaContainer
 {
 public:
-    using cast_func_t = const void*(*)(const void*);
+    using cast_func_t = void const*(*)(void const*);
 
     MetaCategory category() const override;
-    static const MetaClass* findByTypeId(MetaType_ID typeId);
-    static const MetaClass* findByTypeName(const char *name);
+    static MetaClass const* findByTypeId(MetaType_ID typeId);
+    static MetaClass const* findByTypeName(char const *name);
     MetaType_ID metaTypeId() const;
     std::size_t baseClassCount() const;
-    const MetaClass* baseClass(std::size_t index) const;
+    MetaClass const* baseClass(std::size_t index) const;
     std::size_t derivedClassCount() const;
-    const MetaClass* derivedClass(std::size_t index) const;
-    bool inheritedFrom(const MetaClass *base) const;
+    MetaClass const* derivedClass(std::size_t index) const;
+    bool inheritedFrom(MetaClass const *base) const;
 protected:
-    explicit MetaClass(const char *name, const MetaContainer &owner, MetaType_ID typeId);
-    static MetaClass* create(const char *name, MetaContainer &owner, MetaType_ID typeId);
+    explicit MetaClass(char const *name, MetaContainer const &owner, MetaType_ID typeId);
+    static MetaClass* create(char const *name, MetaContainer &owner, MetaType_ID typeId);
 
     void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     void addDerivedClass(MetaType_ID typeId);
-    const void* cast(const MetaClass *base, const void *instance) const;
-    void* cast(const MetaClass *base, void *instance) const;
+    void const* cast(MetaClass const *base, void const *instance) const;
+    void* cast(MetaClass const *base, void *instance) const;
 
-    const MetaMethod* getMethodInternal(const char *name) const override;
-    const MetaProperty* getPropertyInternal(const char *name) const override;
+    MetaMethod const* getMethodInternal(char const *name) const override;
+    MetaProperty const* getPropertyInternal(char const *name) const override;
 private:
     DECLARE_PRIVATE(MetaClass)
     template<typename, typename> friend class rtti::meta_define;
     template<typename To, typename From>
-    friend const To* internal::meta_cast(const From*, std::true_type);
+    friend To const* internal::meta_cast(From const*, std::true_type);
     friend class rtti::variant;
 };
 
 struct DLL_PUBLIC ClassInfo
 {
     MetaType_ID typeId;
-    const void *instance = nullptr;
+    void const *instance = nullptr;
 
     constexpr ClassInfo() = default;
-    constexpr ClassInfo(MetaType_ID typeId, const void *instance)
+    constexpr ClassInfo(MetaType_ID typeId, void const *instance)
         : typeId(typeId), instance(instance)
     {}
 };
@@ -71,14 +71,14 @@ private: \
 namespace internal {
 
 template<typename To, typename From>
-const To* meta_cast(const From *from, std::true_type)
+To const* meta_cast(From const *from, std::true_type)
 {
     static_assert(std::is_class<From>::value && std::is_class<To>::value,
                   "Both template arguments should be classes");
     if (!from)
         return nullptr;
 
-    const auto &info = from->classInfo();
+    auto const &info = from->classInfo();
     auto fromClass = MetaClass::findByTypeId(info.typeId);
     auto toClass = MetaClass::findByTypeId(metaTypeId<To>());
     if (!fromClass || !toClass)
@@ -87,17 +87,17 @@ const To* meta_cast(const From *from, std::true_type)
     auto result = fromClass->cast(toClass, info.instance);
     if (!result)
         return nullptr;
-    return static_cast<const To*>(result);
+    return static_cast<To const*>(result);
 }
 
 template<typename To, typename From>
 To* meta_cast(From *from, std::true_type)
 {
-    return const_cast<To*>(meta_cast<To>(const_cast<const From*>(from), std::true_type{}));
+    return const_cast<To*>(meta_cast<To>(const_cast<From const*>(from), std::true_type{}));
 }
 
 template<typename To, typename From>
-const To* meta_cast(const From *from, std::false_type)
+To const* meta_cast(From const *from, std::false_type)
 {
     return from;
 }
@@ -121,7 +121,7 @@ To* meta_cast(From *from)
 }
 
 template<typename To, typename From>
-To const* meta_cast(const From *from)
+To const* meta_cast(From const *from)
 {
     using has_class_info_t = typename has_method_classInfo<ClassInfo(From::*)() const>::type;
     return internal::meta_cast<To, From>(from, has_class_info_t{});
@@ -137,7 +137,7 @@ To& meta_cast(From &from)
 }
 
 template<typename To, typename From>
-const To& meta_cast(const From &from)
+To const& meta_cast(From const &from)
 {
     auto ptr = meta_cast<To>(&from);
     if (!ptr)
