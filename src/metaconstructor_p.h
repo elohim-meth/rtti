@@ -9,7 +9,7 @@ namespace rtti {
 class DLL_LOCAL MetaConstructorPrivate: public MetaItemPrivate
 {
 public:
-    MetaConstructorPrivate(std::string &&name, const MetaContainer &owner,
+    MetaConstructorPrivate(std::string &&name, MetaContainer const &owner,
                            std::unique_ptr<IConstructorInvoker> constructor)
         : MetaItemPrivate{std::move(name), owner},
           m_constructor{std::move(constructor)}

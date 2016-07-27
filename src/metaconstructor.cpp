@@ -7,7 +7,7 @@ MetaConstructor::MetaConstructor(std::string &&name, MetaContainer &owner,
     : MetaItem{*new MetaConstructorPrivate{std::move(name), owner, std::move(constructor)}}
 {}
 
-MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
+MetaConstructor* MetaConstructor::create(char const *name, MetaContainer &owner,
                                          std::unique_ptr<IConstructorInvoker> constructor)
 {
     if (!constructor)
@@ -23,7 +23,7 @@ MetaConstructor* MetaConstructor::create(const char *name, MetaContainer &owner,
     return result;
 }
 
-const IConstructorInvoker* MetaConstructor::constructor() const
+IConstructorInvoker const* MetaConstructor::constructor() const
 {
     auto d = d_func();
     return d->m_constructor.get();

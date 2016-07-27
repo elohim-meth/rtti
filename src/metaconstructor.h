@@ -26,11 +26,11 @@ public:
 protected:
     explicit MetaConstructor(std::string &&name, MetaContainer &owner,
                              std::unique_ptr<IConstructorInvoker> constructor);
-    static MetaConstructor* create(const char *name, MetaContainer &owner,
+    static MetaConstructor* create(char const *name, MetaContainer &owner,
                                    std::unique_ptr<IConstructorInvoker> constructor);
 
 private:
-    const IConstructorInvoker* constructor() const;
+    IConstructorInvoker const* constructor() const;
 
     DECLARE_PRIVATE(MetaConstructor)
     template<typename, typename> friend class rtti::meta_define;
