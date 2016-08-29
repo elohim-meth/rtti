@@ -320,9 +320,9 @@ void register_classes()
 
 } // namespace
 
-void test1(TestQPointer const &) {};
-void test1(TestQPointer &&) {};
-void test1(TestQPointer &) {};
+void test1(TestQPointer const &) {}
+void test1(TestQPointer &&) {}
+void test1(TestQPointer &) {}
 
 void test_variant_1()
 {
