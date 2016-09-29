@@ -122,7 +122,7 @@ private:
     std::string const m_name;
     MetaContainer const *m_owner = nullptr;
     internal::NamedVariantList m_attributes;
-    mutable std::string m_qualifiedName;
+    mutable std::string m_qualifiedName = {};
 
     friend class rtti::MetaItem;
 };

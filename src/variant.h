@@ -586,7 +586,7 @@ public:
         static_assert(!std::is_reference<T>::value,
                       "Type cannot be reference");
 
-        alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
+        alignas(T) std::uint8_t buffer[sizeof(T)] = {};
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
@@ -599,7 +599,7 @@ public:
         static_assert(!std::is_reference<T>::value,
                       "Type cannot be reference");
 
-        alignas(T) std::uint8_t buffer[sizeof(T)] = {0};
+        alignas(T) std::uint8_t buffer[sizeof(T)] = {};
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };

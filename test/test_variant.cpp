@@ -524,8 +524,7 @@ void test_variant_1()
             auto dP = MC->getProperty("d");
             if (dP)
             {
-                auto r = dP->get(v);
-                dP->set(v, 1024);
+                dP->set(v, dP->get(v).value<int>() + 1);
 
             }
         }
