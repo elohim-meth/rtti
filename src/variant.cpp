@@ -2,15 +2,15 @@
 
 namespace rtti {
 
-const variant variant::empty_variant = {};
+variant const variant::empty_variant = {};
 
-variant::variant(const variant &other)
+variant::variant(variant const &other)
     : manager{other.manager}
 {
     manager->f_copy(other.storage, storage);
 }
 
-variant& variant::operator=(const variant &other)
+variant& variant::operator=(variant const &other)
 {
     if (this != &other)
         variant{other}.swap(*this);
