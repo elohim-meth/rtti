@@ -62,10 +62,13 @@ struct DLL_PUBLIC ClassInfo
 
 #define DECLARE_CLASSINFO \
 public: \
+    _Pragma("clang diagnostic push") \
+    _Pragma("clang diagnostic ignored \"-Winconsistent-missing-override\"") \
     virtual rtti::ClassInfo classInfo() const \
     { \
         return {rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(), this}; \
     } \
+    _Pragma("clang diagnostic pop") \
 private: \
 
 namespace internal {
