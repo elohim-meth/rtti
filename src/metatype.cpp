@@ -492,6 +492,6 @@ std::ostream& operator<<(std::ostream &stream, rtti::MetaType const &value)
 {
     return stream << value.typeId().value() << ":"
                   << value.typeName() << ":"
-                  << static_cast<rtti::underlying_type_t<rtti::TypeFlags>>(value.typeFlags());
+                  << static_cast<std::underlying_type_t<rtti::TypeFlags>>(value.typeFlags());
 
 }

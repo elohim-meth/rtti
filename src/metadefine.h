@@ -63,9 +63,9 @@ struct return_member_func {};
 
 template<typename F>
 using method_invoker_tag =
-conditional_t<std::is_void<typename mpl::function_traits<F>::result_type>::value,
-    conditional_t<std::is_void<typename mpl::function_traits<F>::class_type>::value, void_static_func, void_member_func>,
-    conditional_t<std::is_void<typename mpl::function_traits<F>::class_type>::value, return_static_func, return_member_func>>;
+std::conditional_t<is_void_v<typename mpl::function_traits<F>::result_type>,
+    std::conditional_t<is_void_v<typename mpl::function_traits<F>::class_type>, void_static_func, void_member_func>,
+    std::conditional_t<is_void_v<typename mpl::function_traits<F>::class_type>, return_static_func, return_member_func>>;
 
 template<typename F, typename Tag> struct method_invoker;
 
@@ -274,9 +274,9 @@ private:
     //
     using C = typename mpl::function_traits<F>::class_type;
     using is_const = typename mpl::function_traits<F>::is_const;
-    using class_t = conditional_t<is_const::value, add_const_t<C>, C>;
-    using class_ref_t = add_lvalue_reference_t<class_t>;
-    using class_ptr_t = add_pointer_t<class_t>;
+    using class_t = std::conditional_t<is_const::value, std::add_const_t<C>, C>;
+    using class_ref_t = std::add_lvalue_reference_t<class_t>;
+    using class_ptr_t = std::add_pointer_t<class_t>;
 
     template<std::size_t ...I>
     static std::vector<MetaType_ID> parametersTypeId(mpl::index_sequence<I...>)
@@ -381,9 +381,9 @@ private:
     //
     using C = typename mpl::function_traits<F>::class_type;
     using is_const = typename mpl::function_traits<F>::is_const;
-    using class_t = conditional_t<is_const::value, C const, C>;
-    using class_ref_t = add_lvalue_reference_t<class_t>;
-    using class_ptr_t = add_pointer_t<class_t>;
+    using class_t = std::conditional_t<is_const::value, C const, C>;
+    using class_ref_t = std::add_lvalue_reference_t<class_t>;
+    using class_ptr_t = std::add_pointer_t<class_t>;
 
     template<std::size_t ...I>
     static std::vector<MetaType_ID> parametersTypeId(mpl::index_sequence<I...>)
@@ -570,7 +570,7 @@ private:
     static std::string signature_imp(mpl::index_sequence<0>)
     {
         using Arg = argument_get_t<0>;
-        if (std::is_same<decay_t<Arg>, C>::value)
+        if (is_same_v<std::decay_t<Arg>, C>)
         {
             if (std::is_rvalue_reference<Arg>::value)
                 return "move constructor";
@@ -619,7 +619,7 @@ struct static_pointer{};
 struct member_pointer{};
 
 template<typename P>
-using property_invoker_tag = conditional_t<std::is_member_pointer<P>::value, member_pointer, static_pointer>;
+using property_invoker_tag = std::conditional_t<std::is_member_pointer<P>::value, member_pointer, static_pointer>;
 
 template<typename P, typename Tag> struct property_invoker;
 
@@ -714,7 +714,7 @@ private:
     using C = property_class_t<P>;
     using T = property_type_t<P>;
     using IsReadOnly = is_const_t<T>;
-    using class_ref_t = add_lvalue_reference_t<C>;
+    using class_ref_t = std::add_lvalue_reference_t<C>;
 
     static void set_field(P, variant&, argument const&, std::true_type)
     {
@@ -819,7 +819,7 @@ struct PropertyInvokerEx: IPropertyInvoker
     { MethodInvoker<S>{m_set}.invoke_method(instance, std::move(arg)); }
 
 private:
-    static constexpr bool valid = conditional_t
+    static constexpr bool valid = std::conditional_t
     <(std::is_function<G>::value && (std::is_void<S>::value || std::is_function<S>::value)) ||
      (std::is_member_function_pointer<G>::value && (std::is_void<S>::value || std::is_member_function_pointer<S>::value))
     ,std::true_type, std::false_type>::value;
@@ -838,7 +838,7 @@ private:
     static_assert(STraits::arity::value == 1,
                   "Set method should have one parameters");
     using Arg = typename STraits::template arg<0>::type;
-    static_assert(std::is_same<decay_t<T>, decay_t<Arg>>::value,
+    static_assert(std::is_same<std::decay_t<T>, std::decay_t<Arg>>::value,
                   "Get method return type and Set method parameter type do not match");
     G m_get;
     S m_set;
@@ -922,7 +922,7 @@ public:
                       "Deferred definition supported only for namespaces and class types");
 
         assert(m_currentContainer);
-        using holder_t = internal::DefinitionCallbackHolder<T, decay_t<F>>;
+        using holder_t = internal::DefinitionCallbackHolder<T, std::decay_t<F>>;
         m_currentContainer->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
                                                   new holder_t{std::forward<F>(func)}});
         return std::move(*this);
@@ -1000,7 +1000,7 @@ public:
         assert(m_currentContainer);
         MetaMethod::create(name, *m_currentContainer,
                            std::unique_ptr<IMethodInvoker>{
-                                new internal::MethodInvoker<decay_t<F>>{std::forward<F>(func)}});
+                                new internal::MethodInvoker<std::decay_t<F>>{std::forward<F>(func)}});
         return std::move(*this);
     }
 
@@ -1018,7 +1018,7 @@ public:
         assert(m_currentContainer);
         MetaProperty::create(name, *m_currentContainer,
                            std::unique_ptr<IPropertyInvoker>{
-                                new internal::PropertyInvoker<decay_t<P>>{std::forward<P>(prop)}});
+                                new internal::PropertyInvoker<std::decay_t<P>>{std::forward<P>(prop)}});
         return std::move(*this);
     }
 
@@ -1030,7 +1030,8 @@ public:
         assert(m_currentContainer);
         MetaProperty::create(name, *m_currentContainer,
                            std::unique_ptr<IPropertyInvoker>{
-                                new internal::PropertyInvokerEx<decay_t<G>, decay_t<S>>{std::forward<G>(get), std::forward<S>(set)}});
+                                new internal::PropertyInvokerEx<std::decay_t<G>, std::decay_t<S>>{
+                                     std::forward<G>(get), std::forward<S>(set)}});
         return std::move(*this);
     }
 

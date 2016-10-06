@@ -31,7 +31,7 @@ public:
     }
 
     template<typename T,
-             typename = enable_if_t<!std::is_same<decay_t<T>, argument>::value>>
+             typename = std::enable_if_t<!is_same_v<std::decay_t<T>, argument>>>
     argument(T &&value) noexcept
         : m_data{const_cast<void*>(reinterpret_cast<void const*>(std::addressof(value)))},
           m_type{metaTypeId<T>()}
@@ -45,10 +45,10 @@ public:
     T value() const
     {
         using tag_t =
-            conditional_t<is_rvalue_reference_t<T>::value, std::integral_constant<int, 0>,
-            conditional_t<is_lvalue_const_reference_t<T>::value, std::integral_constant<int, 1>,
-            conditional_t<is_lvalue_reference_t<T>::value, std::integral_constant<int, 2>,
-                                                           std::integral_constant<int, 3>
+            std::conditional_t<is_rvalue_reference_v<T>,        std::integral_constant<int, 0>,
+            std::conditional_t<is_lvalue_const_reference_v<T>,  std::integral_constant<int, 1>,
+            std::conditional_t<is_lvalue_reference_v<T>,        std::integral_constant<int, 2>,
+                                                                std::integral_constant<int, 3>
             >>>;
         if (empty())
             throw bad_argument_cast{"Empty argument"};
@@ -62,7 +62,7 @@ private:
     template<typename T>
     T value(std::integral_constant<int, 0>) const
     {
-        using Decay = decay_t<T>;
+        using Decay = std::decay_t<T>;
 
         auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
@@ -109,7 +109,7 @@ private:
     template<typename T>
     T value(std::integral_constant<int, 1>) const
     {
-        using Decay = decay_t<T>;
+        using Decay = std::decay_t<T>;
 
         auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
@@ -156,7 +156,7 @@ private:
     template<typename T>
     T value(std::integral_constant<int, 2>) const
     {
-        using Decay = decay_t<T>;
+        using Decay = std::decay_t<T>;
 
         auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
@@ -181,7 +181,7 @@ private:
     template<typename T>
     T value(std::integral_constant<int, 3>) const
     {
-        using Decay = decay_t<T>;
+        using Decay = std::decay_t<T>;
 
         auto toType = MetaType{metaTypeId<T>()};
         void *ptr = m_type.isArray() ? &m_data : m_data;

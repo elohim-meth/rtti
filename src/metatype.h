@@ -27,7 +27,7 @@ struct ConvertFunctionBase;
 
 using metatype_manager_t = internal::type_function_table;
 template<typename T>
-using type_manager_t = internal::type_function_table_impl<remove_all_cv_t<remove_reference_t<T>>>;
+using type_manager_t = internal::type_function_table_impl<remove_all_cv_t<std::remove_reference_t<T>>>;
 
 struct TypeInfo;
 class MetaClass;
@@ -334,7 +334,7 @@ private:
 template<typename T, std::size_t N>
 struct type_function_table_impl<T[N]>
 {
-    using Base = remove_all_extents_t<T[N]>;
+    using Base = std::remove_all_extents_t<T[N]>;
     static constexpr auto Length = array_length<T[N]>::value;
 
     static void* allocate()
@@ -478,17 +478,17 @@ inline type_function_table const* type_function_table_for() noexcept
 template <typename T>
 struct type_flags {
     using Flags = TypeFlags;
-    using no_ref = remove_reference_t<T>;
-    using no_ptr = remove_pointer_t<no_ref>;
+    using no_ref = std::remove_reference_t<T>;
+    using no_ptr = std::remove_pointer_t<no_ref>;
     using base = base_type_t<T>;
     static Flags const value =
-          (std::is_const<no_ref>::value                 ? Flags::Const                  : Flags::None)
-        | (std::is_pointer<no_ref>::value               ? Flags::Pointer                : Flags::None)
-        | (std::is_member_pointer<no_ref>::value        ? Flags::MemberPointer          : Flags::None)
-        | (std::is_lvalue_reference<T>::value           ? Flags::LvalueReference        : Flags::None)
-        | (std::is_rvalue_reference<T>::value           ? Flags::RvalueReference        : Flags::None)
-        | (std::is_array<no_ptr>::value                 ? Flags::Array                  : Flags::None)
-        | (std::is_void<base>::value                    ? Flags::Void                   : Flags::None)
+          (is_const_v<no_ref>                 ? Flags::Const                  : Flags::None)
+        | (is_pointer_v<no_ref>               ? Flags::Pointer                : Flags::None)
+        | (is_member_pointer_v<no_ref>        ? Flags::MemberPointer          : Flags::None)
+        | (is_lvalue_reference_v<T>           ? Flags::LvalueReference        : Flags::None)
+        | (is_rvalue_reference_v<T>           ? Flags::RvalueReference        : Flags::None)
+        | (is_array_v<no_ptr>                 ? Flags::Array                  : Flags::None)
+        | (is_void_v<base>                    ? Flags::Void                   : Flags::None)
         | (std::is_integral<base>::value                ? Flags::Integral               : Flags::None)
         | (std::is_floating_point<base>::value          ? Flags::FloatPoint             : Flags::None)
         | (std::is_enum<base>::value                    ? Flags::Enum                   : Flags::None)
@@ -511,7 +511,7 @@ template <typename T>
 class meta_type final
 {
     using Decay = full_decay_t<T>;
-    using NoRef = remove_reference_t<T>;
+    using NoRef = std::remove_reference_t<T>;
     using U = remove_all_cv_t<NoRef>;
 
     meta_type()

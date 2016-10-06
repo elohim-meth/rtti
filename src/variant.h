@@ -24,6 +24,9 @@ using is_inplace = std::integral_constant<bool, Small>;
 template<typename T>
 using is_inplace_t = typename is_inplace<T>::type;
 
+template<typename T>
+constexpr auto is_inplace_v = is_inplace<T>::value;
+
 
 template<typename T>
 struct is_reference_wrapper: std::false_type
@@ -36,7 +39,10 @@ struct is_reference_wrapper<std::reference_wrapper<T>>: std::true_type
 template<typename T>
 using is_reference_wrapper_t = typename is_reference_wrapper<T>::type;
 
-template<typename T, bool = is_reference_wrapper<T>::value>
+template<typename T>
+constexpr auto is_reference_wrapper_v = is_reference_wrapper<T>::value;
+
+template<typename T, bool = is_reference_wrapper_v<T>>
 struct unwrap_reference;
 
 template<typename T>
@@ -94,8 +100,8 @@ struct DLL_PUBLIC variant_function_table
 };
 
 template<typename T,
-         bool = is_inplace<remove_cv_t<T>>::value,
-         bool = is_reference_wrapper<remove_cv_t<T>>::value>
+         bool = is_inplace_v<std::remove_cv_t<T>>,
+         bool = is_reference_wrapper_v<std::remove_cv_t<T>>>
 struct variant_function_table_impl;
 
 template<typename T>
@@ -122,25 +128,25 @@ struct variant_function_table_impl<T, true, false>
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage)
-        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+        noexcept(is_nothrow_copy_constructible_v<Decay>)
     {
         type_manager_t<Decay>::copy_construct(value, &storage.buffer);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
-        noexcept(std::is_nothrow_move_constructible<Decay>::value)
+        noexcept(is_nothrow_move_constructible_v<Decay>)
     {
         type_manager_t<Decay>::move_or_copy(value, true, &storage.buffer);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
-        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+        noexcept(is_nothrow_copy_constructible_v<Decay>)
     {
         type_manager_t<Decay>::copy_construct(&src.buffer, &dst.buffer);
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst)
-        noexcept(std::is_nothrow_move_constructible<Decay>::value)
+        noexcept(is_nothrow_move_constructible_v<Decay>)
     {
         type_manager_t<Decay>::move_or_copy(&src.buffer, true, &dst.buffer);
     }
@@ -150,10 +156,10 @@ struct variant_function_table_impl<T, true, false>
         type_manager_t<Decay>::destroy(&value.buffer);
     }
 private:
-    using U = remove_cv_t<T>;
-    using ULref = add_lvalue_reference_t<U>;
-    using URref = add_rvalue_reference_t<U>;
-    using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
+    using U = std::remove_cv_t<T>;
+    using ULref = std::add_lvalue_reference_t<U>;
+    using URref = std::add_rvalue_reference_t<U>;
+    using UConstLref = std::add_lvalue_reference_t<std::add_const_t<U>>;
 };
 
 template<typename T>
@@ -174,7 +180,7 @@ struct variant_function_table_impl<T, true, true>
 
     static void const* access(variant_type_storage const &value) noexcept
     {
-        return access(value, IsArray{});
+        return access(value, is_array_t<U>{});
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage) noexcept
@@ -204,12 +210,11 @@ struct variant_function_table_impl<T, true, true>
 private:
     using Wrapper = remove_all_cv_t<T>;
     using U = unwrap_reference_t<Wrapper>;
-    using ULref = add_lvalue_reference_t<U>;
-    using URref = add_rvalue_reference_t<U>;
-    using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
+    using ULref = std::add_lvalue_reference_t<U>;
+    using URref = std::add_rvalue_reference_t<U>;
+    using UConstLref = std::add_lvalue_reference_t<std::add_const_t<U>>;
 
-    using IsArray = is_array_t<U>;
-    using Decay = conditional_t<IsArray::value, remove_all_cv_t<U>, full_decay_t<U>>;
+    using Decay = std::conditional_t<is_array_v<U>, remove_all_cv_t<U>, full_decay_t<U>>;
 
     static void const* access(variant_type_storage const &value, std::false_type) noexcept
     {
@@ -246,21 +251,21 @@ struct variant_function_table_impl<T, false, false>
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage)
-        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+        noexcept(is_nothrow_copy_constructible_v<Decay>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::copy_construct(value, storage.ptr);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
-        noexcept(std::is_nothrow_move_constructible<Decay>::value)
+        noexcept(is_nothrow_move_constructible_v<Decay>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::move_or_copy(value, true, storage.ptr);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
-        noexcept(std::is_nothrow_copy_constructible<Decay>::value)
+        noexcept(is_nothrow_copy_constructible_v<Decay>)
     {
         dst.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::copy_construct(src.ptr, dst.ptr);
@@ -278,17 +283,17 @@ struct variant_function_table_impl<T, false, false>
     }
 
 private:
-    using U = remove_cv_t<T>;
-    using ULref = add_lvalue_reference_t<U>;
-    using URref = add_rvalue_reference_t<U>;
-    using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
+    using U = std::remove_cv_t<T>;
+    using ULref = std::add_lvalue_reference_t<U>;
+    using URref = std::add_rvalue_reference_t<U>;
+    using UConstLref = std::add_lvalue_reference_t<std::add_const_t<U>>;
 };
 
 template<typename T, std::size_t N>
 struct variant_function_table_impl<T[N], false, false>
 {
     using Decay = remove_all_cv_t<T[N]>;
-    using Base = remove_all_extents_t<Decay>;
+    using Base = std::remove_all_extents_t<Decay>;
 
     static MetaType_ID type(type_attribute attr)
     {
@@ -309,21 +314,21 @@ struct variant_function_table_impl<T[N], false, false>
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage)
-        noexcept(std::is_nothrow_copy_constructible<Base>::value)
+        noexcept(is_nothrow_copy_constructible_v<Base>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::copy_construct(value, storage.ptr);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
-        noexcept(std::is_nothrow_move_constructible<Base>::value)
+        noexcept(is_nothrow_move_constructible_v<Base>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::move_or_copy(value, true, storage.ptr);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
-        noexcept(std::is_nothrow_copy_constructible<Base>::value)
+        noexcept(is_nothrow_copy_constructible_v<Base>)
     {
         dst.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::copy_construct(src.ptr, dst.ptr);
@@ -342,9 +347,9 @@ struct variant_function_table_impl<T[N], false, false>
 
 private:
     using U = Decay;
-    using ULref = add_lvalue_reference_t<U>;
-    using URref = add_rvalue_reference_t<U>;
-    using UConstLref = add_lvalue_reference_t<add_const_t<U>>;
+    using ULref = std::add_lvalue_reference_t<U>;
+    using URref = std::add_rvalue_reference_t<U>;
+    using UConstLref = std::add_lvalue_reference_t<std::add_const_t<U>>;
 };
 
 
@@ -363,12 +368,12 @@ struct class_info_get
         return info_selector(value, IsClass{}, IsClassPtr{});
     }
 private:
-    using Unwrap = unwrap_reference_t<remove_cv_t<T>>;
-    using Decay = conditional_t<is_array_t<Unwrap>::value, void, full_decay_t<Unwrap>>;
+    using Unwrap = unwrap_reference_t<std::remove_cv_t<T>>;
+    using Decay = std::conditional_t<is_array_v<Unwrap>, void, full_decay_t<Unwrap>>;
     using Selector = variant_function_table_impl<T>;
     using IsClass = is_class_t<Decay>;
     using IsClassPtr = is_class_ptr_t<Decay>;
-    using C = remove_pointer_t<Decay>;
+    using C = std::remove_pointer_t<Decay>;
 
     static ClassInfo info_selector(variant_type_storage const&, std::false_type, std::false_type)
     {
@@ -452,23 +457,23 @@ public:
     variant& operator=(variant &&other) noexcept;
 
     template<typename T,
-             typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
+             typename = std::enable_if_t<!is_same_v<std::decay_t<T>, variant>>>
     variant(T &&value)
-        : manager{internal::variant_function_table_for<remove_reference_t<T>>()}
+        : manager{internal::variant_function_table_for<std::remove_reference_t<T>>()}
     {
-        using NoRef = remove_reference_t<T>;
-        using Type = conditional_t<std::is_array<NoRef>::value, remove_all_extents_t<NoRef>, NoRef>;
-        constexpr bool move = !std::is_reference<T>::value && !std::is_const<T>::value;
-        constexpr bool valid = std::is_copy_constructible<Type>::value
-            || (move && std::is_move_constructible<Type>::value);
+        using NoRef = std::remove_reference_t<T>;
+        using Type = std::conditional_t<is_array_v<NoRef>, std::remove_all_extents_t<NoRef>, NoRef>;
+        constexpr auto move = !is_reference_v<T> && !is_const_v<T>;
+        constexpr auto valid = is_copy_constructible_v<Type>
+            || (move && is_move_constructible_v<Type>);
         static_assert(valid, "The contained type must be CopyConstructible or MoveConstructible");
-        using selector_t = conditional_t<move, std::true_type, std::false_type>;
+        using selector_t = std::conditional_t<move, std::true_type, std::false_type>;
 
         constructor_selector(std::addressof(value), selector_t{});
     }
 
     template<typename T,
-             typename = enable_if_t<!std::is_same<decay_t<T>, variant>::value>>
+             typename = std::enable_if_t<!is_same_v<std::decay_t<T>, variant>>>
     variant& operator=(T &&value)
     {
         variant{std::forward<T>(value)}.swap(*this);
@@ -507,9 +512,9 @@ public:
     template<typename T>
     T& value() &
     {
-        using U = remove_reference_t<T>;
+        using U = std::remove_reference_t<T>;
         auto fromId = internalTypeId(type_attribute::LREF);
-        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
         auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
@@ -517,9 +522,9 @@ public:
     template<typename T>
     T const& value() const &
     {
-        using U = add_const_t<remove_reference_t<T>>;
+        using U = std::add_const_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
-        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
         auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
@@ -527,7 +532,7 @@ public:
     template<typename T>
     T&& value() &&
     {
-        using U = remove_cv_t<remove_reference_t<T>>;
+        using U = std::remove_cv_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::NONE);
         auto toId = metaTypeId<U>();
         auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
@@ -537,9 +542,9 @@ public:
     template<typename T>
     T const& cvalue()
     {
-        using U = add_const_t<remove_reference_t<T>>;
+        using U = std::add_const_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF);
-        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
         auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
@@ -547,9 +552,9 @@ public:
     template<typename T>
     T const& cvalue() const
     {
-        using U = add_const_t<remove_reference_t<T>>;
+        using U = std::add_const_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
-        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
         auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
@@ -557,9 +562,9 @@ public:
     template<typename T>
     T* data() noexcept
     {
-        using U = remove_reference_t<T>;
+        using U = std::remove_reference_t<T>;
         auto fromId = internalTypeId(type_attribute::LREF);
-        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
         try {
             return metafunc_cast<U>::invoke(*this, fromId, toId);
         } catch (...) {
@@ -570,9 +575,9 @@ public:
     template<typename T>
     T const* data() const noexcept
     {
-        using U = add_const_t<remove_reference_t<T>>;
+        using U = std::add_const_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
-        auto toId = metaTypeId<add_lvalue_reference_t<U>>();
+        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
         try {
             return metafunc_cast<U>::invoke(*this, fromId, toId);
         } catch (...) {
@@ -583,8 +588,7 @@ public:
     template<typename T>
     T to()
     {
-        static_assert(!std::is_reference<T>::value,
-                      "Type cannot be reference");
+        static_assert(!is_reference_v<T>, "Type cannot be reference");
 
         alignas(T) std::uint8_t buffer[sizeof(T)] = {};
         auto typeId = internalTypeId(type_attribute::LREF);
@@ -596,8 +600,7 @@ public:
     template<typename T>
     T to() const
     {
-        static_assert(!std::is_reference<T>::value,
-                      "Type cannot be reference");
+        static_assert(!is_reference_v<T>, "Type cannot be reference");
 
         alignas(T) std::uint8_t buffer[sizeof(T)] = {};
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
@@ -609,8 +612,8 @@ public:
     template<typename T>
     bool canConvert() noexcept
     {
-        static_assert(!std::is_reference<T>::value,
-                      "Type cannot be reference");
+        static_assert(!is_reference_v<T>, "Type cannot be reference");
+
         return is<T>() ||
                MetaType::hasConverter(
                     internalTypeId(type_attribute::LREF),
@@ -620,8 +623,8 @@ public:
     template<typename T>
     bool canConvert() const noexcept
     {
-        static_assert(!std::is_reference<T>::value,
-                      "Type cannot be reference");
+        static_assert(!is_reference_v<T>, "Type cannot be reference");
+
         return is<T>() ||
                MetaType::hasConverter(
                     internalTypeId(type_attribute::LREF_CONST),
@@ -686,7 +689,7 @@ private:
         using Decay = full_decay_t<T>;
         using IsClass = is_class_t<Decay>;
         using IsClassPtr = is_class_ptr_t<Decay>;
-        using C = remove_pointer_t<Decay>;
+        using C = std::remove_pointer_t<Decay>;
 
         // nope
         static bool cast_selector(variant const&, MetaType,
@@ -760,7 +763,7 @@ private:
         using IsArray = is_array_t<T>;
         using IsClass = is_class_t<Decay>;
         using IsClassPtr = is_class_ptr_t<Decay>;
-        using C = remove_pointer_t<Decay>;
+        using C = std::remove_pointer_t<Decay>;
 
         static T* result_selector(Decay const *value, std::false_type)
         { return const_cast<T*>(value); }
@@ -818,7 +821,7 @@ private:
     template<typename T>
     struct metafunc_to
     {
-        static_assert(!std::is_array<T>::value, "Array types aren't supported");
+        static_assert(!is_array_v<T>, "Array types aren't supported");
 
         using Decay = full_decay_t<T>;
 
@@ -856,7 +859,7 @@ private:
     private:
         using IsClass = is_class_t<Decay>;
         using IsClassPtr = is_class_ptr_t<Decay>;
-        using C = remove_pointer_t<Decay>;
+        using C = std::remove_pointer_t<Decay>;
 
         // nope
         static bool cast_selector(variant const&, MetaType, void*,
