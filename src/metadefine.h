@@ -100,7 +100,7 @@ struct method_invoker<F, void_static_func>
 {
     using Args = typename mpl::function_traits<F>::args;
 
-    static_assert(mpl::typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+    static_assert(mpl::typelist_size_v<Args> <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic()
@@ -119,7 +119,7 @@ struct method_invoker<F, void_static_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size_v<Args>,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, args, argument_indexes_t{});
@@ -157,7 +157,7 @@ struct method_invoker<F, return_static_func>
     using Args = typename mpl::function_traits<F>::args;
     using Result = typename mpl::function_traits<F>::result_type;
 
-    static_assert(mpl::typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+    static_assert(mpl::typelist_size_v<Args> <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic()
@@ -176,7 +176,7 @@ struct method_invoker<F, return_static_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size_v<Args>,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, args, argument_indexes_t{}, result_is_reference{});
@@ -220,7 +220,7 @@ struct method_invoker<F, void_member_func>
 {
     using Args = typename mpl::function_traits<F>::args;
 
-    static_assert(mpl::typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+    static_assert(mpl::typelist_size_v<Args> <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic()
@@ -240,7 +240,7 @@ struct method_invoker<F, void_member_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size_v<Args>,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, instance, args, argument_indexes_t{});
@@ -254,7 +254,7 @@ struct method_invoker<F, void_member_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size_v<Args>,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, instance, args, argument_indexes_t{});
@@ -326,7 +326,7 @@ struct method_invoker<F, return_member_func>
     using Args = typename mpl::function_traits<F>::args;
     using Result = typename mpl::function_traits<F>::result_type;
 
-    static_assert(mpl::typelist_size<Args>::value <= IMethodInvoker::MaxNumberOfArguments,
+    static_assert(mpl::typelist_size_v<Args> <= IMethodInvoker::MaxNumberOfArguments,
                   "Maximum supported arguments: 10");
 
     static bool isStatic()
@@ -346,7 +346,7 @@ struct method_invoker<F, return_member_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size_v<Args>,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, instance, args, argument_indexes_t{});
@@ -360,7 +360,7 @@ struct method_invoker<F, return_member_func>
                           argument const &arg6, argument const &arg7,
                           argument const &arg8, argument const &arg9)
     {
-        auto const &args = pack_arguments(mpl::typelist_size<Args>::value,
+        auto const &args = pack_arguments(mpl::typelist_size_v<Args>,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
         return invoke_imp(func, instance, args, argument_indexes_t{});
@@ -511,9 +511,9 @@ template<typename C, typename ...Args>
 struct ConstructorInvoker: IConstructorInvoker
 {
     static_assert(sizeof...(Args) <= MaxNumberOfArguments, "Maximum supported arguments: 10");
-    static_assert((sizeof...(Args) > 0) || std::is_default_constructible<C>::value,
+    static_assert((sizeof...(Args) > 0) || is_default_constructible_v<C>,
                   "Type is not default constructible");
-    static_assert((sizeof...(Args) == 0) || std::is_constructible<C, Args...>::value,
+    static_assert((sizeof...(Args) == 0) || is_constructible_v<C, Args...>,
                   "Type can not be constructed with given arguments");
 
     template<std::size_t I>
@@ -572,7 +572,7 @@ private:
         using Arg = argument_get_t<0>;
         if (is_same_v<std::decay_t<Arg>, C>)
         {
-            if (std::is_rvalue_reference<Arg>::value)
+            if (is_rvalue_reference_v<Arg>)
                 return "move constructor";
             else
                 return "copy constructor";
@@ -619,14 +619,14 @@ struct static_pointer{};
 struct member_pointer{};
 
 template<typename P>
-using property_invoker_tag = std::conditional_t<std::is_member_pointer<P>::value, member_pointer, static_pointer>;
+using property_invoker_tag = std::conditional_t<is_member_pointer_v<P>, member_pointer, static_pointer>;
 
 template<typename P, typename Tag> struct property_invoker;
 
 template<typename P>
 struct property_invoker<P, static_pointer>
 {
-    static_assert(std::is_pointer<P>::value && !std::is_function<P>::value,
+    static_assert(is_pointer_v<P> && !is_function_v<P>,
                   "Type should be pointer");
 
     static bool isStatic()
@@ -673,7 +673,7 @@ private:
 template<typename P>
 struct property_invoker<P, member_pointer>
 {
-    static_assert(std::is_member_object_pointer<P>::value,
+    static_assert(is_member_object_pointer_v<P>,
                   "Type should be member object pointer");
 
     static bool isStatic()
@@ -795,7 +795,7 @@ struct PropertyInvokerEx: IPropertyInvoker
     {}
 
     bool isStatic() const override
-    { return std::is_function<G>::value; }
+    { return is_function_v<G>; }
 
     MetaType_ID typeId() const override
     { return metaTypeId<T>(); }
@@ -819,26 +819,27 @@ struct PropertyInvokerEx: IPropertyInvoker
     { MethodInvoker<S>{m_set}.invoke_method(instance, std::move(arg)); }
 
 private:
-    static constexpr bool valid = std::conditional_t
-    <(std::is_function<G>::value && (std::is_void<S>::value || std::is_function<S>::value)) ||
-     (std::is_member_function_pointer<G>::value && (std::is_void<S>::value || std::is_member_function_pointer<S>::value))
-    ,std::true_type, std::false_type>::value;
+    static constexpr auto valid = conditional_v<
+     (is_function_v<G> && (is_void_v<S> || is_function_v<S>))
+     ||
+     (is_member_function_pointer_v<G> && (is_void_v<S> || is_member_function_pointer_v<S>)),
+     std::true_type, std::false_type>;
     static_assert(valid, "Get and Set methods should be simultaneously static method or pointer to member");
 
     using GTraits = mpl::function_traits<G>;
     using STraits = mpl::function_traits<S>;
 
     using T = typename GTraits::result_type;
-    static_assert(!std::is_void<T>::value,
+    static_assert(!is_void_v<T>,
                   "Get method should have non void result type");
     static_assert(GTraits::arity::value == 0,
                   "Get method shouldn't have any parameters");
-    static_assert(std::is_void<typename STraits::result_type>::value,
+    static_assert(is_void_v<typename STraits::result_type>,
                   "Set method should have void result type");
     static_assert(STraits::arity::value == 1,
                   "Set method should have one parameters");
     using Arg = typename STraits::template arg<0>::type;
-    static_assert(std::is_same<std::decay_t<T>, std::decay_t<Arg>>::value,
+    static_assert(is_same_v<std::decay_t<T>, std::decay_t<Arg>>,
                   "Get method return type and Set method parameter type do not match");
     G m_get;
     S m_set;
@@ -869,7 +870,7 @@ public:
 
     meta_define<void, this_t> _namespace(char const *name)
     {
-        static_assert(std::is_void<T>::value, "Namespace can be defined only in another namespace");
+        static_assert(is_void_v<T>, "Namespace can be defined only in another namespace");
         assert(m_currentContainer && m_currentContainer->category() == mcatNamespace && m_containerStack);
 
         m_containerStack->push(m_currentContainer);
@@ -886,9 +887,9 @@ public:
     template<typename C>
     meta_define<C, this_t> _class(char const *name)
     {
-        static_assert(std::is_class<C>::value, "Template argument <C> must be class");
-        static_assert(!std::is_same<T, C>::value, "Recursive class definition");
-        static_assert(std::is_void<T>::value || std::is_class<T>::value,
+        static_assert(is_class_v<C>, "Template argument <C> must be class");
+        static_assert(!is_same_v<T, C>, "Recursive class definition");
+        static_assert(is_void_v<T> || is_class_v<T>,
                       "Class can be defined in namespace or anther class");
         assert(m_currentContainer && m_containerStack);
 
@@ -918,7 +919,7 @@ public:
     template<typename F>
     this_t _lazy(F &&func)
     {
-        static_assert(std::is_void<T>::value || std::is_class<T>::value,
+        static_assert(is_void_v<T> || is_class_v<T>,
                       "Deferred definition supported only for namespaces and class types");
 
         assert(m_currentContainer);
@@ -931,7 +932,7 @@ public:
     template<typename ...B>
     this_t _base()
     {
-        static_assert(std::is_class<T>::value, "Base class can be defined only for class types");
+        static_assert(is_class_v<T>, "Base class can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
 
         addBaseTypeList<mpl::type_list<B...>>(
@@ -977,7 +978,7 @@ public:
     template<typename ...Args>
     this_t _constructor(char const *name = nullptr)
     {
-        static_assert(std::is_class<T>::value, "Constructor can be defined only for class types");
+        static_assert(is_class_v<T>, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
         MetaConstructor::create(name, *m_currentContainer,
                                 std::unique_ptr<IConstructorInvoker>{
@@ -995,7 +996,7 @@ public:
     template<typename F>
     this_t _method(char const *name, F &&func)
     {
-        static_assert(std::is_void<T>::value || std::is_class<T>::value,
+        static_assert(is_void_v<T> || is_class_v<T>,
                       "Method can be defined in namespace or class");
         assert(m_currentContainer);
         MetaMethod::create(name, *m_currentContainer,
@@ -1013,7 +1014,7 @@ public:
     template<typename P>
     this_t _property(char const *name, P &&prop)
     {
-        static_assert(std::is_void<T>::value || std::is_class<T>::value,
+        static_assert(is_void_v<T> || is_class_v<T>,
                       "Propery can be defined in namespace or class");
         assert(m_currentContainer);
         MetaProperty::create(name, *m_currentContainer,
@@ -1025,7 +1026,7 @@ public:
     template<typename G, typename S>
     this_t _property(char const *name, G &&get, S &&set)
     {
-        static_assert(std::is_void<T>::value || std::is_class<T>::value,
+        static_assert(is_void_v<T> || is_class_v<T>,
                       "Propery can be defined in namespace or class");
         assert(m_currentContainer);
         MetaProperty::create(name, *m_currentContainer,
@@ -1037,7 +1038,7 @@ public:
 
     MB _end()
     {
-        static_assert(!std::is_void<MB>::value, "Container stack is EMPTY");
+        static_assert(!is_void_v<MB>, "Container stack is EMPTY");
         assert(m_containerStack && !m_containerStack->empty());
 
         m_currentContainer = m_containerStack->top();
@@ -1068,8 +1069,8 @@ private:
     template<typename C>
     struct check_is_class
     {
-        static_assert(std::is_class<C>::value, "Type <C> is not a class");
-        static_assert(std::is_same<C, full_decay_t<C>>::value, "Type <C> is not a class");
+        static_assert(is_class_v<C>, "Type <C> is not a class");
+        static_assert(is_same_v<C, full_decay_t<C>>, "Type <C> is not a class");
         using type = C;
     };
 

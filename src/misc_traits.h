@@ -104,13 +104,28 @@ template<typename T>
 constexpr auto is_pointer_v = std::is_pointer<T>::value;
 
 template<typename T>
+using is_function_t = typename std::is_function<T>::type;
+
+template<typename T>
+constexpr auto is_function_v = std::is_function<T>::value;
+
+template<typename T>
 constexpr auto extent_v = std::extent<T>::value;
+
+template<typename L, typename R>
+using is_same_t = typename std::is_same<L, R>::type;
 
 template<typename L, typename R>
 constexpr auto is_same_v = std::is_same<L, R>::value;
 
+template<bool B, typename T, typename F>
+constexpr auto conditional_v = std::conditional_t<B, T, F>::value;
+
 template<typename F, typename T>
 constexpr auto is_convertible_v = std::is_convertible<F, T>::value;
+
+template<typename T, typename ...Args>
+constexpr auto is_constructible_v = std::is_constructible<T, Args...>::value;
 
 template<typename T>
 using is_default_constructible_t = typename std::is_default_constructible<T>::type;
@@ -156,6 +171,12 @@ constexpr auto is_trivially_destructible_v = std::is_trivially_destructible<T>::
 
 template<typename T>
 constexpr auto is_member_pointer_v = std::is_member_pointer<T>::value;
+
+template<typename T>
+constexpr auto is_member_object_pointer_v = std::is_member_object_pointer<T>::value;
+
+template<typename T>
+constexpr auto is_member_function_pointer_v = std::is_member_function_pointer<T>::value;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
@@ -370,7 +391,7 @@ template<typename T>
 using is_class_ptr_t = typename is_class_ptr<T>::type;
 
 template<typename T>
-constexpr auto is_class_ptr_v = is_class_ptr<T>::value;
+constexpr auto is_class_ptr_v = is_class_ptr_t<T>::value;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
