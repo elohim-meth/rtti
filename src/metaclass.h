@@ -60,6 +60,8 @@ struct DLL_PUBLIC ClassInfo
     {}
 };
 
+#ifdef __clang__
+
 #define DECLARE_CLASSINFO \
 public: \
     _Pragma("clang diagnostic push") \
@@ -70,6 +72,18 @@ public: \
     } \
     _Pragma("clang diagnostic pop") \
 private: \
+
+#else
+
+#define DECLARE_CLASSINFO \
+public: \
+    virtual rtti::ClassInfo classInfo() const \
+    { \
+        return {rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(), this}; \
+    } \
+private: \
+
+#endif
 
 namespace internal {
 
