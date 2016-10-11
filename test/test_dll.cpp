@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
             }
 
             {
-                const rtti::variant ok = false;
+                rtti::variant const ok = false;
                 try { auto r = itosM->invoke(123, ok); assert(false);
                 } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
             }

@@ -59,7 +59,8 @@ using unwrap_reference_t = typename unwrap_reference<T>::type;
 union DLL_PUBLIC variant_type_storage
 {
     void *ptr;
-    alignas(STORAGE_ALIGN) std::uint8_t buffer[STORAGE_SIZE];
+    //alignas(STORAGE_ALIGN) std::uint8_t buffer[STORAGE_SIZE];
+    std::aligned_storage_t<STORAGE_SIZE, STORAGE_ALIGN> buffer;
 
     variant_type_storage(): buffer{0} {}
 };
@@ -590,7 +591,8 @@ public:
     {
         static_assert(!is_reference_v<T>, "Type cannot be reference");
 
-        alignas(T) std::uint8_t buffer[sizeof(T)] = {};
+        //alignas(T) std::uint8_t buffer[sizeof(T)] = {};
+        std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
@@ -602,7 +604,8 @@ public:
     {
         static_assert(!is_reference_v<T>, "Type cannot be reference");
 
-        alignas(T) std::uint8_t buffer[sizeof(T)] = {};
+        //alignas(T) std::uint8_t buffer[sizeof(T)] = {};
+        std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
