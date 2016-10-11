@@ -64,45 +64,42 @@ private:
     {
         using Decay = std::decay_t<T>;
 
-        auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
+        auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
 
-        if (MetaType::compatible(fromType, toType))
+        if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
+            return std::move(*static_cast<Decay*>(ptr));
+        else if (isVariant())
         {
-            void *ptr = m_type.isArray() && !toType.isArray() ? &m_data : m_data;
-            if (m_type.decayId() == toType.decayId())
-                return std::move(*static_cast<Decay*>(ptr));
-            else if (isVariant())
-            {
-                auto *v = static_cast<variant*>(ptr);
-                if (v->is<Decay>())
-                    return std::move(*v).value<Decay>();
-            }
+            auto *v = static_cast<variant*>(ptr);
+            if (variant::metafunc_is<T>::invoke(*v, typeId()))
+                return std::move(*v).value<Decay>();
         }
-
-        if (MetaType::hasConverter(fromType, toType))
+        else
         {
-            assert(!m_buffer);
-            m_buffer = toType.allocate();
-            FINALLY_NAME(freeOnExcept) {
-                toType.deallocate(m_buffer);
-            };
-
-            void *ptr = m_type.isArray() ? &m_data : m_data;
-            if (isVariant())
-                ptr = static_cast<variant*>(ptr)->raw_data_ptr();
-            if (MetaType::convert(ptr, fromType, m_buffer, toType))
+            auto fromType = MetaType{typeId()};
+            if (MetaType::hasConverter(fromType, toType))
             {
-                m_type = toType;
-                freeOnExcept.dismiss();
-                return std::move(*static_cast<Decay*>(m_buffer));
-            }
+                assert(!m_buffer);
+                m_buffer = toType.allocate();
+                FINALLY_NAME(freeOnExcept) {
+                    toType.deallocate(m_buffer);
+                };
 
-            throw bad_variant_convert{std::string{"Conversion failed: "} +
-                                      m_type.typeName() + " -> " + toType.typeName()};
+                if (isVariant())
+                    ptr = static_cast<variant*>(ptr)->raw_data_ptr();
+                if (MetaType::convert(ptr, fromType, m_buffer, toType))
+                {
+                    freeOnExcept.dismiss();
+                    return std::move(*static_cast<Decay*>(m_buffer));
+                }
+
+                throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                          fromType.typeName() + " -> " + toType.typeName()};
+            }
         }
         throw bad_argument_cast{std::string{"Incompatible types: "} +
-                               fromType.typeName() + " -> " + toType.typeName()};
+                               m_type.typeName() + " -> " + toType.typeName()};
     }
 
     // lvalue const reference
@@ -111,45 +108,42 @@ private:
     {
         using Decay = std::decay_t<T>;
 
-        auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
+        auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
 
-        if (MetaType::compatible(fromType, toType))
+        if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
+            return *static_cast<Decay*>(ptr);
+        else if (isVariant())
         {
-            void *ptr = m_type.isArray() ? &m_data : m_data;
-            if (m_type.decayId() == toType.decayId())
-                return *static_cast<Decay*>(ptr);
-            else if (isVariant())
-            {
-                auto *v = static_cast<variant const*>(ptr);
-                if (v->is<T>())
-                    return v->value<T>();
-            }
+            auto *v = static_cast<variant const*>(ptr);
+            if (variant::metafunc_is<T>::invoke(*v, typeId()))
+                return v->value<T>();
         }
-
-        if (MetaType::hasConverter(fromType, toType))
+        else
         {
-            assert(!m_buffer);
-            m_buffer = toType.allocate();
-            FINALLY_NAME(freeOnExcept) {
-                toType.deallocate(m_buffer);
-            };
-
-            void *ptr = m_type.isArray() ? &m_data : m_data;
-            if (isVariant())
-                ptr = static_cast<variant*>(ptr)->raw_data_ptr();
-            if (MetaType::convert(ptr, fromType, m_buffer, toType))
+            auto fromType = MetaType{typeId()};
+            if (MetaType::hasConverter(fromType, toType))
             {
-                m_type = toType;
-                freeOnExcept.dismiss();
-                return *static_cast<Decay*>(m_buffer);
-            }
+                assert(!m_buffer);
+                m_buffer = toType.allocate();
+                FINALLY_NAME(freeOnExcept) {
+                    toType.deallocate(m_buffer);
+                };
 
-            throw bad_variant_convert{std::string{"Conversion failed: "} +
-                                      m_type.typeName() + " -> " + toType.typeName()};
+                if (isVariant())
+                    ptr = static_cast<variant*>(ptr)->raw_data_ptr();
+                if (MetaType::convert(ptr, fromType, m_buffer, toType))
+                {
+                    freeOnExcept.dismiss();
+                    return *static_cast<Decay*>(m_buffer);
+                }
+
+                throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                          fromType.typeName() + " -> " + toType.typeName()};
+            }
         }
         throw bad_argument_cast{std::string{"Incompatible types: "} +
-                               fromType.typeName() + " -> " + toType.typeName()};
+                               m_type.typeName() + " -> " + toType.typeName()};
     }
 
     // lvalue reference
@@ -158,21 +152,18 @@ private:
     {
         using Decay = std::decay_t<T>;
 
-        auto fromType = MetaType{typeId()};
         auto toType = MetaType{metaTypeId<T>()};
+        auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
 
-        if (MetaType::compatible(fromType, toType))
+        if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
+            return *static_cast<Decay*>(ptr);
+        else if (isVariant())
         {
-            auto *ptr = m_type.isArray() ? &m_data : m_data;
-
-            if (m_type.decayId() == toType.decayId())
-                return *static_cast<Decay*>(ptr);
-            else if (isVariant())
-            {
-                auto *v = static_cast<variant*>(ptr);
+            auto *v = static_cast<variant*>(ptr);
+            if (variant::metafunc_is<T>::invoke(*v, typeId()))
                 return v->value<T>();
-            }
         }
+        auto fromType = MetaType{typeId()};
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                fromType.typeName() + " -> " + toType.typeName()};
     }
@@ -184,9 +175,9 @@ private:
         using Decay = std::decay_t<T>;
 
         auto toType = MetaType{metaTypeId<T>()};
-        void *ptr = m_type.isArray() ? &m_data : m_data;
+       auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
 
-        if (MetaType::compatible(m_type, toType) && (m_type.decayId() == toType.decayId()))
+        if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
             return internal::move_or_copy<Decay>(ptr, !m_type.isLvalueReference());
         else if (isVariant())
         {
@@ -195,7 +186,7 @@ private:
         }
         else if (MetaType::hasConverter(m_type, toType))
         {
-            alignas(Decay) std::uint8_t buffer[sizeof(Decay)] = {0};
+            std::aligned_storage_t<sizeof(Decay), alignof(Decay)> buffer;
             if (MetaType::convert(ptr, m_type, &buffer, toType))
             {
                 FINALLY{ toType.destroy(&buffer); };
@@ -209,9 +200,9 @@ private:
                                m_type.typeName() + " -> " + toType.typeName()};
     }
 
-    mutable void *m_data = nullptr;
+    void *m_data = nullptr;
     mutable void *m_buffer = nullptr;
-    mutable MetaType m_type = {};
+    MetaType m_type = {};
 };
 
 }
