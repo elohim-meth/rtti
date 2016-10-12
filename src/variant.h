@@ -59,10 +59,7 @@ using unwrap_reference_t = typename unwrap_reference<T>::type;
 union DLL_PUBLIC variant_type_storage
 {
     void *ptr;
-    //alignas(STORAGE_ALIGN) std::uint8_t buffer[STORAGE_SIZE];
     std::aligned_storage_t<STORAGE_SIZE, STORAGE_ALIGN> buffer;
-
-    variant_type_storage(): buffer{0} {}
 };
 
 enum class type_attribute {NONE, LREF, RREF, LREF_CONST};
@@ -102,7 +99,8 @@ struct DLL_PUBLIC variant_function_table
 
 template<typename T,
          bool = is_inplace_v<std::remove_cv_t<T>>,
-         bool = is_reference_wrapper_v<std::remove_cv_t<T>>>
+         bool = is_reference_wrapper_v<std::remove_cv_t<T>>
+        >
 struct variant_function_table_impl;
 
 template<typename T>
@@ -591,7 +589,6 @@ public:
     {
         static_assert(!is_reference_v<T>, "Type cannot be reference");
 
-        //alignas(T) std::uint8_t buffer[sizeof(T)] = {};
         std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
@@ -604,7 +601,6 @@ public:
     {
         static_assert(!is_reference_v<T>, "Type cannot be reference");
 
-        //alignas(T) std::uint8_t buffer[sizeof(T)] = {};
         std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
