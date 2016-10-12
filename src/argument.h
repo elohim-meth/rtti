@@ -117,7 +117,7 @@ private:
         {
             auto *v = static_cast<variant const*>(ptr);
             if (variant::metafunc_is<T>::invoke(*v, typeId()))
-                return v->value<T>();
+                return v->value<Decay>();
         }
         else
         {
@@ -161,7 +161,7 @@ private:
         {
             auto *v = static_cast<variant*>(ptr);
             if (variant::metafunc_is<T>::invoke(*v, typeId()))
-                return v->value<T>();
+                return v->value<Decay>();
         }
         auto fromType = MetaType{typeId()};
         throw bad_argument_cast{std::string{"Incompatible types: "} +
