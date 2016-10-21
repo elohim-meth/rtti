@@ -926,7 +926,7 @@ public:
         assert(m_currentContainer);
         using holder_t = internal::DefinitionCallbackHolder<T, std::decay_t<F>>;
         m_currentContainer->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
-                                                  new holder_t{std::forward<F>(func)}});
+                                                  new holder_t{std::forward<F>(func)}}, {});
         return std::move(*this);
     }
 

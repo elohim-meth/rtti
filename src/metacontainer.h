@@ -27,6 +27,7 @@ struct DLL_PUBLIC IDefinitionCallbackHolder
 
 class DLL_PUBLIC MetaContainer: public MetaItem
 {
+    DECLARE_PRIVATE(MetaContainer)
 public:
     enum class ForceDeferred
     {
@@ -97,8 +98,12 @@ protected:
     virtual MetaProperty const* getPropertyInternal(char const *name) const;
 
 private:
-    DECLARE_PRIVATE(MetaContainer)
-    template<typename, typename> friend class rtti::meta_define;
+    DECLARE_ACCESS_KEY(DeferredDefineKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
+public:
+    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback, DeferredDefineKey)
+    { setDeferredDefine(std::move(callback)); }
 };
 
 } // namespace rtti
