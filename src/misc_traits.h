@@ -421,7 +421,7 @@ constexpr E operator&(E lhs, E rhs)
 #define BITMASK_ENUM(NAME) \
 template<> \
 struct enable_bitmask_enum<NAME>: std::true_type \
-{} \
+{};
 
 //-----------------------------------------------------------------------------------------------------------------------------
 

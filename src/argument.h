@@ -87,7 +87,7 @@ private:
                 };
 
                 if (isVariant())
-                    ptr = static_cast<variant*>(ptr)->raw_data_ptr();
+                    ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
                 if (MetaType::convert(ptr, fromType, m_buffer, toType))
                 {
                     freeOnExcept.dismiss();
@@ -131,7 +131,7 @@ private:
                 };
 
                 if (isVariant())
-                    ptr = static_cast<variant*>(ptr)->raw_data_ptr();
+                    ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
                 if (MetaType::convert(ptr, fromType, m_buffer, toType))
                 {
                     freeOnExcept.dismiss();

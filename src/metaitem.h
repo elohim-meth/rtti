@@ -10,6 +10,12 @@
     inline Class##Private const* d_func() const { return reinterpret_cast<Class##Private const*>(d_ptr.get()); } \
     friend class rtti::Class##Private;
 
+#define DECLARE_ACCESS_KEY(NAME) \
+  class NAME  \
+  { \
+      NAME() {}; \
+      NAME(NAME const&) = default;
+
 namespace rtti {
 
 enum MetaCategory: int {

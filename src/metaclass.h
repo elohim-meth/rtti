@@ -18,6 +18,7 @@ class MetaClassPrivate;
 
 class DLL_PUBLIC MetaClass final: public MetaContainer
 {
+    DECLARE_PRIVATE(MetaClass)
 public:
     using cast_func_t = void const*(*)(void const*);
 
@@ -41,12 +42,29 @@ protected:
 
     MetaMethod const* getMethodInternal(char const *name) const override;
     MetaProperty const* getPropertyInternal(char const *name) const override;
+
 private:
-    DECLARE_PRIVATE(MetaClass)
-    template<typename, typename> friend class rtti::meta_define;
-    template<typename To, typename From>
-    friend To const* internal::meta_cast(From const*, std::true_type);
-    friend class rtti::variant;
+    DECLARE_ACCESS_KEY(CreateAccessKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
+
+    DECLARE_ACCESS_KEY(CastAccessKey)
+        friend class rtti::variant;
+
+        template<typename To, typename From>
+        friend To const* internal::meta_cast(From const*, std::true_type);
+    };
+
+public:
+    static MetaClass* create(char const *name, MetaContainer &owner, MetaType_ID typeId, CreateAccessKey)
+    { return create(name, owner, typeId); }
+    void addBaseClass(MetaType_ID typeId, cast_func_t caster, CreateAccessKey)
+    { addBaseClass(typeId, caster); }
+
+    void const* cast(MetaClass const *base, void const *instance, CastAccessKey) const
+    { return cast(base, instance); }
+    void* cast(MetaClass const *base, void *instance, CastAccessKey) const
+    { return cast(base, instance); }
 };
 
 struct DLL_PUBLIC ClassInfo
@@ -71,7 +89,7 @@ public: \
         return {rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(), this}; \
     } \
     _Pragma("clang diagnostic pop") \
-private: \
+private:
 
 #else
 
@@ -81,7 +99,7 @@ public: \
     { \
         return {rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(), this}; \
     } \
-private: \
+private:
 
 #endif
 
@@ -101,7 +119,7 @@ To const* meta_cast(From const *from, std::true_type)
     if (!fromClass || !toClass)
         return nullptr;
 
-    auto result = fromClass->cast(toClass, info.instance);
+    auto result = fromClass->cast(toClass, info.instance, {});
     if (!result)
         return nullptr;
     return static_cast<To const*>(result);
@@ -128,7 +146,7 @@ To* meta_cast(From *from, std::false_type)
 
 } // namespace internal
 
-HAS_METHOD(classInfo);
+HAS_METHOD(classInfo)
 
 template<typename To, typename From>
 To* meta_cast(From *from)

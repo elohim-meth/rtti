@@ -14,18 +14,18 @@ public:
     PrivatePimpl() = delete;
     PrivatePimpl(const PrivatePimpl &other)
         : m_value{other.m_value}
-    { PRINT_PRETTY_FUNC; }
+    { PRINT_PRETTY_FUNC }
     PrivatePimpl& operator=(const PrivatePimpl&) = delete;
     PrivatePimpl& operator=(PrivatePimpl&&) = delete;
     explicit PrivatePimpl(const char *value)
         : m_value{value}
-    { PRINT_PRETTY_FUNC; }
+    { PRINT_PRETTY_FUNC }
     explicit PrivatePimpl(std::string const &value)
         : m_value{value}
-    { PRINT_PRETTY_FUNC; }
+    { PRINT_PRETTY_FUNC }
     explicit PrivatePimpl(std::string &&value)
         : m_value{std::move(value)}
-    { PRINT_PRETTY_FUNC; }
+    { PRINT_PRETTY_FUNC }
 private:
     std::string m_value;
     TestQPointer *m_qImpl = nullptr;
@@ -37,46 +37,46 @@ private:
 class TestQPointer {
 public:
     TestQPointer()
-    { PRINT_PRETTY_FUNC; }
+    { PRINT_PRETTY_FUNC }
 
     TestQPointer(char const *value)
         : m_pImpl{new PrivatePimpl{value}}
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         m_pImpl->m_qImpl = this;
     }
 
     TestQPointer(std::string const &value)
         : m_pImpl{new PrivatePimpl{value}}
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         m_pImpl->m_qImpl = this;
     }
 
     TestQPointer(std::string &&value)
         : m_pImpl{new PrivatePimpl{std::move(value)}}
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         m_pImpl->m_qImpl = this;
     }
 
     TestQPointer(const TestQPointer &other)
         : m_pImpl{other.m_pImpl ? new PrivatePimpl(*other.m_pImpl) : nullptr}
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         if (m_pImpl)
             m_pImpl->m_qImpl = this;
     }
 
     TestQPointer(TestQPointer &&other) noexcept
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         swap(other);
     }
 
     TestQPointer& operator=(const TestQPointer &other)
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         if (m_pImpl != other.m_pImpl)
             TestQPointer{other}.swap(*this);
         return *this;
@@ -84,7 +84,7 @@ public:
 
     TestQPointer& operator=(TestQPointer &&other) noexcept
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         if (m_pImpl != other.m_pImpl)
             TestQPointer{std::move(other)}.swap(*this);
         return *this;
@@ -101,7 +101,7 @@ public:
 
     virtual ~TestQPointer()
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         if (m_pImpl)
             delete m_pImpl;
     }
@@ -209,30 +209,30 @@ class TestB: public TestA
     DECLARE_CLASSINFO
 public:
     TestB() : TestA()
-    { PRINT_PRETTY_FUNC; }
+    { PRINT_PRETTY_FUNC }
 
     explicit TestB(int value)
         : TestA{value}, d{value}
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
     }
 
     TestB(const TestB &other)
         : TestA{other}, d{other.d}
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
     }
 
     TestB(TestB &&other) noexcept
         : TestA{std::move(other)}
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         std::swap(d, other.d);
     }
 
     TestB& operator=(const TestB &other)
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         if (this != &other)
             TestB{other}.swap(*this);
         return *this;
@@ -240,7 +240,7 @@ public:
 
     TestB& operator=(TestB &&other) noexcept
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         if (this != &other)
             TestB{std::move(other)}.swap(*this);
         return *this;
@@ -255,26 +255,26 @@ public:
 
     virtual ~TestB()
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         d = -1;
     }
 
     void print() const override
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         TestA::print();
         std::printf("d = %d\n", d);
     }
 
     int getD() const
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         return d;
     }
 
     void setD(int value)
     {
-        PRINT_PRETTY_FUNC;
+        PRINT_PRETTY_FUNC
         d = value;
     }
 
@@ -408,7 +408,7 @@ void test_variant_1()
         try {
             s.value<std::string>() = "222"; // shoud throw
             assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         mValue = mcQptr->getMethod<TestQPointer&>("value"); assert(mValue);
         s = mValue->invoke(v);
@@ -420,7 +420,7 @@ void test_variant_1()
         try {
             s = mValue->invoke(v1); //should throw
             assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         variant v2 = q;
         s = mValue->invoke(v2); //shouldn't throw
@@ -429,7 +429,7 @@ void test_variant_1()
         try {
             s = mValue->invoke(v3); //should throw
             assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         delete q;
     }
 
@@ -573,7 +573,7 @@ void test_variant_1()
         auto constructor = mcQptr->defaultConstructor(); assert(constructor);
         try {
             auto obj = constructor->invoke(0); assert(false);
-        } catch (const invoke_error &e) { LOG_RED(e.what()); };
+        } catch (const invoke_error &e) { LOG_RED(e.what()) };
         auto obj = constructor->invoke(); assert(obj);
         mCheck->invoke(obj);
         assert(mEmpty->invoke(obj).to<bool>());
@@ -594,7 +594,7 @@ void test_variant_1()
         constructor = mcQptr->moveConstructor(); assert(constructor);
         try {
             auto move = constructor->invoke(copy); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); };
+        } catch (const bad_cast &e) { LOG_RED(e.what()) };
         auto move = constructor->invoke(std::move(copy));
         mCheck->invoke(move);
         assert(mEmpty->invoke(copy).to<bool>());
@@ -636,7 +636,7 @@ void test_variant_1()
         assert(v.to<int const>() == 1);
         try {
             v.value<int>(); assert(false);
-        } catch (bad_cast const &e) { LOG_RED(e.what()); }
+        } catch (bad_cast const &e) { LOG_RED(e.what()) }
         assert(v.value<int const>() == 1);
         assert(v.cvalue<int>() == 1);
         assert(v.cvalue<int const>() == 1);
@@ -662,7 +662,7 @@ void test_variant_1()
         assert(v.to<const int>() == 1);
         try {
             v.value<int>(); assert(false);
-        } catch (bad_cast const &e) { LOG_RED(e.what()); }
+        } catch (bad_cast const &e) { LOG_RED(e.what()) }
         assert(v.value<const int>() == 1);
         assert(v.cvalue<int>() == 1);
         assert(v.cvalue<const int>() == 1);
@@ -689,7 +689,7 @@ void test_variant_1()
         assert(*v.value<int*>() == 1);
         try {
             v.value<const int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         assert(*v.cvalue<int*>() == 1);
         assert(*v.cvalue<const int*>() == 1);
     }
@@ -712,15 +712,15 @@ void test_variant_1()
         variant v = &i;
         try {
             v.to<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         assert(*v.to<const int*>() == 1);
         try {
             v.value<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         assert(*v.value<const int*>() == 1);
         try {
             v.cvalue<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         assert(*v.cvalue<const int*>() == 1);
     }
 
@@ -730,15 +730,15 @@ void test_variant_1()
         const variant v = &i;
         try {
             v.to<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         assert(*v.to<const int*>() == 1);
         try {
             v.value<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         assert(*v.value<const int*>() == 1);
         try {
             v.cvalue<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         assert(*v.cvalue<const int*>() == 1);
     }
 
@@ -756,13 +756,13 @@ void test_variant_1()
         // int *&t3 = i;
         try {
             v.value<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
 
         //int const *&t4 = i;
         try {
             v.value<int const*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         int * const &t5 = i; (void) t5;
         assert(v.cvalue<int*>()[2] == 3);
@@ -782,7 +782,7 @@ void test_variant_1()
         //int (&t10) [10] = i; (void) t10;
         try {
             v.value<int[10]>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
     }
 
     {
@@ -794,7 +794,7 @@ void test_variant_1()
         //int *t1 = j; (void) t1;
         try {
             v.to<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         int const *t2 = j; (void) t2;
         assert(v.to<int const*>()[1] == 2);
@@ -802,7 +802,7 @@ void test_variant_1()
         //int * const &t3 = j;
         try {
             v.value<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         int const * const &t4 = j; (void) t4;
         assert(v.value<int const*>()[1] == 2);
@@ -810,7 +810,7 @@ void test_variant_1()
         //int * const &t5 = j; (void) t5;
         try {
             v.cvalue<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         int const * const &t6 = j; (void) t6;
         assert(v.cvalue<int const*>()[3] == 4);
@@ -827,7 +827,7 @@ void test_variant_1()
         //int const (&t10) [10] = j; (void) t10;
         try {
             v.value<int[10]>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
     }
 
     {
@@ -838,11 +838,11 @@ void test_variant_1()
         assert(v.to<const int*>()[1] == 2);
         try {
             v.value<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         try {
             v.value<const int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
         assert(v.cvalue<int*>()[2] == 3);
         assert(v.cvalue<const int*>()[3] == 4);
 
@@ -851,7 +851,7 @@ void test_variant_1()
         assert(v.value<int[3]>()[1] == 2);
         try {
             v.value<int[10]>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
     }
 
     {
@@ -863,7 +863,7 @@ void test_variant_1()
         //int *t1 = j; (void) t1;
         try {
             v.to<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         int const *t2 = j; (void) t2;
         assert(v.to<int const*>()[1] == 2);
@@ -871,17 +871,17 @@ void test_variant_1()
         //int *&t3 = j;
         try {
             v.value<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         //int const *&t4 = j; (void) t4;
         try {
             v.value<const int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         //int * const &t5 = j; (void) t5;
         try {
             v.cvalue<int*>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         int const * const &t6 = j; (void) t6;
         assert(v.cvalue<const int*>()[3] == 4);
@@ -889,7 +889,7 @@ void test_variant_1()
         //int (&t7) [7] = j; (void) t7;
         try {
             v.value<int[7]>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         int const (&t8) [7] = j; (void) t8;
         assert(v.value<const int[7]>()[5] == 6);
@@ -897,7 +897,7 @@ void test_variant_1()
         //int (&t9) [3] = j; (void) t9;
         try {
             v.value<int[3]>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         //int const (&t10) [3] = j; (void) t10;
         assert(v.value<int const[3]>()[1] == 2); // not strictly correct but safe
@@ -905,12 +905,12 @@ void test_variant_1()
         //int (&t11) [10] = j; (void) t11;
         try {
             v.value<int[10]>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
 
         //int const (&t12) [10] = j; (void) t12;
         try {
             v.value<int const[10]>(); assert(false);
-        } catch (const bad_cast &e) { LOG_RED(e.what()); }
+        } catch (const bad_cast &e) { LOG_RED(e.what()) }
     }
 
     {
@@ -934,7 +934,7 @@ void test_variant_1()
             //int (*&t1)[3] = i; (void) t1;
             try {
                 v.value<int(*)[3]>(); assert(false);
-            } catch (const rtti::bad_cast &e) { LOG_RED(e.what()); }
+            } catch (const rtti::bad_cast &e) { LOG_RED(e.what()) }
 
         }
         {
@@ -947,7 +947,7 @@ void test_variant_1()
             //int const (*&t1)[3] = i; (void) t1;
             try {
                 v.value<int const(*)[3]>(); assert(false);
-            } catch (const rtti::bad_cast &e) { LOG_RED(e.what()); }
+            } catch (const rtti::bad_cast &e) { LOG_RED(e.what()) }
         }
         {
             int const (* const &t1)[3] = i; (void) t1;

@@ -648,10 +648,9 @@ public:
         };
     }
 
+    using type_attribute = internal::type_attribute;
     static variant const empty_variant;
 private:
-    using type_attribute = internal::type_attribute;
-
     void swap(variant &other) noexcept;
 
     void const* raw_data_ptr() const noexcept
@@ -813,7 +812,7 @@ private:
             if (!fromClass && !toClass)
                 return nullptr;
 
-            return fromClass->cast(toClass, info.instance);
+            return fromClass->cast(toClass, info.instance, {});
         }
     };
 
@@ -910,7 +909,7 @@ private:
             if (!fromClass && !toClass)
                 return nullptr;
 
-            return fromClass->cast(toClass, info.instance);
+            return fromClass->cast(toClass, info.instance, {});
         }
     };
 
@@ -920,14 +919,30 @@ private:
     storage_t storage;
     table_t* manager = internal::variant_function_table_for<void>();
 
-    friend void swap(variant&, variant&) noexcept;
-    friend struct std::hash<rtti::variant>;
-    friend class rtti::argument;
+private:
+    DECLARE_ACCESS_KEY(RawPtrAccessKey)
+        friend class rtti::argument;
+        friend struct std::hash<rtti::variant>;
+    };
+    DECLARE_ACCESS_KEY(TypeIdAccessKey)
+        friend class rtti::argument;
+    };
+    DECLARE_ACCESS_KEY(SwapAccessKey)
+        friend void swap(variant&, variant&) noexcept;
+    };
+public:
+    MetaType_ID internalTypeId(type_attribute attr, TypeIdAccessKey) const
+    { return internalTypeId(attr); }
+    void const* raw_data_ptr(RawPtrAccessKey) const noexcept
+    { return raw_data_ptr(); }
+    void * raw_data_ptr(RawPtrAccessKey) noexcept
+    { return raw_data_ptr(); }
+    void swap(variant &other, SwapAccessKey) noexcept;
 };
 
 inline void swap(variant &lhs, variant &rhs) noexcept
 {
-    lhs.swap(rhs);
+    lhs.swap(rhs, {});
 }
 
 } //namespace rtti
@@ -944,7 +959,7 @@ struct hash<rtti::variant>: public std::__hash_base<std::size_t, rtti::variant>
             return 0;
 
         auto type = rtti::MetaType{value.typeId()};
-        auto ptr = value.raw_data_ptr();
+        auto ptr = value.raw_data_ptr({});
         if (type.isArray())
             ptr = *reinterpret_cast<void const * const *>(ptr);
         return _Hash_impl::hash(ptr, type.typeSize());

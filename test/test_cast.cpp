@@ -157,7 +157,7 @@ void test_cast_1()
             (void) d2;
             assert(false);
         }
-        catch(const bad_meta_cast &e) { LOG_RED(e.what()); }
+        catch(const bad_meta_cast &e) { LOG_RED(e.what()) }
     }
 
     {
@@ -276,10 +276,10 @@ void test_cast_1()
         mTestParam1->invoke(v);
         try {
            mTestParam2->invoke(v); assert(false);
-        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()); }
+        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()) }
         try {
            mTestParam3->invoke(v); assert(false);
-        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()); }
+        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()) }
         v = e;
         mTestParam4->invoke(v);
         mTestParam5->invoke(v);
@@ -293,10 +293,10 @@ void test_cast_1()
         mTestParam1->invoke(v);
         try {
            mTestParam2->invoke(v); assert(false);
-        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()); }
+        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()) }
         try {
            mTestParam3->invoke(v); assert(false);
-        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()); }
+        } catch (rtti::bad_cast const &e) { LOG_RED(e.what()) }
 
         std::printf("\n");
     }

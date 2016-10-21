@@ -894,7 +894,8 @@ public:
         assert(m_currentContainer && m_containerStack);
 
         m_containerStack->push(m_currentContainer);
-        m_currentContainer = MetaClass::create(name, *m_currentContainer, metaTypeId<C>());
+        m_currentContainer = MetaClass::create(
+            name, *m_currentContainer, metaTypeId<C>(), {});
         m_currentItem = m_currentContainer;
 
         meta_define<C, this_t> result {m_currentItem, m_currentContainer, m_containerStack};
@@ -1083,7 +1084,7 @@ private:
 
         EXPAND(
             item->addBaseClass(metaTypeId<mpl::typelist_get_t<L, I>>(),
-                               &internal::metacast_to_base<T, mpl::typelist_get_t<L, I>>)
+                &internal::metacast_to_base<T, mpl::typelist_get_t<L, I>>, {})
         );
     }
 
