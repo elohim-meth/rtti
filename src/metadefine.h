@@ -946,7 +946,7 @@ public:
     this_t _enum(char const *name)
     {
         assert(m_currentContainer);
-        m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>());
+        m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>(), {});
         return std::move(*this);
     }
 
@@ -965,7 +965,7 @@ public:
         if (category == mcatEnum)
         {
             auto e = static_cast<MetaEnum*>(m_currentItem);
-            e->addElement(name, std::forward<V>(value));
+            e->addElement(name, std::forward<V>(value), {});
         }
         return std::move(*this);
     }

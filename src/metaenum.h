@@ -12,6 +12,7 @@ class MetaEnumPrivate;
 
 class DLL_PUBLIC MetaEnum final: public MetaItem
 {
+    DECLARE_PRIVATE(MetaEnum)
 public:
     using enum_element_t = std::function<bool(const std::string&, const variant&)>;
 
@@ -28,8 +29,14 @@ protected:
 
     void addElement(const char *name, variant &&value);
 private:
-    DECLARE_PRIVATE(MetaEnum)
-    template<typename, typename> friend class rtti::meta_define;
+    DECLARE_ACCESS_KEY(CreateAccessKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
+public:
+    static MetaEnum* create(const char *name, MetaContainer &owner, MetaType_ID typeId, CreateAccessKey)
+    { return create(name, owner, typeId); }
+    void addElement(const char *name, variant &&value, CreateAccessKey)
+    { addElement(name, std::move(value)); }
 };
 
 } // namespace rtti
