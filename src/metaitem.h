@@ -40,6 +40,7 @@ class MetaItemList;
 
 class DLL_PUBLIC MetaItem
 {
+    DECLARE_PRIVATE(MetaItem)
 public:
     using enum_attribute_t = std::function<bool(std::string const&, variant const&)>;
 
@@ -68,9 +69,15 @@ protected:
     std::unique_ptr<MetaItemPrivate> d_ptr;
 
 private:
-    DECLARE_PRIVATE(MetaItem)
+    DECLARE_ACCESS_KEY(SetAttributeKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
     friend class rtti::internal::MetaItemList;
-    template<typename, typename> friend class rtti::meta_define;
+public:
+    void setAttribute(char const *name, variant const &value, SetAttributeKey)
+    { setAttribute(name, value); }
+    void setAttribute(char const *name, variant &&value, SetAttributeKey)
+    { setAttribute(name, std::move(value)); }
 };
 
 } //namespace rtti

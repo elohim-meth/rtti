@@ -858,7 +858,7 @@ public:
     {
         assert(m_currentItem);
         if (m_currentItem)
-            m_currentItem->setAttribute(name, std::forward<V>(value));
+            m_currentItem->setAttribute(name, std::forward<V>(value), {});
         return std::move(*this);
     }
 

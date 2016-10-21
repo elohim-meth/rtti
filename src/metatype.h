@@ -149,6 +149,7 @@ private:
     friend class rtti::MetaClass;
     friend class rtti::variant;
     friend class rtti::argument;
+
 };
 
 //forward
