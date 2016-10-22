@@ -47,7 +47,6 @@ private:
     DECLARE_ACCESS_KEY(CreateAccessKey)
         template<typename, typename> friend class rtti::meta_define;
     };
-
     DECLARE_ACCESS_KEY(CastAccessKey)
         friend class rtti::variant;
 

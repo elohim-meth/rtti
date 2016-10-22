@@ -12,6 +12,7 @@ class MetaConstructorPrivate;
 
 class DLL_PUBLIC MetaConstructor final: public MetaItem
 {
+    DECLARE_PRIVATE(MetaConstructor)
 public:
     MetaCategory category() const override;
 
@@ -32,8 +33,15 @@ protected:
 private:
     IConstructorInvoker const* constructor() const;
 
-    DECLARE_PRIVATE(MetaConstructor)
-    template<typename, typename> friend class rtti::meta_define;
+    DECLARE_ACCESS_KEY(CreateAccessKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
+public:
+    static MetaConstructor* create(char const *name, MetaContainer &owner,
+                                   std::unique_ptr<IConstructorInvoker> constructor,
+                                   CreateAccessKey)
+    { return create(name, owner, std::move(constructor)); }
+
 };
 
 }

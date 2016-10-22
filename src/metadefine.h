@@ -983,7 +983,8 @@ public:
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
         MetaConstructor::create(name, *m_currentContainer,
                                 std::unique_ptr<IConstructorInvoker>{
-                                    new internal::ConstructorInvoker<T, Args...>{}});
+                                    new internal::ConstructorInvoker<T, Args...>{}},
+                                {});
         register_converting_constructor<mpl::type_list<Args...>>(is_converting_constructor_t<T, Args...>{});
         return std::move(*this);
     }
@@ -1002,7 +1003,8 @@ public:
         assert(m_currentContainer);
         MetaMethod::create(name, *m_currentContainer,
                            std::unique_ptr<IMethodInvoker>{
-                                new internal::MethodInvoker<std::decay_t<F>>{std::forward<F>(func)}});
+                                new internal::MethodInvoker<std::decay_t<F>>{std::forward<F>(func)}},
+                           {});
         return std::move(*this);
     }
 
@@ -1085,7 +1087,7 @@ private:
         EXPAND(
             item->addBaseClass(metaTypeId<mpl::typelist_get_t<L, I>>(),
                 &internal::metacast_to_base<T, mpl::typelist_get_t<L, I>>, {})
-        );
+        )
     }
 
     void define_default_constructor(std::false_type) {}

@@ -64,7 +64,7 @@ enum class TypeFlags: std::uint32_t {
     Destructible         = 1 << 21,
 };
 
-BITMASK_ENUM(TypeFlags);
+BITMASK_ENUM(TypeFlags)
 
 class DLL_PUBLIC MetaType final {
 public:
@@ -149,7 +149,6 @@ private:
     friend class rtti::MetaClass;
     friend class rtti::variant;
     friend class rtti::argument;
-
 };
 
 //forward

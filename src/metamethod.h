@@ -44,6 +44,7 @@ class MetaMethodPrivate;
 
 class DLL_PUBLIC MetaMethod final: public MetaItem
 {
+    DECLARE_PRIVATE(MetaMethod)
 public:
     MetaCategory category() const override;
 
@@ -66,8 +67,15 @@ protected:
 private:
     const IMethodInvoker* invoker() const;
 
-    DECLARE_PRIVATE(MetaMethod)
-    template<typename, typename> friend class rtti::meta_define;
+    DECLARE_ACCESS_KEY(CreateAccessKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
+public:
+    static MetaMethod* create(const char *name, MetaContainer &owner,
+                              std::unique_ptr<IMethodInvoker> invoker,
+                              CreateAccessKey)
+    { return create(name, owner, std::move(invoker)); }
+
 };
 
 } // namespace rtti
