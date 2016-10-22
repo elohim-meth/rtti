@@ -72,31 +72,29 @@ private:
         else if (isVariant())
         {
             auto *v = static_cast<variant*>(ptr);
-            if (variant::metafunc_is<T>::invoke(*v, typeId()))
+            if (variant::internalIs<T>(*v, typeId(), {}))
                 return std::move(*v).value<Decay>();
         }
-        else
+
+        auto fromType = MetaType{typeId()};
+        if (MetaType::hasConverter(fromType, toType))
         {
-            auto fromType = MetaType{typeId()};
-            if (MetaType::hasConverter(fromType, toType))
+            assert(!m_buffer);
+            m_buffer = toType.allocate();
+            FINALLY_NAME(freeOnExcept) {
+                toType.deallocate(m_buffer);
+            };
+
+            if (isVariant())
+                ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
+            if (MetaType::convert(ptr, fromType, m_buffer, toType))
             {
-                assert(!m_buffer);
-                m_buffer = toType.allocate();
-                FINALLY_NAME(freeOnExcept) {
-                    toType.deallocate(m_buffer);
-                };
-
-                if (isVariant())
-                    ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
-                if (MetaType::convert(ptr, fromType, m_buffer, toType))
-                {
-                    freeOnExcept.dismiss();
-                    return std::move(*static_cast<Decay*>(m_buffer));
-                }
-
-                throw bad_variant_convert{std::string{"Conversion failed: "} +
-                                          fromType.typeName() + " -> " + toType.typeName()};
+                freeOnExcept.dismiss();
+                return std::move(*static_cast<Decay*>(m_buffer));
             }
+
+            throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                      fromType.typeName() + " -> " + toType.typeName()};
         }
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                m_type.typeName() + " -> " + toType.typeName()};
@@ -116,31 +114,29 @@ private:
         else if (isVariant())
         {
             auto *v = static_cast<variant const*>(ptr);
-            if (variant::metafunc_is<T>::invoke(*v, typeId()))
+            if (variant::internalIs<T>(*v, typeId(), {}))
                 return v->value<Decay>();
         }
-        else
+
+        auto fromType = MetaType{typeId()};
+        if (MetaType::hasConverter(fromType, toType))
         {
-            auto fromType = MetaType{typeId()};
-            if (MetaType::hasConverter(fromType, toType))
+            assert(!m_buffer);
+            m_buffer = toType.allocate();
+            FINALLY_NAME(freeOnExcept) {
+                toType.deallocate(m_buffer);
+            };
+
+            if (isVariant())
+                ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
+            if (MetaType::convert(ptr, fromType, m_buffer, toType))
             {
-                assert(!m_buffer);
-                m_buffer = toType.allocate();
-                FINALLY_NAME(freeOnExcept) {
-                    toType.deallocate(m_buffer);
-                };
-
-                if (isVariant())
-                    ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
-                if (MetaType::convert(ptr, fromType, m_buffer, toType))
-                {
-                    freeOnExcept.dismiss();
-                    return *static_cast<Decay*>(m_buffer);
-                }
-
-                throw bad_variant_convert{std::string{"Conversion failed: "} +
-                                          fromType.typeName() + " -> " + toType.typeName()};
+                freeOnExcept.dismiss();
+                return *static_cast<Decay*>(m_buffer);
             }
+
+            throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                      fromType.typeName() + " -> " + toType.typeName()};
         }
         throw bad_argument_cast{std::string{"Incompatible types: "} +
                                m_type.typeName() + " -> " + toType.typeName()};
@@ -160,7 +156,7 @@ private:
         else if (isVariant())
         {
             auto *v = static_cast<variant*>(ptr);
-            if (variant::metafunc_is<T>::invoke(*v, typeId()))
+            if (variant::internalIs<T>(*v, typeId(), {}))
                 return v->value<Decay>();
         }
         auto fromType = MetaType{typeId()};

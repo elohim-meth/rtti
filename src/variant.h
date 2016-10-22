@@ -920,12 +920,15 @@ private:
     table_t* manager = internal::variant_function_table_for<void>();
 
 private:
+    DECLARE_ACCESS_KEY(TypeIdAccessKey)
+        friend class rtti::argument;
+    };
+    DECLARE_ACCESS_KEY(InternalIsAccessKey)
+        friend class rtti::argument;
+    };
     DECLARE_ACCESS_KEY(RawPtrAccessKey)
         friend class rtti::argument;
         friend struct std::hash<rtti::variant>;
-    };
-    DECLARE_ACCESS_KEY(TypeIdAccessKey)
-        friend class rtti::argument;
     };
     DECLARE_ACCESS_KEY(SwapAccessKey)
         friend void swap(variant&, variant&) noexcept;
@@ -933,11 +936,15 @@ private:
 public:
     MetaType_ID internalTypeId(type_attribute attr, TypeIdAccessKey) const
     { return internalTypeId(attr); }
+    template<typename T>
+    static bool internalIs(variant const &v, MetaType_ID typeId, InternalIsAccessKey)
+    { return metafunc_is<T>::invoke(v, typeId); }
     void const* raw_data_ptr(RawPtrAccessKey) const noexcept
     { return raw_data_ptr(); }
     void * raw_data_ptr(RawPtrAccessKey) noexcept
     { return raw_data_ptr(); }
-    void swap(variant &other, SwapAccessKey) noexcept;
+    void swap(variant &other, SwapAccessKey) noexcept
+    { swap(other); }
 };
 
 inline void swap(variant &lhs, variant &rhs) noexcept
