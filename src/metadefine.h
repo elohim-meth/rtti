@@ -874,7 +874,7 @@ public:
         assert(m_currentContainer && m_currentContainer->category() == mcatNamespace && m_containerStack);
 
         m_containerStack->push(m_currentContainer);
-        m_currentContainer = MetaNamespace::create(name, *m_currentContainer);
+        m_currentContainer = MetaNamespace::create(name, *m_currentContainer, {});
         m_currentItem = m_currentContainer;
         return meta_define<void, this_t>{m_currentItem, m_currentContainer, m_containerStack};
     }
@@ -1020,9 +1020,9 @@ public:
         static_assert(is_void_v<T> || is_class_v<T>,
                       "Propery can be defined in namespace or class");
         assert(m_currentContainer);
-        MetaProperty::create(name, *m_currentContainer,
-                           std::unique_ptr<IPropertyInvoker>{
-                                new internal::PropertyInvoker<std::decay_t<P>>{std::forward<P>(prop)}});
+        MetaProperty::create(name, *m_currentContainer, std::unique_ptr<IPropertyInvoker>{
+                                new internal::PropertyInvoker<std::decay_t<P>>{std::forward<P>(prop)}},
+                            {});
         return std::move(*this);
     }
 
@@ -1032,10 +1032,10 @@ public:
         static_assert(is_void_v<T> || is_class_v<T>,
                       "Propery can be defined in namespace or class");
         assert(m_currentContainer);
-        MetaProperty::create(name, *m_currentContainer,
-                           std::unique_ptr<IPropertyInvoker>{
+        MetaProperty::create(name, *m_currentContainer, std::unique_ptr<IPropertyInvoker>{
                                 new internal::PropertyInvokerEx<std::decay_t<G>, std::decay_t<S>>{
-                                     std::forward<G>(get), std::forward<S>(set)}});
+                                     std::forward<G>(get), std::forward<S>(set)}},
+                             {});
         return std::move(*this);
     }
 

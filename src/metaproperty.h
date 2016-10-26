@@ -24,6 +24,7 @@ class MetaPropertyPrivate;
 
 class DLL_PUBLIC MetaProperty final: public MetaItem
 {
+    DECLARE_PRIVATE(MetaProperty)
 public:
     MetaCategory category() const override;
 
@@ -101,8 +102,16 @@ private:
         interface->set_field(instance, std::forward<Arg>(arg));
     }
 
-    DECLARE_PRIVATE(MetaProperty)
-    template<typename, typename> friend class rtti::meta_define;
+private:
+    DECLARE_ACCESS_KEY(CreateAccessKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
+public:
+    static MetaProperty* create(const char *name, MetaContainer &owner,
+                              std::unique_ptr<IPropertyInvoker> invoker,
+                              CreateAccessKey)
+    { return create(name, owner, std::move(invoker)); }
+
 };
 
 } // namespace rtti

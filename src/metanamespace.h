@@ -9,6 +9,7 @@ class MetaNamespacePrivate;
 
 class DLL_PUBLIC MetaNamespace final: public MetaContainer
 {
+    DECLARE_PRIVATE(MetaNamespace)
 public:
     static const MetaNamespace* global();
     bool isGlobal() const;
@@ -19,8 +20,12 @@ protected:
 private:
     MetaNamespace(); //global namespace
 
-    DECLARE_PRIVATE(MetaNamespace)
-    template<typename, typename> friend class rtti::meta_define;
+    DECLARE_ACCESS_KEY(CreateAccessKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
+public:
+    static MetaNamespace* create(const char *name, MetaContainer &owner, CreateAccessKey)
+    { return create(name, owner); }
 };
 
 } // namespace rtti
