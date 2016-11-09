@@ -18,7 +18,7 @@ MetaClass::MetaClass(char const *name, MetaContainer const &owner, MetaType_ID t
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
                                   + std::to_string(typeId.value())};
 
-    auto &metaClass = const_cast<TypeInfo*>(type.m_typeInfo)->metaClass;
+    auto &metaClass = type.typeInfo({})->metaClass;
     if (metaClass)
         throw duplicate_metaclass{std::string{"Class "} + type.typeName()
                 + " already registered as: " + metaClass->qualifiedName()};
@@ -40,7 +40,7 @@ MetaClass const* MetaClass::findByTypeId(MetaType_ID typeId)
 {
     auto type = MetaType{typeId};
     if (type.valid())
-        return type.m_typeInfo->metaClass;
+        return type.typeInfo({})->metaClass;
     return nullptr;
 }
 
@@ -51,7 +51,7 @@ MetaClass const* MetaClass::findByTypeName(char const *name)
 
     auto type = MetaType{name};
     if (type.valid())
-        return type.m_typeInfo->metaClass;
+        return type.typeInfo({})->metaClass;
 
     return nullptr;
 }
@@ -98,7 +98,7 @@ void MetaClass::addBaseClass(MetaType_ID typeId, cast_func_t caster)
     if (!type.valid())
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
                                   + std::to_string(typeId.value())};
-    auto base = type.m_typeInfo->metaClass;
+    auto base = type.typeInfo({})->metaClass;
     if (!base)
         throw unregistered_metaclass{std::string{"Base class "}
                                      + type.typeName()
@@ -115,7 +115,7 @@ void MetaClass::addDerivedClass(MetaType_ID typeId)
     if (!type.valid())
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
                                   + std::to_string(typeId.value())};
-    auto derived = type.m_typeInfo->metaClass;
+    auto derived = type.typeInfo({})->metaClass;
     if (!derived)
         throw unregistered_metaclass{std::string{"Derived class "}
                                      + type.typeName()
@@ -135,7 +135,7 @@ bool MetaClass::inheritedFrom(MetaClass const *base) const
     checkDeferredDefine();
     auto d = d_func();
     auto result = false;
-    d->m_baseClasses.for_each([&result, base](internal::BaseClassList::item_t const &item)
+    d->m_baseClasses.for_each([&result, base](auto const &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);
@@ -161,7 +161,7 @@ void const* MetaClass::cast(MetaClass const *base, void const *instance) const
     checkDeferredDefine();
     auto d = d_func();
     auto found = false;
-    d->m_baseClasses.for_each([&result, base, &found](internal::BaseClassList::item_t const &item)
+    d->m_baseClasses.for_each([&result, base, &found](auto const &item)
     {
         auto directBase = findByTypeId(item.first);
         assert(directBase);

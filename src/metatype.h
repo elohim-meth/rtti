@@ -144,11 +144,23 @@ private:
     static bool convert(void const *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId);
 
     TypeInfo const *m_typeInfo = nullptr;
-
-    template<typename> friend class internal::meta_type;
-    friend class rtti::MetaClass;
+private:
+    DECLARE_ACCESS_KEY(TypeInfoKey)
+        friend class rtti::MetaClass;
+    };
+    DECLARE_ACCESS_KEY(RegisterTypeKey)
+        template<typename> friend class internal::meta_type;
+    };
     friend class rtti::variant;
     friend class rtti::argument;
+public:
+    TypeInfo const* typeInfo(TypeInfoKey) const
+    { return m_typeInfo; }
+    static MetaType_ID registerMetaType(char const *name, std::size_t size,
+                                        MetaType_ID decay, uint16_t arity, uint16_t const_mask,
+                                        TypeFlags flags, metatype_manager_t const *manager,
+                                        RegisterTypeKey)
+    { return registerMetaType(name, size, decay, arity, const_mask, flags, manager); }
 };
 
 //forward
@@ -489,21 +501,21 @@ struct type_flags {
         | (is_rvalue_reference_v<T>           ? Flags::RvalueReference        : Flags::None)
         | (is_array_v<no_ptr>                 ? Flags::Array                  : Flags::None)
         | (is_void_v<base>                    ? Flags::Void                   : Flags::None)
-        | (std::is_integral<base>::value                ? Flags::Integral               : Flags::None)
-        | (std::is_floating_point<base>::value          ? Flags::FloatPoint             : Flags::None)
-        | (std::is_enum<base>::value                    ? Flags::Enum                   : Flags::None)
-        | (std::is_function<base>::value                ? Flags::Function               : Flags::None)
-        | (std::is_union<base>::value                   ? Flags::Union                  : Flags::None)
-        | (std::is_class<base>::value                   ? Flags::Class                  : Flags::None)
-        | (std::is_pod<base>::value                     ? Flags::Pod                    : Flags::None)
-        | (std::is_abstract<base>::value                ? Flags::Abstract               : Flags::None)
-        | (std::is_polymorphic<base>::value             ? Flags::Polymorphic            : Flags::None)
-        | (std::is_default_constructible<base>::value   ? Flags::DefaultConstructible   : Flags::None)
-        | (std::is_copy_constructible<base>::value      ? Flags::CopyConstructible      : Flags::None)
-        | (std::is_copy_assignable<base>::value         ? Flags::CopyAssignable         : Flags::None)
-        | (std::is_move_constructible<base>::value      ? Flags::MoveConstructible      : Flags::None)
-        | (std::is_move_assignable<base>::value         ? Flags::MoveAssignable         : Flags::None)
-        | (std::is_destructible<base>::value            ? Flags::Destructible           : Flags::None)
+        | (is_integral_v<base>                ? Flags::Integral               : Flags::None)
+        | (is_floating_point_v<base>          ? Flags::FloatPoint             : Flags::None)
+        | (is_enum_v<base>                    ? Flags::Enum                   : Flags::None)
+        | (is_function_v<base>                ? Flags::Function               : Flags::None)
+        | (is_union_v<base>                   ? Flags::Union                  : Flags::None)
+        | (is_class_v<base>                   ? Flags::Class                  : Flags::None)
+        | (is_pod_v<base>                     ? Flags::Pod                    : Flags::None)
+        | (is_abstract_v<base>                ? Flags::Abstract               : Flags::None)
+        | (is_polymorphic_v<base>             ? Flags::Polymorphic            : Flags::None)
+        | (is_default_constructible_v<base>   ? Flags::DefaultConstructible   : Flags::None)
+        | (is_copy_constructible_v<base>      ? Flags::CopyConstructible      : Flags::None)
+        | (is_copy_assignable_v<base>         ? Flags::CopyAssignable         : Flags::None)
+        | (is_move_constructible_v<base>      ? Flags::MoveConstructible      : Flags::None)
+        | (is_move_assignable_v<base>         ? Flags::MoveAssignable         : Flags::None)
+        | (is_destructible_v<base>            ? Flags::Destructible           : Flags::None)
     ;
 };
 
@@ -527,7 +539,7 @@ class meta_type final
         auto *manager = type_function_table_for<U>();
         meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
                                              arity, const_mask, flags,
-                                             manager);
+                                             manager, {});
     }
 
     static MetaType_ID decay_metatype(std::false_type)

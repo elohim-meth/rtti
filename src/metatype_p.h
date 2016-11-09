@@ -23,7 +23,7 @@ struct DLL_LOCAL TypeInfo {
     TypeFlags const flags;
     metatype_manager_t const *manager;
 
-    MetaClass *metaClass = nullptr;
+    mutable MetaClass *metaClass = nullptr;
 
     constexpr TypeInfo(CString name, std::size_t size,
                        MetaType_ID type, MetaType_ID decay,

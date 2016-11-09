@@ -31,4 +31,15 @@
   #define DLL_LOCAL
 #endif
 
+#define DECLARE_PRIVATE(Class) \
+    inline Class##Private* d_func() { return reinterpret_cast<Class##Private *>(d_ptr.get()); } \
+    inline Class##Private const* d_func() const { return reinterpret_cast<Class##Private const*>(d_ptr.get()); } \
+    friend class rtti::Class##Private;
+
+#define DECLARE_ACCESS_KEY(NAME) \
+  class NAME  \
+  { \
+      NAME() {}; \
+      NAME(NAME const&) = default;
+
 #endif // GLOBAL_H

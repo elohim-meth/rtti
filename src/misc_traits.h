@@ -56,16 +56,40 @@ template<typename T>
 constexpr auto is_void_v = std::is_void<T>::value;
 
 template<typename T>
+constexpr auto is_integral_v = std::is_integral<T>::value;
+
+template<typename T>
+constexpr auto is_floating_point_v = std::is_floating_point<T>::value;
+
+template<typename T>
 using is_array_t = typename std::is_array<T>::type;
 
 template<typename T>
 constexpr auto is_array_v = std::is_array<T>::value;
 
 template<typename T>
+using is_pod_t = typename std::is_pod<T>::type;
+
+template<typename T>
+constexpr auto is_pod_v = std::is_pod<T>::value;
+
+template<typename T>
 using is_class_t = typename std::is_class<T>::type;
 
 template<typename T>
 constexpr auto is_class_v = std::is_class<T>::value;
+
+template<typename T>
+using is_union_t = typename std::is_union<T>::type;
+
+template<typename T>
+constexpr auto is_union_v = std::is_union<T>::value;
+
+template<typename T>
+constexpr auto is_abstract_v = std::is_abstract<T>::value;
+
+template<typename T>
+constexpr auto is_polymorphic_v = std::is_polymorphic<T>::value;
 
 template<typename T>
 using is_enum_t = typename std::is_enum<T>::type;
@@ -155,6 +179,9 @@ template<typename T>
 constexpr auto is_nothrow_move_constructible_v = std::is_nothrow_move_constructible<T>::value;
 
 template<typename T>
+constexpr auto is_move_assignable_v = std::is_move_assignable<T>::value;
+
+template<typename T>
 using is_copy_constructible_t = typename std::is_copy_constructible<T>::type;
 
 template<typename T>
@@ -162,6 +189,12 @@ constexpr auto is_copy_constructible_v = std::is_copy_constructible<T>::value;
 
 template<typename T>
 constexpr auto is_nothrow_copy_constructible_v = std::is_nothrow_copy_constructible<T>::value;
+
+template<typename T>
+constexpr auto is_copy_assignable_v = std::is_copy_assignable<T>::value;
+
+template<typename T>
+constexpr auto is_destructible_v = std::is_destructible<T>::value;
 
 template<typename T>
 using is_trivially_destructible_t = typename std::is_trivially_destructible<T>::type;

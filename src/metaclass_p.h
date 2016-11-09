@@ -98,7 +98,7 @@ template<typename F>
 inline void BaseClassList::for_each(F &&func) const
 {
     std::lock_guard<std::mutex> lock{m_lock};
-    for(const auto &item: m_items)
+    for(auto const &item: m_items)
     {
         if (!func(item))
             break;
