@@ -77,7 +77,7 @@ CustomTypes::~CustomTypes()
 
 TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
 {
-    auto type = typeId.value();
+    auto type = std::size_t{typeId.value()};
     if (type == MetaType::InvalidTypeId)
         return nullptr;
 

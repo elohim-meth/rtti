@@ -730,14 +730,10 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-        {
             throw bad_variant_cast{std::string{"Incompatible types: "} +
                                    "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
-        }
         else if (type.isClassPtr())
-        {
             instance.to<C*>()->*property = arg.value<T>();
-        }
     }
 
     static void set_field(P property, variant &instance, argument const &arg, std::false_type)

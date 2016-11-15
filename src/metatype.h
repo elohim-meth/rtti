@@ -195,7 +195,7 @@ inline T move_or_copy(void *source, bool movable, std::true_type, std::true_type
 template <typename T>
 inline T move_or_copy(void *source, bool movable)
 {
-    static_assert(std::is_copy_constructible<T>::value || std::is_move_constructible<T>::value,
+    static_assert(is_copy_constructible_v<T> || is_move_constructible_v<T>,
                   "Type should be CopyConstructible or MoveConstructible");
 
     return move_or_copy<T>(source, movable, is_move_constructible_t<T>{}, is_copy_constructible_t<T>{});
@@ -550,7 +550,7 @@ class meta_type final
 
     MetaType_ID meta_id;
 
-    template <typename> friend MetaType_ID rtti::metaTypeId();
+    friend MetaType_ID rtti::metaTypeId<T>();
 };
 
 } // namespace internal
