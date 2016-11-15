@@ -416,7 +416,7 @@ template<typename T>
 using is_class_ptr =
 std::conditional_t<
     is_pointer_v<std::remove_reference_t<T>> &&
-    is_class_v<std::remove_reference_t<std::remove_pointer_t<T>>>,
+    is_class_v<std::remove_pointer_t<std::remove_reference_t<T>>>,
     std::true_type, std::false_type
 >;
 
