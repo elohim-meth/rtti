@@ -83,12 +83,15 @@ private:
             m_buffer = toType.allocate();
             FINALLY_NAME(freeOnExcept) {
                 toType.deallocate(m_buffer);
+                m_buffer = nullptr;
             };
 
             if (isVariant())
                 ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
+
             if (MetaType::convert(ptr, fromType, m_buffer, toType))
             {
+                m_type = toType;
                 freeOnExcept.dismiss();
                 return std::move(*static_cast<Decay*>(m_buffer));
             }
@@ -125,12 +128,15 @@ private:
             m_buffer = toType.allocate();
             FINALLY_NAME(freeOnExcept) {
                 toType.deallocate(m_buffer);
+                m_buffer = nullptr;
             };
 
             if (isVariant())
                 ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
+
             if (MetaType::convert(ptr, fromType, m_buffer, toType))
             {
+                m_type = toType;
                 freeOnExcept.dismiss();
                 return *static_cast<Decay*>(m_buffer);
             }
@@ -198,7 +204,7 @@ private:
 
     void *m_data = nullptr;
     mutable void *m_buffer = nullptr;
-    MetaType m_type = {};
+    mutable MetaType m_type = {};
 };
 
 }
