@@ -73,7 +73,7 @@ struct DLL_PUBLIC variant_function_table
     using copy_t = void (*) (variant_type_storage const&, variant_type_storage&);
     using move_t = void (*) (variant_type_storage&, variant_type_storage&);
     using destroy_t = void (*) (variant_type_storage&);
-    using info_t = ClassInfo(*)(variant_type_storage const&);
+    using info_t = ClassInfo (*) (variant_type_storage const&);
 
     type_t const f_type = nullptr;
     access_t const f_access = nullptr;
