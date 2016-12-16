@@ -177,7 +177,7 @@ private:
         using Decay = std::decay_t<T>;
 
         auto toType = MetaType{metaTypeId<T>()};
-       auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
+        auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
 
         if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
             return internal::move_or_copy<Decay>(ptr, !m_type.isLvalueReference());
