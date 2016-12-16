@@ -468,7 +468,7 @@ public:
         static_assert(valid, "The contained type must be CopyConstructible or MoveConstructible");
         using selector_t = std::conditional_t<move, std::true_type, std::false_type>;
 
-        constructor_selector(std::addressof(value), selector_t{});
+        constructor(std::addressof(value), selector_t{});
     }
 
     template<typename T,
@@ -559,7 +559,7 @@ public:
     }
 
     template<typename T>
-    T* data() noexcept
+    T* data()
     {
         using U = std::remove_reference_t<T>;
         auto fromId = internalTypeId(type_attribute::LREF);
@@ -572,7 +572,7 @@ public:
     }
 
     template<typename T>
-    T const* data() const noexcept
+    T const* data() const
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
@@ -609,7 +609,7 @@ public:
     }
 
     template<typename T>
-    bool canConvert() noexcept
+    bool canConvert()
     {
         static_assert(!is_reference_v<T>, "Type cannot be reference");
 
@@ -620,7 +620,7 @@ public:
     }
 
     template<typename T>
-    bool canConvert() const noexcept
+    bool canConvert() const
     {
         static_assert(!is_reference_v<T>, "Type cannot be reference");
 
@@ -635,7 +635,7 @@ public:
     { *this = to<T>(); }
 
     template<typename T>
-    bool tryConvert() noexcept
+    bool tryConvert()
     {
         try
         {
@@ -657,14 +657,14 @@ private:
     { return manager->f_access(storage); }
     void * raw_data_ptr() noexcept
     { return const_cast<void*>(manager->f_access(storage)); }
-    MetaType_ID internalTypeId(type_attribute attr = type_attribute::NONE) const
+    MetaType_ID internalTypeId(type_attribute attr = type_attribute::NONE) const noexcept
     { return manager->f_type(attr); }
-    ClassInfo classInfo() const
+    ClassInfo classInfo() const noexcept
     { return manager->f_info(storage); }
 
-    void constructor_selector(void *value, std::true_type)
+    void constructor(void *value, std::true_type)
     { manager->f_move_construct(value, storage); }
-    void constructor_selector(void const *value, std::false_type)
+    void constructor(void const *value, std::false_type)
     { manager->f_copy_construct(value, storage); }
 
     template<typename T>
@@ -679,38 +679,40 @@ private:
             auto to = MetaType{metaTypeId<T>()};
 
             return MetaType::compatible(from, to) &&
-                    ((from.decayId() == to.decayId()) ||
-                     cast_selector(self, from, IsClass{}, IsClassPtr{}));
+                ((from.decayId() == to.decayId()) || cast(self, from, tag_t{}));
         }
 
     private:
         using Decay = full_decay_t<T>;
-        using IsClass = is_class_t<Decay>;
-        using IsClassPtr = is_class_ptr_t<Decay>;
         using C = std::remove_pointer_t<Decay>;
+        using tag_t =
+            std::conditional_t<is_class_v<Decay>,      std::integral_constant<int, 1>,
+            std::conditional_t<is_class_ptr_v<Decay>,  std::integral_constant<int, 2>,
+                                                       std::integral_constant<int, 0>
+            >>;
 
         // nope
-        static bool cast_selector(variant const&, MetaType,
-                                  std::false_type, std::false_type)
+        static bool cast(variant const&, MetaType,
+                         std::integral_constant<int, 0>)
         { return false; }
         // class
-        static bool cast_selector(variant const &self, MetaType from,
-                                  std::true_type, std::false_type)
+        static bool cast(variant const &self, MetaType from,
+                         std::integral_constant<int, 1>)
         {
             if (from.isClass())
-                return invoke_imp(self);
+                return cast_imp(self);
             return false;
         }
         // class ptr
-        static bool cast_selector(variant const &self, MetaType from,
-                                  std::false_type, std::true_type)
+        static bool cast(variant const &self, MetaType from,
+                         std::integral_constant<int, 2>)
         {
             if (from.isClassPtr())
-                return invoke_imp(self);
+                return cast_imp(self);
             return false;
         }
         // implementaion
-        static bool invoke_imp(variant const &self)
+        static bool cast_imp(variant const &self)
         {
             auto const &info = self.classInfo();
 
@@ -729,8 +731,6 @@ private:
     template<typename T>
     struct metafunc_cast
     {
-        using Decay = full_decay_t<T>;
-
         static T* invoke(variant const &self, MetaType_ID fromId, MetaType_ID toId)
         {
             if (self.empty())
@@ -745,7 +745,7 @@ private:
                     result = static_cast<Decay const*>(self.raw_data_ptr());
                 else
                 {
-                    auto ptr = cast_selector(self, from, IsClass{}, IsClassPtr{});
+                    auto ptr = cast(self, from, tag_t{});
                     if (ptr)
                         result = static_cast<Decay const*>(ptr);
                 }
@@ -754,14 +754,17 @@ private:
             if (!result)
                 throw bad_variant_cast{std::string{"Incompatible types: "} +
                                        from.typeName() + " -> " + to.typeName()};
-            return result_selector(result, IsArray{});
+            return result_selector(result, is_array_t<T>{});
         }
 
     private:
-        using IsArray = is_array_t<T>;
-        using IsClass = is_class_t<Decay>;
-        using IsClassPtr = is_class_ptr_t<Decay>;
+        using Decay = full_decay_t<T>;
         using C = std::remove_pointer_t<Decay>;
+        using tag_t =
+            std::conditional_t<is_class_v<Decay>,      std::integral_constant<int, 1>,
+            std::conditional_t<is_class_ptr_v<Decay>,  std::integral_constant<int, 2>,
+                                                       std::integral_constant<int, 0>
+            >>;
 
         static T* result_selector(Decay const *value, std::false_type)
         { return const_cast<T*>(value); }
@@ -769,25 +772,25 @@ private:
         { return reinterpret_cast<T*>(*value); }
 
         // nope
-        static void const* cast_selector(variant const&, MetaType,
-                                         std::false_type, std::false_type)
+        static void const* cast(variant const&, MetaType,
+                                std::integral_constant<int, 0>)
         { return nullptr; }
         // class
-        static void const* cast_selector(variant const &self, MetaType from,
-                                         std::true_type, std::false_type)
+        static void const* cast(variant const &self, MetaType from,
+                                std::integral_constant<int, 1>)
         {
             if (from.isClass())
-                return invoke_imp(self);
+                return cast_imp(self);
 
             return nullptr;
         }
         // class ptr
-        static void const* cast_selector(variant const &self, MetaType from,
-                                         std::false_type, std::true_type)
+        static void const* cast(variant const &self, MetaType from,
+                                std::integral_constant<int, 2>)
         {
             if (from.isClassPtr())
             {
-                auto ptr = invoke_imp(self);
+                auto ptr = cast_imp(self);
                 if (ptr)
                 {
                     if (ptr == self.storage.ptr)
@@ -799,7 +802,7 @@ private:
             return nullptr;
         }
         // implementaion
-        static void const* invoke_imp(variant const &self)
+        static void const* cast_imp(variant const &self)
         {
             auto const &info = self.classInfo();
 
@@ -821,8 +824,6 @@ private:
     {
         static_assert(!is_array_v<T>, "Array types aren't supported");
 
-        using Decay = full_decay_t<T>;
-
         static void invoke(variant const &self, MetaType_ID typeId, void *buffer)
         {
             assert(buffer);
@@ -838,7 +839,7 @@ private:
                     to.copy_construct(self.raw_data_ptr(), buffer);
                     return;
                 }
-                else if (cast_selector(self, from, buffer, IsClass{}, IsClassPtr{}))
+                else if (cast(self, from, to, buffer, tag_t{}))
                     return;
             }
 
@@ -855,24 +856,28 @@ private:
         }
 
     private:
-        using IsClass = is_class_t<Decay>;
-        using IsClassPtr = is_class_ptr_t<Decay>;
+        using Decay = full_decay_t<T>;
         using C = std::remove_pointer_t<Decay>;
+        using tag_t =
+            std::conditional_t<is_class_v<Decay>,      std::integral_constant<int, 1>,
+            std::conditional_t<is_class_ptr_v<Decay>,  std::integral_constant<int, 2>,
+                                                       std::integral_constant<int, 0>
+            >>;
 
         // nope
-        static bool cast_selector(variant const&, MetaType, void*,
-                                  std::false_type, std::false_type)
+        static bool cast(variant const&, MetaType, MetaType, void*,
+                         std::integral_constant<int, 0>)
         { return false; }
         // class
-        static bool cast_selector(variant const &self, MetaType from, void *buffer,
-                                  std::true_type, std::false_type)
+        static bool cast(variant const &self, MetaType from, MetaType to, void *buffer,
+                         std::integral_constant<int, 1>)
         {
             if (from.isClass())
             {
-                auto ptr = invoke_imp(self);
+                auto ptr = cast_imp(self);
                 if (ptr)
                 {
-                    type_manager_t<C>::copy_construct(ptr, buffer);
+                    to.copy_construct(ptr, buffer);
                     return true;
                 }
                 return false;
@@ -880,15 +885,15 @@ private:
             return false;
         }
         // class ptr
-        static bool cast_selector(variant const &self, MetaType from, void *buffer,
-                                  std::false_type, std::true_type)
+        static bool cast(variant const &self, MetaType from, MetaType to, void *buffer,
+                         std::integral_constant<int, 2>)
         {
             if (from.isClassPtr())
             {
-                auto ptr = invoke_imp(self);
+                auto ptr = cast_imp(self);
                 if (ptr)
                 {
-                    type_manager_t<C*>::copy_construct(&ptr, buffer);
+                    to.copy_construct(&ptr, buffer);
                     return true;
                 }
                 return false;
@@ -896,7 +901,7 @@ private:
             return false;
         }
         // implementaion
-        static void const* invoke_imp(variant const &self)
+        static void const* cast_imp(variant const &self)
         {
             auto const &info = self.classInfo();
 
@@ -934,7 +939,7 @@ private:
         friend void swap(variant&, variant&) noexcept;
     };
 public:
-    MetaType_ID internalTypeId(type_attribute attr, TypeIdAccessKey) const
+    MetaType_ID internalTypeId(type_attribute attr, TypeIdAccessKey) const noexcept
     { return internalTypeId(attr); }
     template<typename T>
     static bool internalIs(variant const &v, MetaType_ID typeId, InternalIsAccessKey)
