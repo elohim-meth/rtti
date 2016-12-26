@@ -286,8 +286,8 @@ private:
 
     static class_ref_t class_get(variant const&, std::false_type)
     {
-        throw bad_variant_cast{std::string{"Incompatible types: "} +
-                               "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
+        throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                               mpl::type_name<class_ref_t>()};
     }
 
     static class_ref_t class_get(variant const &instance, std::true_type)
@@ -405,8 +405,8 @@ private:
 
     static class_ref_t class_get(variant const&, std::false_type)
     {
-        throw bad_variant_cast{std::string{"Incompatible types: "} +
-                               "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
+        throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                               mpl::type_name<class_ref_t>()};
     }
 
     static class_ref_t class_get(variant const &instance, std::true_type)
@@ -730,8 +730,8 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            throw bad_variant_cast{std::string{"Incompatible types: "} +
-                                   "const rtti::variant& -> " + mpl::type_name<class_ref_t>()};
+            throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                                   mpl::type_name<class_ref_t>()};
         else if (type.isClassPtr())
             instance.to<C*>()->*property = arg.value<T>();
     }
