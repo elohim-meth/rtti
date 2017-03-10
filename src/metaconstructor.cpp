@@ -18,7 +18,7 @@ MetaConstructor* MetaConstructor::create(char const *name, MetaContainer &owner,
     if (!result)
     {
         result = new MetaConstructor{std::move(temp), owner, std::move(constructor)};
-        static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
+        INVOKE_PROTECTED(owner, addItem, result);
     }
     return result;
 }

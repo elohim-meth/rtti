@@ -13,7 +13,7 @@ MetaEnum *MetaEnum::create(const char *name, MetaContainer &owner, MetaType_ID t
     if (!result)
     {
         result = new MetaEnum{name, owner, typeId};
-        static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
+        INVOKE_PROTECTED(owner, addItem, result);
     }
     return result;
 }

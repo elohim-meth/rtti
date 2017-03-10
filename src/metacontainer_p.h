@@ -4,21 +4,19 @@
 #include "metaitem_p.h"
 #include "metacontainer.h"
 
+#define INVOKE_PROTECTED(OBJECT, METHOD, ...) (\
+    ([&](auto &o) -> auto {\
+        using T = std::remove_reference_t<decltype(o)>;\
+        struct: T\
+        {\
+            using T::METHOD;\
+        } *a = reinterpret_cast<decltype(a)>(&o);\
+        return a->METHOD(__VA_ARGS__);\
+    })(OBJECT)\
+)
+
 namespace rtti {
 namespace internal {
-
-struct DLL_LOCAL MetaContainerAccess: MetaContainer
-{
-    bool addItem(MetaItem *value)
-    { return MetaContainer::addItem(value); }
-
-    friend class rtti::MetaNamespace;
-    friend class rtti::MetaClass;
-    friend class rtti::MetaConstructor;
-    friend class rtti::MetaProperty;
-    friend class rtti::MetaMethod;
-    friend class rtti::MetaEnum;
-};
 
 class DLL_LOCAL MetaItemList
 {

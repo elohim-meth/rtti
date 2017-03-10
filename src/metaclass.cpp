@@ -31,7 +31,7 @@ MetaClass* MetaClass::create(char const *name, MetaContainer &owner, MetaType_ID
     if (!result)
     {
         result = new MetaClass(name, owner, typeId);
-        static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
+        INVOKE_PROTECTED(owner, addItem, result);
     }
     return result;
 }

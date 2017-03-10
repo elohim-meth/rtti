@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.1.0)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-        message(FATAL_ERROR "GCC version must be at least 4.9!")
+        message(FATAL_ERROR "GCC version must be at least 5.0!")
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.5)

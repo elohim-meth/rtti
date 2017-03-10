@@ -33,7 +33,7 @@ MetaProperty* MetaProperty::create(const char *name, MetaContainer &owner,
     if (!result)
     {
         result = new MetaProperty{name, owner, std::move(invoker)};
-        static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
+        INVOKE_PROTECTED(owner, addItem, result);
     }
     return result;
 }

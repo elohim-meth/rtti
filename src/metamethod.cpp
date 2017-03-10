@@ -34,7 +34,7 @@ MetaMethod* MetaMethod::create(const char *name, MetaContainer &owner,
     if (!result)
     {
         result = new MetaMethod{std::move(signature), owner, std::move(invoker)};
-        static_cast<internal::MetaContainerAccess&>(owner).addItem(result);
+        INVOKE_PROTECTED(owner, addItem, result);
     }
     return result;
 }
