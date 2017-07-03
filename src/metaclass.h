@@ -107,7 +107,7 @@ namespace internal {
 template<typename To, typename From>
 To const* meta_cast(From const *from, std::true_type)
 {
-    static_assert(is_class_v<From> && is_class_v<To>,
+    static_assert(std::is_class_v<From> && std::is_class_v<To>,
                   "Both template arguments should be classes");
     if (!from)
         return nullptr;

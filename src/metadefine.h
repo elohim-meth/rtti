@@ -63,9 +63,9 @@ struct return_member_func {};
 
 template<typename F>
 using method_invoker_tag =
-std::conditional_t<is_void_v<typename mpl::function_traits<F>::result_type>,
-    std::conditional_t<is_void_v<typename mpl::function_traits<F>::class_type>, void_static_func, void_member_func>,
-    std::conditional_t<is_void_v<typename mpl::function_traits<F>::class_type>, return_static_func, return_member_func>>;
+std::conditional_t<std::is_void_v<typename mpl::function_traits<F>::result_type>,
+    std::conditional_t<std::is_void_v<typename mpl::function_traits<F>::class_type>, void_static_func, void_member_func>,
+    std::conditional_t<std::is_void_v<typename mpl::function_traits<F>::class_type>, return_static_func, return_member_func>>;
 
 template<typename F, typename Tag> struct method_invoker;
 
@@ -193,7 +193,7 @@ private:
     template<std::size_t I>
     using argument_get_t = mpl::typelist_get_t<Args, I>;
     using argument_indexes_t = mpl::index_sequence_for_t<Args>;
-    using result_is_reference = is_reference_t<Result>;
+    using result_is_reference = std::is_reference_t<Result>;
 
     template<std::size_t ...I>
     static std::vector<MetaType_ID> parametersTypeId(mpl::index_sequence<I...>)
@@ -377,7 +377,7 @@ private:
     template<std::size_t I>
     using argument_get_t = mpl::typelist_get_t<Args, I>;
     using argument_indexes_t = mpl::index_sequence_for_t<Args>;
-    using result_is_reference = is_reference_t<Result>;
+    using result_is_reference = std::is_reference_t<Result>;
     //
     using C = typename mpl::function_traits<F>::class_type;
     using is_const = typename mpl::function_traits<F>::is_const;
@@ -572,7 +572,7 @@ private:
         using Arg = argument_get_t<0>;
         if (is_same_v<std::decay_t<Arg>, C>)
         {
-            if (is_rvalue_reference_v<Arg>)
+            if (std::is_rvalue_reference_v<Arg>)
                 return "move constructor";
             else
                 return "copy constructor";
@@ -626,7 +626,7 @@ template<typename P, typename Tag> struct property_invoker;
 template<typename P>
 struct property_invoker<P, static_pointer>
 {
-    static_assert(is_pointer_v<P> && !is_function_v<P>,
+    static_assert(std::is_pointer_v<P> && !std::is_function_v<P>,
                   "Type should be pointer");
 
     static bool isStatic()
@@ -657,7 +657,7 @@ struct property_invoker<P, static_pointer>
 
 private:
     using T = property_type_t<P>;
-    using IsReadOnly = is_const_t<T>;
+    using IsReadOnly = std::is_const_t<T>;
 
     static void set_static(P, argument const&, std::true_type)
     {
@@ -713,7 +713,7 @@ struct property_invoker<P, member_pointer>
 private:
     using C = property_class_t<P>;
     using T = property_type_t<P>;
-    using IsReadOnly = is_const_t<T>;
+    using IsReadOnly = std::is_const_t<T>;
     using class_ref_t = std::add_lvalue_reference_t<C>;
 
     static void set_field(P, variant&, argument const&, std::true_type)
@@ -791,7 +791,7 @@ struct PropertyInvokerEx: IPropertyInvoker
     {}
 
     bool isStatic() const override
-    { return is_function_v<G>; }
+    { return std::is_function_v<G>; }
 
     MetaType_ID typeId() const override
     { return metaTypeId<T>(); }
@@ -816,9 +816,9 @@ struct PropertyInvokerEx: IPropertyInvoker
 
 private:
     static constexpr auto valid = conditional_v<
-     (is_function_v<G> && (is_void_v<S> || is_function_v<S>))
+     (std::is_function_v<G> && (std::is_void_v<S> || std::is_function_v<S>))
      ||
-     (is_member_function_pointer_v<G> && (is_void_v<S> || is_member_function_pointer_v<S>)),
+     (is_member_function_pointer_v<G> && (std::is_void_v<S> || is_member_function_pointer_v<S>)),
      std::true_type, std::false_type>;
     static_assert(valid, "Get and Set methods should be simultaneously static method or pointer to member");
 
@@ -826,11 +826,11 @@ private:
     using STraits = mpl::function_traits<S>;
 
     using T = typename GTraits::result_type;
-    static_assert(!is_void_v<T>,
+    static_assert(!std::is_void_v<T>,
                   "Get method should have non void result type");
     static_assert(GTraits::arity::value == 0,
                   "Get method shouldn't have any parameters");
-    static_assert(is_void_v<typename STraits::result_type>,
+    static_assert(std::is_void_v<typename STraits::result_type>,
                   "Set method should have void result type");
     static_assert(STraits::arity::value == 1,
                   "Set method should have one parameters");
@@ -866,7 +866,7 @@ public:
 
     meta_define<void, this_t> _namespace(char const *name)
     {
-        static_assert(is_void_v<T>, "Namespace can be defined only in another namespace");
+        static_assert(std::is_void_v<T>, "Namespace can be defined only in another namespace");
         assert(m_currentContainer && m_currentContainer->category() == mcatNamespace && m_containerStack);
 
         m_containerStack->push(m_currentContainer);
@@ -883,9 +883,9 @@ public:
     template<typename C>
     meta_define<C, this_t> _class(char const *name)
     {
-        static_assert(is_class_v<C>, "Template argument <C> must be class");
+        static_assert(std::is_class_v<C>, "Template argument <C> must be class");
         static_assert(!is_same_v<T, C>, "Recursive class definition");
-        static_assert(is_void_v<T> || is_class_v<T>,
+        static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Class can be defined in namespace or anther class");
         assert(m_currentContainer && m_containerStack);
 
@@ -916,7 +916,7 @@ public:
     template<typename F>
     this_t _lazy(F &&func)
     {
-        static_assert(is_void_v<T> || is_class_v<T>,
+        static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Deferred definition supported only for namespaces and class types");
 
         assert(m_currentContainer);
@@ -929,7 +929,7 @@ public:
     template<typename ...B>
     this_t _base()
     {
-        static_assert(is_class_v<T>, "Base class can be defined only for class types");
+        static_assert(std::is_class_v<T>, "Base class can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
 
         addBaseTypeList<mpl::type_list<B...>>(
@@ -975,7 +975,7 @@ public:
     template<typename ...Args>
     this_t _constructor(char const *name = nullptr)
     {
-        static_assert(is_class_v<T>, "Constructor can be defined only for class types");
+        static_assert(std::is_class_v<T>, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
         MetaConstructor::create(name, *m_currentContainer,
                                 std::unique_ptr<IConstructorInvoker>{
@@ -994,7 +994,7 @@ public:
     template<typename F>
     this_t _method(char const *name, F &&func)
     {
-        static_assert(is_void_v<T> || is_class_v<T>,
+        static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Method can be defined in namespace or class");
         assert(m_currentContainer);
         MetaMethod::create(name, *m_currentContainer,
@@ -1013,7 +1013,7 @@ public:
     template<typename P>
     this_t _property(char const *name, P &&prop)
     {
-        static_assert(is_void_v<T> || is_class_v<T>,
+        static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Propery can be defined in namespace or class");
         assert(m_currentContainer);
         MetaProperty::create(name, *m_currentContainer, std::unique_ptr<IPropertyInvoker>{
@@ -1025,7 +1025,7 @@ public:
     template<typename G, typename S>
     this_t _property(char const *name, G &&get, S &&set)
     {
-        static_assert(is_void_v<T> || is_class_v<T>,
+        static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Propery can be defined in namespace or class");
         assert(m_currentContainer);
         MetaProperty::create(name, *m_currentContainer, std::unique_ptr<IPropertyInvoker>{
@@ -1037,7 +1037,7 @@ public:
 
     MB _end()
     {
-        static_assert(!is_void_v<MB>, "Container stack is EMPTY");
+        static_assert(!std::is_void_v<MB>, "Container stack is EMPTY");
         assert(m_containerStack && !m_containerStack->empty());
 
         m_currentContainer = m_containerStack->top();
@@ -1068,7 +1068,7 @@ private:
     template<typename C>
     struct check_is_class
     {
-        static_assert(is_class_v<C>, "Type <C> is not a class");
+        static_assert(std::is_class_v<C>, "Type <C> is not a class");
         static_assert(is_same_v<C, full_decay_t<C>>, "Type <C> is not a class");
         using type = C;
     };

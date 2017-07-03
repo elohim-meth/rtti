@@ -179,7 +179,7 @@ struct variant_function_table_impl<T, true, true>
 
     static void const* access(variant_type_storage const &value) noexcept
     {
-        return access(value, is_array_t<U>{});
+        return access(value, std::is_array_t<U>{});
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage) noexcept
@@ -213,7 +213,7 @@ private:
     using URref = std::add_rvalue_reference_t<U>;
     using UConstLref = std::add_lvalue_reference_t<std::add_const_t<U>>;
 
-    using Decay = std::conditional_t<is_array_v<U>, remove_all_cv_t<U>, full_decay_t<U>>;
+    using Decay = std::conditional_t<std::is_array_v<U>, remove_all_cv_t<U>, full_decay_t<U>>;
 
     static void const* access(variant_type_storage const &value, std::false_type) noexcept
     {
@@ -368,9 +368,9 @@ struct class_info_get
     }
 private:
     using Unwrap = unwrap_reference_t<std::remove_cv_t<T>>;
-    using Decay = std::conditional_t<is_array_v<Unwrap>, void, full_decay_t<Unwrap>>;
+    using Decay = std::conditional_t<std::is_array_v<Unwrap>, void, full_decay_t<Unwrap>>;
     using Selector = variant_function_table_impl<T>;
-    using IsClass = is_class_t<Decay>;
+    using IsClass = std::is_class_t<Decay>;
     using IsClassPtr = is_class_ptr_t<Decay>;
     using C = std::remove_pointer_t<Decay>;
 
@@ -461,8 +461,8 @@ public:
         : manager{internal::variant_function_table_for<std::remove_reference_t<T>>()}
     {
         using NoRef = std::remove_reference_t<T>;
-        using Type = std::conditional_t<is_array_v<NoRef>, std::remove_all_extents_t<NoRef>, NoRef>;
-        constexpr auto move = !is_reference_v<T> && !is_const_v<T>;
+        using Type = std::conditional_t<std::is_array_v<NoRef>, std::remove_all_extents_t<NoRef>, NoRef>;
+        constexpr auto move = !std::is_reference_v<T> && !std::is_const_v<T>;
         constexpr auto valid = is_copy_constructible_v<Type>
             || (move && is_move_constructible_v<Type>);
         static_assert(valid, "The contained type must be CopyConstructible or MoveConstructible");
@@ -587,7 +587,7 @@ public:
     template<typename T>
     T to()
     {
-        static_assert(!is_reference_v<T>, "Type cannot be reference");
+        static_assert(!std::is_reference_v<T>, "Type cannot be reference");
 
         std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
         auto typeId = internalTypeId(type_attribute::LREF);
@@ -599,7 +599,7 @@ public:
     template<typename T>
     T to() const
     {
-        static_assert(!is_reference_v<T>, "Type cannot be reference");
+        static_assert(!std::is_reference_v<T>, "Type cannot be reference");
 
         std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
@@ -611,7 +611,7 @@ public:
     template<typename T>
     bool canConvert()
     {
-        static_assert(!is_reference_v<T>, "Type cannot be reference");
+        static_assert(!std::is_reference_v<T>, "Type cannot be reference");
 
         return is<T>() ||
                MetaType::hasConverter(
@@ -622,7 +622,7 @@ public:
     template<typename T>
     bool canConvert() const
     {
-        static_assert(!is_reference_v<T>, "Type cannot be reference");
+        static_assert(!std::is_reference_v<T>, "Type cannot be reference");
 
         return is<T>() ||
                MetaType::hasConverter(
@@ -686,7 +686,7 @@ private:
         using Decay = full_decay_t<T>;
         using C = std::remove_pointer_t<Decay>;
         using tag_t =
-            std::conditional_t<is_class_v<Decay>,      std::integral_constant<int, 1>,
+            std::conditional_t<std::is_class_v<Decay>, std::integral_constant<int, 1>,
             std::conditional_t<is_class_ptr_v<Decay>,  std::integral_constant<int, 2>,
                                                        std::integral_constant<int, 0>
             >>;
@@ -754,14 +754,14 @@ private:
             if (!result)
                 throw bad_variant_cast{std::string{"Incompatible types: "} +
                                        from.typeName() + " -> " + to.typeName()};
-            return result_selector(result, is_array_t<T>{});
+            return result_selector(result, std::is_array_t<T>{});
         }
 
     private:
         using Decay = full_decay_t<T>;
         using C = std::remove_pointer_t<Decay>;
         using tag_t =
-            std::conditional_t<is_class_v<Decay>,      std::integral_constant<int, 1>,
+            std::conditional_t<std::is_class_v<Decay>, std::integral_constant<int, 1>,
             std::conditional_t<is_class_ptr_v<Decay>,  std::integral_constant<int, 2>,
                                                        std::integral_constant<int, 0>
             >>;
@@ -822,7 +822,7 @@ private:
     template<typename T>
     struct metafunc_to
     {
-        static_assert(!is_array_v<T>, "Array types aren't supported");
+        static_assert(!std::is_array_v<T>, "Array types aren't supported");
 
         static void invoke(variant const &self, MetaType_ID typeId, void *buffer)
         {
@@ -859,7 +859,7 @@ private:
         using Decay = full_decay_t<T>;
         using C = std::remove_pointer_t<Decay>;
         using tag_t =
-            std::conditional_t<is_class_v<Decay>,      std::integral_constant<int, 1>,
+            std::conditional_t<std::is_class_v<Decay>, std::integral_constant<int, 1>,
             std::conditional_t<is_class_ptr_v<Decay>,  std::integral_constant<int, 2>,
                                                        std::integral_constant<int, 0>
             >>;

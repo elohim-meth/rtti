@@ -4,12 +4,12 @@
 #include <typelist.h>
 #include <sfinae.h>
 
-namespace rtti {
+namespace std {
 
 //-----------------------------------------------------------------------------------------------------------------------------
 // Until C++14
 //-----------------------------------------------------------------------------------------------------------------------------
-#if __cplusplus == 201103L
+#if __cplusplus < 201402L
 
 template<typename T>
 using add_const_t = typename std::add_const<T>::type;
@@ -52,6 +52,8 @@ using underlying_type_t = typename std::underlying_type<T>::type;
 
 #endif
 
+#if __cplusplus < 201703L
+
 template<typename T>
 constexpr auto is_void_v = std::is_void<T>::value;
 
@@ -62,25 +64,13 @@ template<typename T>
 constexpr auto is_floating_point_v = std::is_floating_point<T>::value;
 
 template<typename T>
-using is_array_t = typename std::is_array<T>::type;
-
-template<typename T>
 constexpr auto is_array_v = std::is_array<T>::value;
-
-template<typename T>
-using is_pod_t = typename std::is_pod<T>::type;
 
 template<typename T>
 constexpr auto is_pod_v = std::is_pod<T>::value;
 
 template<typename T>
-using is_class_t = typename std::is_class<T>::type;
-
-template<typename T>
 constexpr auto is_class_v = std::is_class<T>::value;
-
-template<typename T>
-using is_union_t = typename std::is_union<T>::type;
 
 template<typename T>
 constexpr auto is_union_v = std::is_union<T>::value;
@@ -92,46 +82,64 @@ template<typename T>
 constexpr auto is_polymorphic_v = std::is_polymorphic<T>::value;
 
 template<typename T>
-using is_enum_t = typename std::is_enum<T>::type;
-
-template<typename T>
 constexpr auto is_enum_v = std::is_enum<T>::value;
-
-template<typename T>
-using is_const_t = typename std::is_const<T>::type;
 
 template<typename T>
 constexpr auto is_const_v = std::is_const<T>::value;
 
 template<typename T>
-using is_reference_t = typename std::is_reference<T>::type;
-
-template<typename T>
 constexpr auto is_reference_v = std::is_reference<T>::value;
-
-template<typename T>
-using is_lvalue_reference_t = typename std::is_lvalue_reference<T>::type;
 
 template<typename T>
 constexpr auto is_lvalue_reference_v = std::is_lvalue_reference<T>::value;
 
 template<typename T>
-using is_rvalue_reference_t = typename std::is_rvalue_reference<T>::type;
-
-template<typename T>
 constexpr auto is_rvalue_reference_v = std::is_rvalue_reference<T>::value;
-
-template<typename T>
-using is_pointer_t = typename std::is_pointer<T>::type;
 
 template<typename T>
 constexpr auto is_pointer_v = std::is_pointer<T>::value;
 
 template<typename T>
-using is_function_t = typename std::is_function<T>::type;
+constexpr auto is_function_v = std::is_function<T>::value;
+
+#endif
 
 template<typename T>
-constexpr auto is_function_v = std::is_function<T>::value;
+using is_array_t = typename std::is_array<T>::type;
+
+template<typename T>
+using is_pod_t = typename std::is_pod<T>::type;
+
+template<typename T>
+using is_class_t = typename std::is_class<T>::type;
+
+template<typename T>
+using is_union_t = typename std::is_union<T>::type;
+
+template<typename T>
+using is_enum_t = typename std::is_enum<T>::type;
+
+template<typename T>
+using is_const_t = typename std::is_const<T>::type;
+
+template<typename T>
+using is_reference_t = typename std::is_reference<T>::type;
+
+template<typename T>
+using is_lvalue_reference_t = typename std::is_lvalue_reference<T>::type;
+
+template<typename T>
+using is_rvalue_reference_t = typename std::is_rvalue_reference<T>::type;
+
+template<typename T>
+using is_pointer_t = typename std::is_pointer<T>::type;
+
+template<typename T>
+using is_function_t = typename std::is_function<T>::type;
+
+} // namespace std
+
+namespace rtti {
 
 template<typename T>
 constexpr auto extent_v = std::extent<T>::value;
@@ -226,7 +234,7 @@ using add_pointers_t = typename add_pointers<T, I>::type;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = is_pointer_v<T>>
+template<typename T, bool = std::is_pointer_v<T>>
 struct pointer_arity;
 
 template<typename T>
@@ -244,7 +252,7 @@ struct pointer_arity<T, true>:
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = is_pointer_v<T>>
+template<typename T, bool = std::is_pointer_v<T>>
 struct remove_all_pointers;
 
 template<typename T>
@@ -274,9 +282,9 @@ struct array_length<T[N]>: std::integral_constant<std::size_t, N * array_length_
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = is_reference_v<T>,
-                     bool = is_pointer_v<T>,
-                     bool = is_array_v<T>>
+template<typename T, bool = std::is_reference_v<T>,
+                     bool = std::is_pointer_v<T>,
+                     bool = std::is_array_v<T>>
 struct remove_all_cv;
 
 template<typename T>
@@ -291,7 +299,7 @@ struct remove_all_cv<T, false, false, false>
 template<typename T>
 struct remove_all_cv<T, true, false, false>
 {
-    constexpr static auto lref = is_lvalue_reference_v<T>;
+    constexpr static auto lref = std::is_lvalue_reference_v<T>;
     using U = remove_all_cv_t<std::remove_reference_t<T>>;
     using type = std::conditional_t<lref, std::add_lvalue_reference_t<U>, std::add_rvalue_reference_t<U>>;
 };
@@ -318,9 +326,9 @@ using full_decay_t = remove_all_cv_t<std::decay_t<T>>;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = is_reference_v<T>,
-                     bool = is_pointer_v<T>,
-                     bool = is_array_v<T>>
+template<typename T, bool = std::is_reference_v<T>,
+                     bool = std::is_pointer_v<T>,
+                     bool = std::is_array_v<T>>
 struct base_type;
 
 template<typename T>
@@ -348,8 +356,8 @@ namespace internal {
 
 template<typename T,
          std::size_t I,
-         bool = is_const_v<T>,
-         bool = is_pointer_v<T>>
+         bool = std::is_const_v<T>,
+         bool = std::is_pointer_v<T>>
 struct const_bitset_helper;
 
 template<typename T, std::size_t I>
@@ -400,7 +408,7 @@ constexpr auto is_converting_constructor_v = is_converting_constructor<T, Args..
 
 template<typename T>
 struct is_lvalue_const_reference:
-    std::conditional_t<is_lvalue_reference_v<T> && is_const_v<std::remove_reference_t<T>>,
+    std::conditional_t<std::is_lvalue_reference_v<T> && std::is_const_v<std::remove_reference_t<T>>,
                        std::true_type, std::false_type>
 {};
 
@@ -415,8 +423,8 @@ constexpr auto is_lvalue_const_reference_v = is_lvalue_const_reference<T>::value
 template<typename T>
 using is_class_ptr =
 std::conditional_t<
-    is_pointer_v<std::remove_reference_t<T>> &&
-    is_class_v<std::remove_pointer_t<std::remove_reference_t<T>>>,
+    std::is_pointer_v<std::remove_reference_t<T>> &&
+    std::is_class_v<std::remove_pointer_t<std::remove_reference_t<T>>>,
     std::true_type, std::false_type
 >;
 
@@ -436,7 +444,7 @@ template<typename E>
 constexpr auto enable_bitmask_enum_v = enable_bitmask_enum<E>::value;
 
 template<typename E,
-         typename = std::enable_if_t<is_enum_v<E> & enable_bitmask_enum_v<E>>>
+         typename = std::enable_if_t<std::is_enum_v<E> & enable_bitmask_enum_v<E>>>
 constexpr E operator|(E lhs, E rhs)
 {
   using T = std::underlying_type_t<E>;
@@ -444,7 +452,7 @@ constexpr E operator|(E lhs, E rhs)
 }
 
 template<typename E,
-         typename = std::enable_if_t<is_enum_v<E> & enable_bitmask_enum_v<E>>>
+         typename = std::enable_if_t<std::is_enum_v<E> & enable_bitmask_enum_v<E>>>
 constexpr E operator&(E lhs, E rhs)
 {
   using T = std::underlying_type_t<E>;
@@ -458,7 +466,7 @@ struct enable_bitmask_enum<NAME>: std::true_type \
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-template<typename T, bool = is_class_v<T>>
+template<typename T, bool = std::is_class_v<T>>
 struct has_move_constructor;
 
 template<typename T>

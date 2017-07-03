@@ -45,9 +45,9 @@ public:
     T value() const
     {
         using tag_t =
-            std::conditional_t<is_rvalue_reference_v<T>,        std::integral_constant<int, 0>,
+            std::conditional_t<std::is_rvalue_reference_v<T>,   std::integral_constant<int, 0>,
             std::conditional_t<is_lvalue_const_reference_v<T>,  std::integral_constant<int, 1>,
-            std::conditional_t<is_lvalue_reference_v<T>,        std::integral_constant<int, 2>,
+            std::conditional_t<std::is_lvalue_reference_v<T>,   std::integral_constant<int, 2>,
                                                                 std::integral_constant<int, 3>
             >>>;
         if (empty())
