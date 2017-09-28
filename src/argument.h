@@ -31,7 +31,7 @@ public:
     }
 
     template<typename T,
-             typename = std::enable_if_t<!is_same_v<std::decay_t<T>, argument>>>
+             typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, argument>>>
     argument(T &&value) noexcept
         : m_data{const_cast<void*>(reinterpret_cast<void const*>(std::addressof(value)))},
           m_type{metaTypeId<T>()}

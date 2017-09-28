@@ -67,6 +67,9 @@ template<typename T>
 constexpr auto is_array_v = std::is_array<T>::value;
 
 template<typename T>
+constexpr auto extent_v = std::extent<T>::value;
+
+template<typename T>
 constexpr auto is_pod_v = std::is_pod<T>::value;
 
 template<typename T>
@@ -102,7 +105,58 @@ constexpr auto is_pointer_v = std::is_pointer<T>::value;
 template<typename T>
 constexpr auto is_function_v = std::is_function<T>::value;
 
+template<typename T>
+constexpr auto is_member_pointer_v = std::is_member_pointer<T>::value;
+
+template<typename T>
+constexpr auto is_member_object_pointer_v = std::is_member_object_pointer<T>::value;
+
+template<typename T>
+constexpr auto is_member_function_pointer_v = std::is_member_function_pointer<T>::value;
+
+template<typename T>
+constexpr auto is_default_constructible_v = std::is_default_constructible<T>::value;
+
+template<typename T>
+constexpr auto is_trivially_default_constructible_v = std::is_trivially_default_constructible<T>::value;
+
+template<typename T>
+constexpr auto is_nothrow_default_constructible_v = std::is_nothrow_default_constructible<T>::value;
+
+template<typename T, typename ...Args>
+constexpr auto is_constructible_v = std::is_constructible<T, Args...>::value;
+
+template<typename F, typename T>
+constexpr auto is_convertible_v = std::is_convertible<F, T>::value;
+
+template<typename T>
+constexpr auto is_copy_constructible_v = std::is_copy_constructible<T>::value;
+
+template<typename T>
+constexpr auto is_nothrow_copy_constructible_v = std::is_nothrow_copy_constructible<T>::value;
+
+template<typename T>
+constexpr auto is_copy_assignable_v = std::is_copy_assignable<T>::value;
+
+template<typename T>
+constexpr auto is_move_constructible_v = std::is_move_constructible<T>::value;
+
+template<typename T>
+constexpr auto is_nothrow_move_constructible_v = std::is_nothrow_move_constructible<T>::value;
+
+template<typename T>
+constexpr auto is_move_assignable_v = std::is_move_assignable<T>::value;
+
+template<typename T>
+constexpr auto is_destructible_v = std::is_destructible<T>::value;
+
+template<typename T>
+constexpr auto is_trivially_destructible_v = std::is_trivially_destructible<T>::value;
+
 #endif
+
+template<typename L, typename R>
+using is_same_t = typename std::is_same<L, R>::type;
 
 template<typename T>
 using is_array_t = typename std::is_array<T>::type;
@@ -137,87 +191,27 @@ using is_pointer_t = typename std::is_pointer<T>::type;
 template<typename T>
 using is_function_t = typename std::is_function<T>::type;
 
-} // namespace std
-
-namespace rtti {
-
-template<typename T>
-constexpr auto extent_v = std::extent<T>::value;
-
-template<typename L, typename R>
-using is_same_t = typename std::is_same<L, R>::type;
-
-template<typename L, typename R>
-constexpr auto is_same_v = std::is_same<L, R>::value;
-
-template<bool B, typename T, typename F>
-constexpr auto conditional_v = std::conditional_t<B, T, F>::value;
-
-template<typename F, typename T>
-constexpr auto is_convertible_v = std::is_convertible<F, T>::value;
-
-template<typename T, typename ...Args>
-constexpr auto is_constructible_v = std::is_constructible<T, Args...>::value;
-
 template<typename T>
 using is_default_constructible_t = typename std::is_default_constructible<T>::type;
 
 template<typename T>
-constexpr auto is_default_constructible_v = std::is_default_constructible<T>::value;
-
-#if __GNUC__ < 5
-template<typename T>
-using is_trivially_default_constructible_t = typename std::has_trivial_default_constructor<T>::type;
-template<typename T>
-constexpr auto is_trivially_default_constructible_v = std::has_trivial_default_constructor<T>::value;
-#else
-template<typename T>
 using is_trivially_default_constructible_t = typename std::is_trivially_default_constructible<T>::type;
-template<typename T>
-constexpr auto is_trivially_default_constructible_v = std::is_trivially_default_constructible<T>::value;
-#endif
-
-template<typename T>
-using is_move_constructible_t = typename std::is_move_constructible<T>::type;
-
-template<typename T>
-constexpr auto is_move_constructible_v = std::is_move_constructible<T>::value;
-
-template<typename T>
-constexpr auto is_nothrow_move_constructible_v = std::is_nothrow_move_constructible<T>::value;
-
-template<typename T>
-constexpr auto is_move_assignable_v = std::is_move_assignable<T>::value;
 
 template<typename T>
 using is_copy_constructible_t = typename std::is_copy_constructible<T>::type;
 
 template<typename T>
-constexpr auto is_copy_constructible_v = std::is_copy_constructible<T>::value;
-
-template<typename T>
-constexpr auto is_nothrow_copy_constructible_v = std::is_nothrow_copy_constructible<T>::value;
-
-template<typename T>
-constexpr auto is_copy_assignable_v = std::is_copy_assignable<T>::value;
-
-template<typename T>
-constexpr auto is_destructible_v = std::is_destructible<T>::value;
+using is_move_constructible_t = typename std::is_move_constructible<T>::type;
 
 template<typename T>
 using is_trivially_destructible_t = typename std::is_trivially_destructible<T>::type;
 
-template<typename T>
-constexpr auto is_trivially_destructible_v = std::is_trivially_destructible<T>::value;
+} // namespace std
 
-template<typename T>
-constexpr auto is_member_pointer_v = std::is_member_pointer<T>::value;
+namespace rtti {
 
-template<typename T>
-constexpr auto is_member_object_pointer_v = std::is_member_object_pointer<T>::value;
-
-template<typename T>
-constexpr auto is_member_function_pointer_v = std::is_member_function_pointer<T>::value;
+template<bool B, typename T, typename F>
+constexpr auto conditional_v = std::conditional_t<B, T, F>::value;
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
@@ -314,7 +308,7 @@ struct remove_all_cv<T, false, true, false>
 template<typename T>
 struct remove_all_cv<T, false, false, true>
 {
-    constexpr static auto extent = extent_v<T>;
+    constexpr static auto extent = std::extent_v<T>;
     using U = remove_all_cv_t<std::remove_extent_t<T>>;
     using type = U[extent];
 };
@@ -396,7 +390,7 @@ struct is_converting_constructor: std::false_type
 
 template<typename T, typename Arg>
 struct is_converting_constructor<T, Arg>:
-    std::conditional_t<!is_same_v<T, full_decay_t<Arg>> && is_convertible_v<Arg, T>,
+    std::conditional_t<!std::is_same_v<T, full_decay_t<Arg>> && std::is_convertible_v<Arg, T>,
                        std::true_type, std::false_type>
 {};
 

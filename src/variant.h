@@ -127,25 +127,25 @@ struct variant_function_table_impl<T, true, false>
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage)
-        noexcept(is_nothrow_copy_constructible_v<Decay>)
+        noexcept(std::is_nothrow_copy_constructible_v<Decay>)
     {
         type_manager_t<Decay>::copy_construct(value, &storage.buffer);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
-        noexcept(is_nothrow_move_constructible_v<Decay>)
+        noexcept(std::is_nothrow_move_constructible_v<Decay>)
     {
         type_manager_t<Decay>::move_or_copy(value, true, &storage.buffer);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
-        noexcept(is_nothrow_copy_constructible_v<Decay>)
+        noexcept(std::is_nothrow_copy_constructible_v<Decay>)
     {
         type_manager_t<Decay>::copy_construct(&src.buffer, &dst.buffer);
     }
 
     static void move(variant_type_storage &src, variant_type_storage &dst)
-        noexcept(is_nothrow_move_constructible_v<Decay>)
+        noexcept(std::is_nothrow_move_constructible_v<Decay>)
     {
         type_manager_t<Decay>::move_or_copy(&src.buffer, true, &dst.buffer);
     }
@@ -250,21 +250,21 @@ struct variant_function_table_impl<T, false, false>
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage)
-        noexcept(is_nothrow_copy_constructible_v<Decay>)
+        noexcept(std::is_nothrow_copy_constructible_v<Decay>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::copy_construct(value, storage.ptr);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
-        noexcept(is_nothrow_move_constructible_v<Decay>)
+        noexcept(std::is_nothrow_move_constructible_v<Decay>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::move_or_copy(value, true, storage.ptr);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
-        noexcept(is_nothrow_copy_constructible_v<Decay>)
+        noexcept(std::is_nothrow_copy_constructible_v<Decay>)
     {
         dst.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::copy_construct(src.ptr, dst.ptr);
@@ -313,21 +313,21 @@ struct variant_function_table_impl<T[N], false, false>
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage)
-        noexcept(is_nothrow_copy_constructible_v<Base>)
+        noexcept(std::is_nothrow_copy_constructible_v<Base>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::copy_construct(value, storage.ptr);
     }
 
     static void move_construct(void *value, variant_type_storage &storage)
-        noexcept(is_nothrow_move_constructible_v<Base>)
+        noexcept(std::is_nothrow_move_constructible_v<Base>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::move_or_copy(value, true, storage.ptr);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
-        noexcept(is_nothrow_copy_constructible_v<Base>)
+        noexcept(std::is_nothrow_copy_constructible_v<Base>)
     {
         dst.ptr = type_manager_t<Decay>::allocate();
         type_manager_t<Decay>::copy_construct(src.ptr, dst.ptr);
@@ -456,15 +456,15 @@ public:
     variant& operator=(variant &&other) noexcept;
 
     template<typename T,
-             typename = std::enable_if_t<!is_same_v<std::decay_t<T>, variant>>>
+             typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, variant>>>
     variant(T &&value)
         : manager{internal::variant_function_table_for<std::remove_reference_t<T>>()}
     {
         using NoRef = std::remove_reference_t<T>;
         using Type = std::conditional_t<std::is_array_v<NoRef>, std::remove_all_extents_t<NoRef>, NoRef>;
         constexpr auto move = !std::is_reference_v<T> && !std::is_const_v<T>;
-        constexpr auto valid = is_copy_constructible_v<Type>
-            || (move && is_move_constructible_v<Type>);
+        constexpr auto valid = std::is_copy_constructible_v<Type>
+            || (move && std::is_move_constructible_v<Type>);
         static_assert(valid, "The contained type must be CopyConstructible or MoveConstructible");
         using selector_t = std::conditional_t<move, std::true_type, std::false_type>;
 
@@ -472,7 +472,7 @@ public:
     }
 
     template<typename T,
-             typename = std::enable_if_t<!is_same_v<std::decay_t<T>, variant>>>
+             typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, variant>>>
     variant& operator=(T &&value)
     {
         variant{std::forward<T>(value)}.swap(*this);

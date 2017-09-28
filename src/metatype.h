@@ -195,10 +195,10 @@ inline T move_or_copy(void *source, bool movable, std::true_type, std::true_type
 template <typename T>
 inline T move_or_copy(void *source, bool movable)
 {
-    static_assert(is_copy_constructible_v<T> || is_move_constructible_v<T>,
+    static_assert(std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>,
                   "Type should be CopyConstructible or MoveConstructible");
 
-    return move_or_copy<T>(source, movable, is_move_constructible_t<T>{}, is_copy_constructible_t<T>{});
+    return move_or_copy<T>(source, movable, std::is_move_constructible_t<T>{}, std::is_copy_constructible_t<T>{});
 }
 
 struct DLL_LOCAL type_function_table
@@ -250,38 +250,38 @@ struct type_function_table_impl
     }
 
     static void default_construct(void *where)
-        noexcept(std::is_nothrow_default_constructible<T>::value)
+        noexcept(std::is_nothrow_default_constructible_v<T>)
     {
-        default_construct(where, is_default_constructible_t<T>{});
+        default_construct(where, std::is_default_constructible_t<T>{});
     }
 
     static void copy_construct(void const *source, void *where)
-        noexcept(std::is_nothrow_copy_constructible<T>::value)
+        noexcept(std::is_nothrow_copy_constructible_v<T>)
     {
-        copy_construct(source, where, is_copy_constructible_t<T>{});
+        copy_construct(source, where, std::is_copy_constructible_t<T>{});
     }
 
     static void move_construct(void *source, void *where)
-        noexcept(std::is_nothrow_move_constructible<T>::value)
+        noexcept(std::is_nothrow_move_constructible_v<T>)
     {
-        move_construct(source, where, is_move_constructible_t<T>{});
+        move_construct(source, where, std::is_move_constructible_t<T>{});
     }
 
     static void move_or_copy(void *source, bool movable, void *where)
     {
         move_or_copy(source, movable, where,
-                     is_move_constructible_t<T>{},
-                     is_copy_constructible_t<T>{});
+                     std::is_move_constructible_t<T>{},
+                     std::is_copy_constructible_t<T>{});
     }
 
     static void destroy(void *ptr) noexcept
     {
-        destroy(ptr, is_trivially_destructible_t<T>{});
+        destroy(ptr, std::is_trivially_destructible_t<T>{});
     }
 private:
     static void default_construct(void *where, std::true_type)
     {
-        default_construct_imp(where, is_trivially_default_constructible_t<T>{});
+        default_construct_imp(where, std::is_trivially_default_constructible_t<T>{});
     }
     static void default_construct(void *, std::false_type)
     {
@@ -363,36 +363,36 @@ struct type_function_table_impl<T[N]>
     static void default_construct(void *where)
         noexcept(std::is_nothrow_default_constructible<Base>::value)
     {
-        default_construct(where, is_default_constructible_t<Base>{});
+        default_construct(where, std::is_default_constructible_t<Base>{});
     }
 
     static void copy_construct(void const *source, void *where)
         noexcept(std::is_nothrow_copy_constructible<Base>::value)
     {
-        copy_construct(source, where, is_copy_constructible_t<Base>{});
+        copy_construct(source, where, std::is_copy_constructible_t<Base>{});
     }
 
     static void move_construct(void *source, void *where)
         noexcept(std::is_nothrow_move_constructible<Base>::value)
     {
-        move_construct(source, where, is_move_constructible_t<Base>{});
+        move_construct(source, where, std::is_move_constructible_t<Base>{});
     }
 
     static void move_or_copy(void *source, bool movable, void *where)
     {
         move_or_copy(source, movable, where,
-                     is_move_constructible_t<Base>{},
-                     is_copy_constructible_t<Base>{});
+                     std::is_move_constructible_t<Base>{},
+                     std::is_copy_constructible_t<Base>{});
     }
 
     static void destroy(void *ptr) noexcept
     {
-        destroy(ptr, is_trivially_destructible_t<Base>{});
+        destroy(ptr, std::is_trivially_destructible_t<Base>{});
     }
 private:
     static void default_construct(void *where, std::true_type)
     {
-        default_construct_imp(where, is_trivially_default_constructible_t<Base>{});
+        default_construct_imp(where, std::is_trivially_default_constructible_t<Base>{});
     }
     static void default_construct(void *, std::false_type)
     {
@@ -496,7 +496,7 @@ struct type_flags {
     static Flags const value =
           (std::is_const_v<no_ref>                 ? Flags::Const                  : Flags::None)
         | (std::is_pointer_v<no_ref>               ? Flags::Pointer                : Flags::None)
-        | (is_member_pointer_v<no_ref>        ? Flags::MemberPointer          : Flags::None)
+        | (std::is_member_pointer_v<no_ref>        ? Flags::MemberPointer          : Flags::None)
         | (std::is_lvalue_reference_v<T>           ? Flags::LvalueReference        : Flags::None)
         | (std::is_rvalue_reference_v<T>           ? Flags::RvalueReference        : Flags::None)
         | (std::is_array_v<no_ptr>                 ? Flags::Array                  : Flags::None)
@@ -510,12 +510,12 @@ struct type_flags {
         | (std::is_pod_v<base>                     ? Flags::Pod                    : Flags::None)
         | (std::is_abstract_v<base>                ? Flags::Abstract               : Flags::None)
         | (std::is_polymorphic_v<base>             ? Flags::Polymorphic            : Flags::None)
-        | (is_default_constructible_v<base>   ? Flags::DefaultConstructible   : Flags::None)
-        | (is_copy_constructible_v<base>      ? Flags::CopyConstructible      : Flags::None)
-        | (is_copy_assignable_v<base>         ? Flags::CopyAssignable         : Flags::None)
-        | (is_move_constructible_v<base>      ? Flags::MoveConstructible      : Flags::None)
-        | (is_move_assignable_v<base>         ? Flags::MoveAssignable         : Flags::None)
-        | (is_destructible_v<base>            ? Flags::Destructible           : Flags::None)
+        | (std::is_default_constructible_v<base>   ? Flags::DefaultConstructible   : Flags::None)
+        | (std::is_copy_constructible_v<base>      ? Flags::CopyConstructible      : Flags::None)
+        | (std::is_copy_assignable_v<base>         ? Flags::CopyAssignable         : Flags::None)
+        | (std::is_move_constructible_v<base>      ? Flags::MoveConstructible      : Flags::None)
+        | (std::is_move_assignable_v<base>         ? Flags::MoveAssignable         : Flags::None)
+        | (std::is_destructible_v<base>            ? Flags::Destructible           : Flags::None)
     ;
 };
 

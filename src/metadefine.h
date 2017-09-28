@@ -511,9 +511,9 @@ template<typename C, typename ...Args>
 struct ConstructorInvoker: IConstructorInvoker
 {
     static_assert(sizeof...(Args) <= MaxNumberOfArguments, "Maximum supported arguments: 10");
-    static_assert((sizeof...(Args) > 0) || is_default_constructible_v<C>,
+    static_assert((sizeof...(Args) > 0) || std::is_default_constructible_v<C>,
                   "Type is not default constructible");
-    static_assert((sizeof...(Args) == 0) || is_constructible_v<C, Args...>,
+    static_assert((sizeof...(Args) == 0) || std::is_constructible_v<C, Args...>,
                   "Type can not be constructed with given arguments");
 
     template<std::size_t I>
@@ -570,7 +570,7 @@ private:
     static std::string signature_imp(mpl::index_sequence<0>)
     {
         using Arg = argument_get_t<0>;
-        if (is_same_v<std::decay_t<Arg>, C>)
+        if (std::is_same_v<std::decay_t<Arg>, C>)
         {
             if (std::is_rvalue_reference_v<Arg>)
                 return "move constructor";
@@ -619,7 +619,7 @@ struct static_pointer{};
 struct member_pointer{};
 
 template<typename P>
-using property_invoker_tag = std::conditional_t<is_member_pointer_v<P>, member_pointer, static_pointer>;
+using property_invoker_tag = std::conditional_t<std::is_member_pointer_v<P>, member_pointer, static_pointer>;
 
 template<typename P, typename Tag> struct property_invoker;
 
@@ -673,7 +673,7 @@ private:
 template<typename P>
 struct property_invoker<P, member_pointer>
 {
-    static_assert(is_member_object_pointer_v<P>,
+    static_assert(std::is_member_object_pointer_v<P>,
                   "Type should be member object pointer");
 
     static bool isStatic()
@@ -818,7 +818,7 @@ private:
     static constexpr auto valid = conditional_v<
      (std::is_function_v<G> && (std::is_void_v<S> || std::is_function_v<S>))
      ||
-     (is_member_function_pointer_v<G> && (std::is_void_v<S> || is_member_function_pointer_v<S>)),
+     (std::is_member_function_pointer_v<G> && (std::is_void_v<S> || std::is_member_function_pointer_v<S>)),
      std::true_type, std::false_type>;
     static_assert(valid, "Get and Set methods should be simultaneously static method or pointer to member");
 
@@ -835,7 +835,7 @@ private:
     static_assert(STraits::arity::value == 1,
                   "Set method should have one parameters");
     using Arg = typename STraits::template arg<0>::type;
-    static_assert(is_same_v<std::decay_t<T>, std::decay_t<Arg>>,
+    static_assert(std::is_same_v<std::decay_t<T>, std::decay_t<Arg>>,
                   "Get method return type and Set method parameter type do not match");
     G m_get;
     S m_set;
@@ -884,7 +884,7 @@ public:
     meta_define<C, this_t> _class(char const *name)
     {
         static_assert(std::is_class_v<C>, "Template argument <C> must be class");
-        static_assert(!is_same_v<T, C>, "Recursive class definition");
+        static_assert(!std::is_same_v<T, C>, "Recursive class definition");
         static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Class can be defined in namespace or anther class");
         assert(m_currentContainer && m_containerStack);
@@ -1069,7 +1069,7 @@ private:
     struct check_is_class
     {
         static_assert(std::is_class_v<C>, "Type <C> is not a class");
-        static_assert(is_same_v<C, full_decay_t<C>>, "Type <C> is not a class");
+        static_assert(std::is_same_v<C, full_decay_t<C>>, "Type <C> is not a class");
         using type = C;
     };
 
