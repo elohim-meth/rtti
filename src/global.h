@@ -39,7 +39,7 @@
 #define DECLARE_ACCESS_KEY(NAME) \
   class NAME  \
   { \
-      NAME() {}; \
+      NAME() {} \
       NAME(NAME const&) = default;
 
 #endif // GLOBAL_H
