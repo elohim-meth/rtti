@@ -12,7 +12,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         message(FATAL_ERROR "Clang version must be at least 3.5!")
     endif()
 else()
-    message(FATAL_ERROR "You are using an unsupported compiler! Compilation has only been tested on GCC.")
+    message(FATAL_ERROR "You are using an unsupported compiler!")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
