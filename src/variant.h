@@ -179,7 +179,10 @@ struct variant_function_table_impl<T, true, true>
 
     static void const* access(variant_type_storage const &value) noexcept
     {
-        return access(value, std::is_array_t<U>{});
+        if constexpr(std::is_array_v<U>)
+            return &value.ptr;
+        else
+            return value.ptr;
     }
 
     static void copy_construct(void const *value, variant_type_storage &storage) noexcept
@@ -214,16 +217,6 @@ private:
     using UConstLref = std::add_lvalue_reference_t<std::add_const_t<U>>;
 
     using Decay = std::conditional_t<std::is_array_v<U>, remove_all_cv_t<U>, full_decay_t<U>>;
-
-    static void const* access(variant_type_storage const &value, std::false_type) noexcept
-    {
-        return value.ptr;
-    }
-
-    static void const* access(variant_type_storage const &value, std::true_type) noexcept
-    {
-        return &value.ptr;
-    }
 };
 
 template<typename T>

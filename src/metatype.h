@@ -249,98 +249,62 @@ struct type_function_table_impl
             ::operator delete(ptr);
     }
 
-    static void default_construct(void *where)
+    static void default_construct([[maybe_unused]] void *where)
         noexcept(std::is_nothrow_default_constructible_v<T>)
     {
-        default_construct(where, std::is_default_constructible_t<T>{});
+        if constexpr(std::is_default_constructible_v<T>)
+        {
+            if constexpr(!std::is_trivially_default_constructible_v<T>)
+                if (where)
+                    new (where) T();
+        }
+        else
+            throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't DefaultConstructible");
     }
 
     static void copy_construct(void const *source, void *where)
         noexcept(std::is_nothrow_copy_constructible_v<T>)
     {
-        copy_construct(source, where, std::is_copy_constructible_t<T>{});
+        if constexpr(std::is_copy_constructible_v<T>)
+        {
+            if (source && where)
+                new (where) T(*static_cast<T const*>(source));
+        }
+        else
+            throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't CopyConstructible");
     }
 
     static void move_construct(void *source, void *where)
         noexcept(std::is_nothrow_move_constructible_v<T>)
     {
-        move_construct(source, where, std::is_move_constructible_t<T>{});
+        if constexpr(std::is_move_constructible_v<T>)
+        {
+            if (source && where)
+                new (where) T(std::move(*static_cast<T*>(source)));
+        }
+        else
+            throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't MoveConstructible");
     }
 
-    static void move_or_copy(void *source, bool movable, void *where)
+    static void move_or_copy(void *source, [[maybe_unused]] bool movable, void *where)
     {
-        move_or_copy(source, movable, where,
-                     std::is_move_constructible_t<T>{},
-                     std::is_copy_constructible_t<T>{});
+        if constexpr(std::is_move_constructible_v<T>)
+        {
+            if (movable)
+                move_construct(source, where);
+        }
+        else
+            copy_construct(source, where);
     }
 
-    static void destroy(void *ptr) noexcept
+    static void destroy([[maybe_unused]] void *ptr) noexcept
     {
-        destroy(ptr, std::is_trivially_destructible_t<T>{});
+        if constexpr(!std::is_trivially_destructible_v<T>)
+        {
+            if (ptr)
+                static_cast<T*>(ptr)->~T();
+        }
     }
-private:
-    static void default_construct(void *where, std::true_type)
-    {
-        default_construct_imp(where, std::is_trivially_default_constructible_t<T>{});
-    }
-    static void default_construct(void *, std::false_type)
-    {
-        throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't DefaultConstructible");
-    }
-    static void default_construct_imp(void *where, std::false_type)
-    {
-        if (where)
-            new (where) T();
-    }
-    static void default_construct_imp(void*, std::true_type)
-    { /* do nothing */ }
-
-    static void move_construct(void *source, void *where, std::true_type)
-    {
-        if (source && where)
-            new (where) T(std::move(*static_cast<T*>(source)));
-    }
-    static void move_construct(void*, void*, std::false_type)
-    {
-        throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't MoveConstructible");
-    }
-
-    static void copy_construct(void const *source, void *where, std::true_type)
-    {
-        if (source && where)
-            new (where) T(*static_cast<T const*>(source));
-    }
-    static void copy_construct(void const*, void*, std::false_type)
-    {
-        throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't CopyConstructible");
-    }
-
-    static void move_or_copy(void*, bool, void*, std::false_type, std::false_type)
-    {
-        throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't Copy or MoveConstructible");
-    }
-    static void move_or_copy(void *source, bool movable, void *where, std::true_type, std::false_type)
-    {
-        movable ? move_construct(source, where, std::true_type{})
-                : copy_construct(source, where, std::false_type{});
-    }
-    static void move_or_copy(void *source, bool, void *where, std::false_type, std::true_type)
-    {
-        copy_construct(source, where, std::true_type{});
-    }
-    static void move_or_copy(void *source, bool movable, void *where, std::true_type, std::true_type)
-    {
-        movable ? move_construct(source, where, std::true_type{})
-                : copy_construct(source, where, std::true_type{});
-    }
-
-    static void destroy(void *ptr, std::false_type) noexcept
-    {
-        if (ptr)
-            static_cast<T*>(ptr)->~T();
-    }
-    static void destroy(void*, std::true_type) noexcept
-    { /* do nothing */ }
 };
 
 template<typename T, std::size_t N>

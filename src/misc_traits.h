@@ -7,50 +7,8 @@
 namespace std {
 
 //-----------------------------------------------------------------------------------------------------------------------------
-// Until C++14
+// Until C++17
 //-----------------------------------------------------------------------------------------------------------------------------
-#if __cplusplus < 201402L
-
-template<typename T>
-using add_const_t = typename std::add_const<T>::type;
-
-template<typename T>
-using add_pointer_t = typename std::add_pointer<T>::type;
-
-template<typename T>
-using add_lvalue_reference_t = typename std::add_lvalue_reference<T>::type;
-
-template<typename T>
-using add_rvalue_reference_t = typename std::add_rvalue_reference<T>::type;
-
-template<bool C, typename T, typename F>
-using conditional_t = typename std::conditional<C, T, F>::type;
-
-template<typename T>
-using decay_t = typename std::decay<T>::type;
-
-template<bool B, typename T = void>
-using enable_if_t = typename std::enable_if<B, T>::type;
-
-template<typename T>
-using remove_cv_t = typename std::remove_cv<T>::type;
-
-template<typename T>
-using remove_extent_t = typename std::remove_extent<T>::type;
-
-template<typename T>
-using remove_all_extents_t = typename std::remove_all_extents<T>::type;
-
-template<typename T>
-using remove_pointer_t = typename std::remove_pointer<T>::type;
-
-template<typename T>
-using remove_reference_t = typename std::remove_reference<T>::type;
-
-template<typename T>
-using underlying_type_t = typename std::underlying_type<T>::type;
-
-#endif
 
 #if __cplusplus < 201703L
 
@@ -155,8 +113,8 @@ constexpr auto is_trivially_destructible_v = std::is_trivially_destructible<T>::
 
 #endif
 
-template<typename L, typename R>
-using is_same_t = typename std::is_same<L, R>::type;
+//template<typename L, typename R>
+//using is_same_t = typename std::is_same<L, R>::type;
 
 template<typename T>
 using is_array_t = typename std::is_array<T>::type;
