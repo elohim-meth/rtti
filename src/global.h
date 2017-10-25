@@ -42,4 +42,15 @@
       NAME() {} \
       NAME(NAME const&) = default;
 
+#define INVOKE_PROTECTED(OBJECT, METHOD, ...) (\
+    ([&](auto &o) -> auto {\
+        using T = std::remove_reference_t<decltype(o)>;\
+        struct: T\
+        {\
+            using T::METHOD;\
+        } *a = reinterpret_cast<decltype(a)>(&o);\
+        return a->METHOD(__VA_ARGS__);\
+    })(OBJECT)\
+)
+
 #endif // GLOBAL_H

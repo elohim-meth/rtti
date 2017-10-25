@@ -91,7 +91,7 @@ inline bool MetaContainerPrivate::addItem(MetaItem *value)
 // MetaContainer
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaContainer::MetaContainer(char const *name, MetaContainer const &owner)
+MetaContainer::MetaContainer(std::string_view const &name, MetaContainer const &owner)
     : MetaItem(*new MetaContainerPrivate(name, owner))
 {}
 

@@ -357,51 +357,44 @@ struct class_info_get
 {
     static ClassInfo info(variant_type_storage const &value)
     {
-        return info_selector(value, IsClass{}, IsClassPtr{});
+        if constexpr(!(std::is_class_v<Decay> || is_class_ptr_v<Decay>))
+        {
+            return ClassInfo{};
+        }
+        else
+        {
+            using is_registered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
+            auto instance = Selector::access(value);
+            if constexpr(std::is_class_v<Decay>)
+            {
+                if constexpr(is_registered::value)
+                {
+                    auto ptr = static_cast<C const*>(instance);
+                    return ptr->classInfo();
+                }
+                else
+                    return ClassInfo{metaTypeId<C>(), instance};
+            }
+            else if constexpr(is_class_ptr_v<Decay>)
+            {
+                if constexpr(is_registered::value)
+                {
+                    auto ptr = reinterpret_cast<C const * const *>(instance);
+                    return (*ptr)->classInfo();
+                }
+                else
+                {
+                    auto ptr = reinterpret_cast<C const * const *>(instance);
+                    return ClassInfo{metaTypeId<C>(), *ptr};
+                }
+            }
+        }
     }
 private:
     using Unwrap = unwrap_reference_t<std::remove_cv_t<T>>;
     using Decay = std::conditional_t<std::is_array_v<Unwrap>, void, full_decay_t<Unwrap>>;
     using Selector = variant_function_table_impl<T>;
-    using IsClass = std::is_class_t<Decay>;
-    using IsClassPtr = is_class_ptr_t<Decay>;
     using C = std::remove_pointer_t<Decay>;
-
-    static ClassInfo info_selector(variant_type_storage const&, std::false_type, std::false_type)
-    {
-        return ClassInfo{};
-    }
-
-    static ClassInfo info_selector(variant_type_storage const &value, std::true_type, std::false_type)
-    {
-        using IsRegistered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
-        return info_selector_registered(value, IsRegistered{});
-    }
-    static ClassInfo info_selector_registered(variant_type_storage const &value, std::false_type)
-    {
-        return ClassInfo{metaTypeId<C>(), Selector::access(value)};
-    }
-    static ClassInfo info_selector_registered(variant_type_storage const &value, std::true_type)
-    {
-        auto ptr = static_cast<C const*>(Selector::access(value));
-        return ptr->classInfo();
-    }
-
-    static ClassInfo info_selector(variant_type_storage const &value, std::false_type, std::true_type)
-    {
-        using IsRegistered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
-        return info_selector_registered_ptr(value, IsRegistered{});
-    }
-    static ClassInfo info_selector_registered_ptr(variant_type_storage const &value, std::false_type)
-    {
-        auto ptr = reinterpret_cast<C const * const *>(Selector::access(value));
-        return ClassInfo{metaTypeId<C>(), *ptr};
-    }
-    static ClassInfo info_selector_registered_ptr(variant_type_storage const &value, std::true_type)
-    {
-        auto ptr = reinterpret_cast<C const * const *>(Selector::access(value));
-        return (*ptr)->classInfo();
-    }
 };
 
 template<typename T>
@@ -747,7 +740,10 @@ private:
             if (!result)
                 throw bad_variant_cast{std::string{"Incompatible types: "} +
                                        from.typeName() + " -> " + to.typeName()};
-            return result_selector(result, std::is_array_t<T>{});
+            if constexpr(std::is_array_v<T>)
+                return reinterpret_cast<T*>(*result);
+            else
+                return const_cast<T*>(result);
         }
 
     private:
@@ -758,11 +754,6 @@ private:
             std::conditional_t<is_class_ptr_v<Decay>,  std::integral_constant<int, 2>,
                                                        std::integral_constant<int, 0>
             >>;
-
-        static T* result_selector(Decay const *value, std::false_type)
-        { return const_cast<T*>(value); }
-        static T* result_selector(Decay const *value, std::true_type)
-        { return reinterpret_cast<T*>(*value); }
 
         // nope
         static void const* cast(variant const&, MetaType,

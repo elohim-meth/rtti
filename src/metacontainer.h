@@ -83,7 +83,7 @@ public:
 
     void forceDeferredDefine(ForceDeferred type = ForceDeferred::SelfOnly) const;
 protected:
-    explicit MetaContainer(char const *name, MetaContainer const &owner);
+    explicit MetaContainer(std::string_view const &name, MetaContainer const &owner);
     explicit MetaContainer(MetaContainerPrivate &value);
 
     bool addItem(MetaItem *value);

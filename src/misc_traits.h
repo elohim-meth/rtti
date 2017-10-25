@@ -113,27 +113,6 @@ constexpr auto is_trivially_destructible_v = std::is_trivially_destructible<T>::
 
 #endif
 
-//template<typename L, typename R>
-//using is_same_t = typename std::is_same<L, R>::type;
-
-template<typename T>
-using is_array_t = typename std::is_array<T>::type;
-
-template<typename T>
-using is_pod_t = typename std::is_pod<T>::type;
-
-template<typename T>
-using is_class_t = typename std::is_class<T>::type;
-
-template<typename T>
-using is_union_t = typename std::is_union<T>::type;
-
-template<typename T>
-using is_enum_t = typename std::is_enum<T>::type;
-
-template<typename T>
-using is_const_t = typename std::is_const<T>::type;
-
 template<typename T>
 using is_reference_t = typename std::is_reference<T>::type;
 

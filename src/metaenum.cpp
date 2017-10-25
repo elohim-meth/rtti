@@ -47,19 +47,19 @@ const std::string &MetaEnum::elementName(std::size_t index) const
     return d->m_elements.name(index);
 }
 
-const variant& MetaEnum::element(const char *name) const
+const variant& MetaEnum::element(std::string_view const &name) const
 {
     auto d = d_func();
     return d->m_elements.get(name);
 }
 
-void MetaEnum::for_each_element(const enum_element_t &func) const
+void MetaEnum::for_each_element(enum_element_t const &func) const
 {
     if (!func)
         return;
 
     auto d = d_func();
-    d->m_elements.for_each([&func](const std::string &name, const variant &value) -> bool
+    d->m_elements.for_each([&func](std::string const &name, variant const &value) -> bool
     {
         return func(name, value);
     });

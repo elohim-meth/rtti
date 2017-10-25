@@ -4,8 +4,6 @@
 #include "metaitem.h"
 #include "variant.h"
 
-#include <c_string.h>
-
 #include <mutex>
 #include <vector>
 #include <map>
@@ -18,9 +16,8 @@ namespace internal {
 struct DLL_LOCAL NamedVariant
 {
     template<typename T>
-    NamedVariant(CString const &name, T&& value)
-        : name{name.data(), name.length()},
-          value{std::forward<T>(value)}
+    NamedVariant(std::string_view const &name, T&& value)
+        : name{name}, value{std::forward<T>(value)}
     {}
 
     std::string const name;
@@ -31,9 +28,9 @@ class DLL_LOCAL NamedVariantList
 {
 public:
     template<typename T>
-    void set(char const *name, T &&value);
+    void set(std::string_view const &name, T &&value);
     variant const& get(std::size_t index) const;
-    variant const& get(char const *name) const;
+    variant const& get(const std::string_view &name) const;
     std::string const& name(std::size_t index) const;
 
     std::size_t size() const
@@ -46,30 +43,27 @@ public:
 
 private:
     mutable std::mutex m_lock;
-    std::vector<NamedVariant> m_items;
-    std::map<CString, std::size_t> m_names;
+    std::vector<std::unique_ptr<NamedVariant>> m_items;
+    std::unordered_map<std::string_view, std::size_t> m_names;
 };
 
 template<typename T>
-inline void NamedVariantList::set(char const *name, T &&value)
+inline void NamedVariantList::set(std::string_view const &name, T &&value)
 {
-    if (!name)
+    if (name.empty())
         return;
 
     std::lock_guard<std::mutex> lock{m_lock};
-    auto temp = CString{name};
-    auto search = m_names.find(temp);
-
-    if (search == std::end(m_names))
+    if (auto search = m_names.find(name); search == std::end(m_names))
     {
-        auto index = m_items.size();
-        m_items.emplace_back(temp, std::forward<T>(value));
-        m_names.emplace(std::move(temp), index);
+        auto const &item = m_items.emplace_back(
+            std::make_unique<NamedVariant>(name, std::forward<T>(value)));
+        m_names.emplace(item->name, m_items.size() - 1);
     }
     else
     {
         auto index = search->second;
-        m_items.at(index).value = std::forward<T>(value);
+        m_items.at(index)->value = std::forward<T>(value);
     }
 }
 
@@ -79,7 +73,7 @@ inline void NamedVariantList::for_each(F &&func) const
     std::lock_guard<std::mutex> lock{m_lock};
     for(auto const &item: m_items)
     {
-        if (!func(item.name, item.value))
+        if (!func(item->name, item->value))
             break;
     }
 }
@@ -96,15 +90,12 @@ public:
     MetaItemPrivate& operator=(MetaItemPrivate&&) = delete;
 
     // Constructor for global namespace
-    explicit MetaItemPrivate(char const *name)
+    explicit MetaItemPrivate(std::string_view const &name)
         : m_name(name)
     {}
 
-    MetaItemPrivate(char const *name, MetaContainer const &owner)
+    MetaItemPrivate(std::string_view const &name, MetaContainer const &owner)
         : m_name(name), m_owner(&owner)
-    {}
-    MetaItemPrivate(std::string &&name, MetaContainer const &owner)
-        : m_name(std::move(name)), m_owner(&owner)
     {}
 
     virtual ~MetaItemPrivate();

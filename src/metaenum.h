@@ -14,15 +14,15 @@ class DLL_PUBLIC MetaEnum final: public MetaItem
 {
     DECLARE_PRIVATE(MetaEnum)
 public:
-    using enum_element_t = std::function<bool(const std::string&, const variant&)>;
+    using enum_element_t = std::function<bool(std::string const&, variant const&)>;
 
     MetaCategory category() const override;
 
     std::size_t elementCount() const;
-    const variant& element(std::size_t index) const;
-    const std::string& elementName(std::size_t index) const;
-    const variant& element(const char *name) const;
-    void for_each_element(const enum_element_t &func) const;
+    variant const& element(std::size_t index) const;
+    std::string const& elementName(std::size_t index) const;
+    variant const& element(std::string_view const &name) const;
+    void for_each_element(enum_element_t const &func) const;
 protected:
     explicit MetaEnum(const char *name, const MetaContainer &owner, MetaType_ID typeId);
     static MetaEnum* create(const char *name, MetaContainer &owner, MetaType_ID typeId);

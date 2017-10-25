@@ -1,19 +1,10 @@
 ﻿#ifndef METACONTAINER_P_H
 #define METACONTAINER_P_H
 
+#include "c_string.h"
+
 #include "metaitem_p.h"
 #include "metacontainer.h"
-
-#define INVOKE_PROTECTED(OBJECT, METHOD, ...) (\
-    ([&](auto &o) -> auto {\
-        using T = std::remove_reference_t<decltype(o)>;\
-        struct: T\
-        {\
-            using T::METHOD;\
-        } *a = reinterpret_cast<decltype(a)>(&o);\
-        return a->METHOD(__VA_ARGS__);\
-    })(OBJECT)\
-)
 
 namespace rtti {
 namespace internal {

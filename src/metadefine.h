@@ -162,10 +162,13 @@ struct method_invoker<F, return_static_func>
 
     static bool isStatic()
     { return true; }
+
     static MetaType_ID returnTypeId()
     { return metaTypeId<Result>(); }
+
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
+
     static std::string signature(char const *name)
     { return f_signature<F>::get(name); }
 
@@ -179,7 +182,7 @@ struct method_invoker<F, return_static_func>
         auto const &args = pack_arguments(mpl::typelist_size_v<Args>,
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
-        return invoke_imp(func, args, argument_indexes_t{}, result_is_reference{});
+        return invoke(func, args, argument_indexes_t{});
     }
 
     static variant invoke(F, const variant&,
@@ -193,7 +196,6 @@ private:
     template<std::size_t I>
     using argument_get_t = mpl::typelist_get_t<Args, I>;
     using argument_indexes_t = mpl::index_sequence_for_t<Args>;
-    using result_is_reference = std::is_reference_t<Result>;
 
     template<std::size_t ...I>
     static std::vector<MetaType_ID> parametersTypeId(mpl::index_sequence<I...>)
@@ -202,16 +204,12 @@ private:
     }
 
     template<std::size_t ...I>
-    static variant invoke_imp(F func, argument_array_t const &args,
-                              mpl::index_sequence<I...>, std::false_type)
+    static variant invoke(F func, argument_array_t const &args, mpl::index_sequence<I...>)
     {
-        return func(args[I]->value<argument_get_t<I>>()...);
-    }
-    template<std::size_t ...I>
-    static variant invoke_imp(F func, argument_array_t const &args,
-                              mpl::index_sequence<I...>, std::true_type)
-    {
-        return std::ref(func(args[I]->value<argument_get_t<I>>()...));
+        if constexpr(std::is_reference_v<Result>)
+            return std::ref(func(args[I]->value<argument_get_t<I>>()...));
+        else
+            return func(args[I]->value<argument_get_t<I>>()...);
     }
 };
 
@@ -636,14 +634,17 @@ struct property_invoker<P, static_pointer>
     { return metaTypeId<T>(); }
 
     static bool readOnly()
-    { return IsReadOnly::value; }
+    { return std::is_const_v<T>; }
 
     static variant get_static(P property)
     { return std::cref(*property); }
 
-    static void set_static(P property, argument const &arg)
+    static void set_static([[maybe_unused]] P property, argument const &arg)
     {
-        set_static(property, arg, IsReadOnly{});
+        if constexpr(std::is_const_v<T>)
+            throw invoke_error{"Write to readonly property"};
+        else
+            *property = arg.value<T>();
     }
 
     static variant get_field(P, variant const&)
@@ -657,17 +658,6 @@ struct property_invoker<P, static_pointer>
 
 private:
     using T = property_type_t<P>;
-    using IsReadOnly = std::is_const_t<T>;
-
-    static void set_static(P, argument const&, std::true_type)
-    {
-        throw invoke_error{"Write to readonly property"};
-    }
-
-    static void set_static(P property, argument const &arg, std::false_type)
-    {
-        *property = arg.value<T>();
-    }
 };
 
 template<typename P>
@@ -683,7 +673,7 @@ struct property_invoker<P, member_pointer>
     { return metaTypeId<T>(); }
 
     static bool readOnly()
-    { return IsReadOnly::value; }
+    { return std::is_const_v<T>; }
 
     static variant get_static(P)
     { assert(false); return variant::empty_variant; }
@@ -703,47 +693,36 @@ struct property_invoker<P, member_pointer>
 
     static void set_field(P property, variant const &instance, argument const &arg)
     {
-        set_field(property, instance, arg, IsReadOnly{});
+        if constexpr(std::is_const_v<T>)
+            throw invoke_error{"Write to readonly property"};
+        else
+        {
+            auto type = MetaType{instance.typeId()};
+            if (type.isClass())
+                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                                       mpl::type_name<class_ref_t>()};
+            else if (type.isClassPtr())
+                instance.to<C*>()->*property = arg.value<T>();
+        }
     }
 
     static void set_field(P property, variant &instance, argument const &arg)
     {
-        set_field(property, instance, arg, IsReadOnly{});
+        if constexpr(std::is_const_v<T>)
+            throw invoke_error{"Write to readonly property"};
+        else
+        {
+            auto type = MetaType{instance.typeId()};
+            if (type.isClass())
+                instance.value<C>().*property = arg.value<T>();
+            else if (type.isClassPtr())
+                instance.to<C*>()->*property = arg.value<T>();
+        }
     }
 private:
     using C = property_class_t<P>;
     using T = property_type_t<P>;
-    using IsReadOnly = std::is_const_t<T>;
     using class_ref_t = std::add_lvalue_reference_t<C>;
-
-    static void set_field(P, variant&, argument const&, std::true_type)
-    {
-        throw invoke_error{"Write to readonly property"};
-    }
-
-    static void set_field(P, variant const&, argument const&, std::true_type)
-    {
-        throw invoke_error{"Write to readonly property"};
-    }
-
-    static void set_field(P property, variant const &instance, argument const &arg, std::false_type)
-    {
-        auto type = MetaType{instance.typeId()};
-        if (type.isClass())
-            throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
-                                   mpl::type_name<class_ref_t>()};
-        else if (type.isClassPtr())
-            instance.to<C*>()->*property = arg.value<T>();
-    }
-
-    static void set_field(P property, variant &instance, argument const &arg, std::false_type)
-    {
-        auto type = MetaType{instance.typeId()};
-        if (type.isClass())
-            instance.value<C>().*property = arg.value<T>();
-        else if (type.isClassPtr())
-            instance.to<C*>()->*property = arg.value<T>();
-    }
 };
 
 template<typename P>

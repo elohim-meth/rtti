@@ -32,7 +32,7 @@ class DLL_PUBLIC MetaItem
 {
     DECLARE_PRIVATE(MetaItem)
 public:
-    using enum_attribute_t = std::function<bool(std::string const&, variant const&)>;
+    using enum_attribute_t = std::function<bool(std::string_view const&, variant const&)>;
 
     virtual MetaCategory category() const = 0;
     std::string const& name() const;
@@ -40,11 +40,11 @@ public:
     std::string const& qualifiedName() const;
     std::size_t attributeCount() const;
     variant const& attribute(std::size_t index) const;
-    std::string const& attributeName(std::size_t index) const;
-    variant const& attribute(char const *name) const;
+    std::string const &attributeName(std::size_t index) const;
+    variant const& attribute(std::string_view const &name) const;
     void for_each_attribute(enum_attribute_t const &func) const;
 protected:
-    explicit MetaItem(char const *name, MetaContainer const &owner);
+    explicit MetaItem(std::string_view const &name, MetaContainer const &owner);
     explicit MetaItem(MetaItemPrivate &value);
     MetaItem(MetaItem const&) = delete;
     MetaItem& operator=(MetaItem const&) = delete;
@@ -54,8 +54,8 @@ protected:
 
     virtual void checkDeferredDefine() const;
 
-    void setAttribute(char const *name, variant const &value);
-    void setAttribute(char const *name, variant &&value);
+    void setAttribute(std::string_view const &name, variant const &value);
+    void setAttribute(std::string_view const &name, variant &&value);
     std::unique_ptr<MetaItemPrivate> d_ptr;
 
 private:
@@ -64,9 +64,9 @@ private:
     };
     friend class rtti::internal::MetaItemList;
 public:
-    void setAttribute(char const *name, variant const &value, SetAttributeKey)
+    void setAttribute(std::string_view const &name, variant const &value, SetAttributeKey)
     { setAttribute(name, value); }
-    void setAttribute(char const *name, variant &&value, SetAttributeKey)
+    void setAttribute(std::string_view const &name, variant &&value, SetAttributeKey)
     { setAttribute(name, std::move(value)); }
 };
 
