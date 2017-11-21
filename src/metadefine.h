@@ -535,7 +535,7 @@ struct ConstructorInvoker: IConstructorInvoker
 
     std::string signature(char const*) const override
     {
-        return signature_imp(argument_indexes_t{});
+        return signature(argument_indexes_t{});
     }
 
     variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
@@ -547,7 +547,7 @@ struct ConstructorInvoker: IConstructorInvoker
         auto const &args = pack_arguments(sizeof...(Args),
                                           arg0, arg1, arg2, arg3, arg4,
                                           arg5, arg6, arg7, arg8, arg9);
-        return invoke_imp(args, argument_indexes_t{});
+        return invoke(args, argument_indexes_t{});
     }
 
     variant invoke_method(variant const&,
@@ -560,17 +560,17 @@ struct ConstructorInvoker: IConstructorInvoker
                           argument, argument, argument, argument, argument) const override
     { assert(false); return variant::empty_variant; }
 private:
-    static constexpr char const* signature_imp(mpl::index_sequence<>)
+    static constexpr char const* signature(mpl::index_sequence<>)
     {
         return "default constructor";
     }
 
-    static std::string signature_imp(mpl::index_sequence<0>)
+    static std::string signature(mpl::index_sequence<0>)
     {
         using Arg = argument_get_t<0>;
         if (std::is_same_v<std::decay_t<Arg>, C>)
         {
-            if (std::is_rvalue_reference_v<Arg>)
+            if constexpr(std::is_rvalue_reference_v<Arg>)
                 return "move constructor";
             else
                 return "copy constructor";
@@ -579,13 +579,13 @@ private:
     }
 
     template<std::size_t ...I>
-    static std::string signature_imp(mpl::index_sequence<I...>)
+    static std::string signature(mpl::index_sequence<I...>)
     {
         return ::rtti::signature<Args...>::get("constructor");
     }
 
     template<std::size_t ...I>
-    static variant invoke_imp(argument_array_t const &args, mpl::index_sequence<I...>)
+    static variant invoke(argument_array_t const &args, mpl::index_sequence<I...>)
     {
         return C(args[I]->value<argument_get_t<I>>()...);
     }

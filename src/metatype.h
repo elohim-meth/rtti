@@ -493,7 +493,9 @@ class meta_type final
     meta_type()
     {
         //register decayed type
-        auto decay = decay_metatype(std::is_same<T, Decay>{});
+        auto decay = MetaType_ID{};
+        if constexpr(!std::is_same_v<T, Decay>)
+            decay = metaTypeId<Decay>();
 
         auto const &name = mpl::type_name<T>();
         auto const flags = type_flags<T>::value;
@@ -505,12 +507,6 @@ class meta_type final
                                              arity, const_mask, flags,
                                              manager, {});
     }
-
-    static MetaType_ID decay_metatype(std::false_type)
-    { return metaTypeId<Decay>(); }
-
-    static MetaType_ID decay_metatype(std::true_type)
-    { return MetaType_ID{}; }
 
     MetaType_ID meta_id;
 
