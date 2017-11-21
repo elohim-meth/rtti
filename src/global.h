@@ -45,10 +45,12 @@
 #define INVOKE_PROTECTED(OBJECT, METHOD, ...) (\
     ([&](auto &o) -> auto {\
         using T = std::remove_reference_t<decltype(o)>;\
-        struct: T\
+        struct A: T\
         {\
             using T::METHOD;\
-        } *a = reinterpret_cast<decltype(a)>(&o);\
+        };\
+        using U = std::conditional_t<std::is_const_v<T>, A const*, A*>;\
+        auto a = reinterpret_cast<U>(&o);\
         return a->METHOD(__VA_ARGS__);\
     })(OBJECT)\
 )

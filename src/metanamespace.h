@@ -11,7 +11,7 @@ class DLL_PUBLIC MetaNamespace final: public MetaContainer
 {
     DECLARE_PRIVATE(MetaNamespace)
 public:
-    static const MetaNamespace* global();
+    static MetaNamespace const* global();
     bool isGlobal() const;
     MetaCategory category() const override;
 protected:

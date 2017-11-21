@@ -10,7 +10,7 @@ MetaNamespace::MetaNamespace()
     : MetaContainer{*new MetaNamespacePrivate{"global"}}
 {}
 
-const MetaNamespace* MetaNamespace::global()
+MetaNamespace const* MetaNamespace::global()
 {
     static MetaNamespace globalNamespace;
     return &globalNamespace;
