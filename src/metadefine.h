@@ -271,8 +271,8 @@ private:
     using argument_indexes_t = mpl::index_sequence_for_t<Args>;
     //
     using C = typename mpl::function_traits<F>::class_type;
-    using is_const = typename mpl::function_traits<F>::is_const;
-    using class_t = std::conditional_t<is_const::value, std::add_const_t<C>, C>;
+    using is_const_method = typename mpl::function_traits<F>::is_const;
+    using class_t = std::conditional_t<is_const_method::value, std::add_const_t<C>, C>;
     using class_ref_t = std::add_lvalue_reference_t<class_t>;
     using class_ptr_t = std::add_pointer_t<class_t>;
 
@@ -282,26 +282,22 @@ private:
         return { metaTypeId<argument_get_t<I>>()... };
     }
 
-    static class_ref_t class_get(variant const&, std::false_type)
-    {
-        throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
-                               mpl::type_name<class_ref_t>()};
-    }
-
-    static class_ref_t class_get(variant const &instance, std::true_type)
-    {
-        return instance.value<class_t>();
-    }
-
     template<std::size_t ...I>
     static variant invoke_imp(F func, variant const &instance,
                               argument_array_t const &args, mpl::index_sequence<I...>)
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            (class_get(instance, is_const{}).*func)(args[I]->value<argument_get_t<I>>()...);
+        {
+            if constexpr(is_const_method::value)
+                (instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
+            else
+                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                                       mpl::type_name<class_ref_t>()};
+        }
         else if (type.isClassPtr())
             (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
+
         return variant::empty_variant;
     }
 
@@ -314,6 +310,7 @@ private:
             (instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.isClassPtr())
             (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
+
         return variant::empty_variant;
     }
 };
@@ -375,11 +372,10 @@ private:
     template<std::size_t I>
     using argument_get_t = mpl::typelist_get_t<Args, I>;
     using argument_indexes_t = mpl::index_sequence_for_t<Args>;
-    using result_is_reference = std::is_reference_t<Result>;
     //
     using C = typename mpl::function_traits<F>::class_type;
-    using is_const = typename mpl::function_traits<F>::is_const;
-    using class_t = std::conditional_t<is_const::value, C const, C>;
+    using is_const_method = typename mpl::function_traits<F>::is_const;
+    using class_t = std::conditional_t<is_const_method::value, std::add_const_t<C>, C>;
     using class_ref_t = std::add_lvalue_reference_t<class_t>;
     using class_ptr_t = std::add_pointer_t<class_t>;
 
@@ -390,26 +386,12 @@ private:
     }
 
     template<typename R>
-    static variant reference_get(R &&result, std::false_type)
+    static variant reference_get(R &&result)
     {
-        return std::forward<R>(result);
-    }
-
-    template<typename R>
-    static variant reference_get(R &&result, std::true_type)
-    {
-        return std::ref(std::forward<R>(result));
-    }
-
-    static class_ref_t class_get(variant const&, std::false_type)
-    {
-        throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
-                               mpl::type_name<class_ref_t>()};
-    }
-
-    static class_ref_t class_get(variant const &instance, std::true_type)
-    {
-        return instance.value<class_t>();
+        if constexpr(std::is_reference_v<Result>)
+            return std::ref(std::forward<R>(result));
+        else
+            return std::forward<R>(result);
     }
 
     template<std::size_t ...I>
@@ -418,13 +400,16 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            return reference_get((class_get(instance, is_const{}).*func)(
-                                     args[I]->value<argument_get_t<I>>()...),
-                                 result_is_reference{});
+        {
+            if constexpr(is_const_method::value)
+                return reference_get((instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
+            else
+                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                                       mpl::type_name<class_ref_t>()};
+        }
         else if (type.isClassPtr())
-            return reference_get((instance.to<class_ptr_t>()->*func)(
-                                     args[I]->value<argument_get_t<I>>()...),
-                                 result_is_reference{});
+            return reference_get((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...));
+
         return variant::empty_variant;
     }
 
@@ -434,11 +419,10 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            return reference_get((instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...),
-                                      result_is_reference{});
+            return reference_get((instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
         else if (type.isClassPtr())
-            return reference_get((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...),
-                                      result_is_reference{});
+            return reference_get((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...));
+
         return variant::empty_variant;
     }
 };
