@@ -92,7 +92,7 @@ TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
     return nullptr;
 }
 
-const TypeInfo* CustomTypes::getTypeInfo(std::string_view const &name) const
+TypeInfo const* CustomTypes::getTypeInfo(std::string_view const &name) const
 {
     if (name.empty())
         return nullptr;
@@ -112,7 +112,7 @@ const TypeInfo* CustomTypes::getTypeInfo(std::string_view const &name) const
     return nullptr;
 }
 
-inline TypeInfo const* CustomTypes::addTypeInfo(std::string_view const &name, std::size_t size,
+TypeInfo const* CustomTypes::addTypeInfo(std::string_view const &name, std::size_t size,
                                             MetaType_ID decay, uint16_t arity,
                                             uint16_t const_mask, TypeFlags flags,
                                             metatype_manager_t const *manager)
@@ -150,31 +150,27 @@ inline CustomTypes* customTypes()
 
 MetaType::MetaType(MetaType_ID typeId) noexcept
 {
-    auto *types = customTypes();
-    if (types)
+    if (auto *types = customTypes(); types)
         m_typeInfo = types->getTypeInfo(typeId);
 }
 
 rtti::MetaType::MetaType(std::string_view const &name) noexcept
 {
-    auto *types = customTypes();
-    if (types)
+    if (auto *types = customTypes(); types)
         m_typeInfo = types->getTypeInfo(name.data());
 
 }
 
 MetaType_ID MetaType::typeId() const noexcept
 {
-    if (m_typeInfo)
-        return m_typeInfo->type;
-    return MetaType_ID{};
+    return m_typeInfo ? m_typeInfo->type
+                      : MetaType_ID{};
 }
 
 MetaType_ID MetaType::decayId() const noexcept
 {
-    if (m_typeInfo)
-        return m_typeInfo->decay;
-    return MetaType_ID{};
+    return m_typeInfo ? m_typeInfo->decay
+                      : MetaType_ID{};
 }
 
 void MetaType::setTypeId(MetaType_ID typeId)
@@ -184,31 +180,26 @@ void MetaType::setTypeId(MetaType_ID typeId)
 
 std::string_view MetaType::typeName() const noexcept
 {
-    if (m_typeInfo)
-        return m_typeInfo->name;
-    return nullptr;
+    return m_typeInfo ? m_typeInfo->name
+                      : nullptr;
 }
 
 std::size_t MetaType::typeSize() const noexcept
 {
-    if (m_typeInfo)
-        return m_typeInfo->size;
-    return 0;
+    return m_typeInfo ? m_typeInfo->size
+                      : 0;
 }
 
 TypeFlags MetaType::typeFlags() const noexcept
 {
-    TypeFlags result = TypeFlags::None;
-    if (m_typeInfo)
-        result = m_typeInfo->flags;
-    return result;
+    return m_typeInfo ? m_typeInfo->flags
+                      : TypeFlags::None;
 }
 
 std::uint16_t MetaType::pointerArity() const noexcept
 {
-    if (m_typeInfo)
-        return m_typeInfo->arity;
-    return 0;
+    return m_typeInfo ? m_typeInfo->arity
+                      : 0;
 }
 
 bool MetaType::compatible(MetaType fromType, MetaType toType) noexcept
