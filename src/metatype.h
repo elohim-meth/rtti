@@ -85,7 +85,8 @@ public:
     bool decayed() const noexcept
     { return valid() && (typeId() == decayId()); }
     void setTypeId(MetaType_ID typeId);
-    char const* typeName() const noexcept;
+    //char const* typeName() const noexcept;
+    std::string_view typeName() const noexcept;
     std::size_t typeSize() const noexcept;
     TypeFlags typeFlags() const noexcept;
 

@@ -6,6 +6,25 @@
 
 namespace rtti {
 
+// It's weird STD library lacks this operator :()
+template<typename _CharT, typename _Traits, typename _Alloc>
+inline std::basic_string<_CharT, _Traits, _Alloc>
+operator+(std::basic_string<_CharT, _Traits, _Alloc> const &lhs,
+          std::basic_string_view<_CharT, _Traits> const &rhs)
+{
+    std::basic_string<_CharT, _Traits, _Alloc> str(lhs);
+    str.append(rhs);
+    return str;
+}
+
+template<typename _CharT, typename _Traits, typename _Alloc>
+inline std::basic_string<_CharT, _Traits, _Alloc>
+operator+(std::basic_string<_CharT, _Traits, _Alloc> &&lhs,
+          std::basic_string_view<_CharT, _Traits> const &rhs)
+{
+    return std::move(lhs.append(rhs));
+}
+
 template<bool B, typename T, typename F>
 constexpr auto conditional_v = std::conditional_t<B, T, F>::value;
 

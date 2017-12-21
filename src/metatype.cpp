@@ -182,10 +182,10 @@ void MetaType::setTypeId(MetaType_ID typeId)
     *this = MetaType{typeId};
 }
 
-char const* MetaType::typeName() const noexcept
+std::string_view MetaType::typeName() const noexcept
 {
     if (m_typeInfo)
-        return m_typeInfo->name.data();
+        return m_typeInfo->name;
     return nullptr;
 }
 
