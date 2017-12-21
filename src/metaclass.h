@@ -23,8 +23,8 @@ public:
     using cast_func_t = void const*(*)(void const*);
 
     MetaCategory category() const override;
-    static MetaClass const* findByTypeId(MetaType_ID typeId);
-    static MetaClass const* findByTypeName(char const *name);
+    static MetaClass const* find(MetaType_ID typeId);
+    static MetaClass const* find(std::string_view const &name);
     MetaType_ID metaTypeId() const;
     std::size_t baseClassCount() const;
     MetaClass const* baseClass(std::size_t index) const;
@@ -32,16 +32,16 @@ public:
     MetaClass const* derivedClass(std::size_t index) const;
     bool inheritedFrom(MetaClass const *base) const;
 protected:
-    explicit MetaClass(char const *name, MetaContainer const &owner, MetaType_ID typeId);
-    static MetaClass* create(char const *name, MetaContainer &owner, MetaType_ID typeId);
+    explicit MetaClass(std::string_view const &name, MetaContainer const &owner, MetaType_ID typeId);
+    static MetaClass* create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId);
 
     void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     void addDerivedClass(MetaType_ID typeId);
     void const* cast(MetaClass const *base, void const *instance) const;
     void* cast(MetaClass const *base, void *instance) const;
 
-    MetaMethod const* getMethodInternal(char const *name) const override;
-    MetaProperty const* getPropertyInternal(char const *name) const override;
+    MetaMethod const* getMethodInternal(std::string_view const &name) const override;
+    MetaProperty const* getPropertyInternal(std::string_view const &name) const override;
 
 private:
     DECLARE_ACCESS_KEY(CreateAccessKey)
@@ -55,7 +55,7 @@ private:
     };
 
 public:
-    static MetaClass* create(char const *name, MetaContainer &owner, MetaType_ID typeId, CreateAccessKey)
+    static MetaClass* create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId, CreateAccessKey)
     { return create(name, owner, typeId); }
     void addBaseClass(MetaType_ID typeId, cast_func_t caster, CreateAccessKey)
     { addBaseClass(typeId, caster); }
@@ -113,8 +113,8 @@ To const* meta_cast(From const *from, std::true_type)
         return nullptr;
 
     auto const &info = from->classInfo();
-    auto *fromClass = MetaClass::findByTypeId(info.typeId);
-    auto *toClass = MetaClass::findByTypeId(metaTypeId<To>());
+    auto *fromClass = MetaClass::find(info.typeId);
+    auto *toClass = MetaClass::find(metaTypeId<To>());
     if (!fromClass || !toClass)
         return nullptr;
 

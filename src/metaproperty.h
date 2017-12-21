@@ -47,9 +47,9 @@ public:
         return invoker()->readOnly();
     }
 protected:
-    explicit MetaProperty(const char *name, MetaContainer &owner,
+    explicit MetaProperty(std::string_view const &name, MetaContainer &owner,
                         std::unique_ptr<IPropertyInvoker> invoker);
-    static MetaProperty* create(const char *name, MetaContainer &owner,
+    static MetaProperty* create(std::string_view const &name, MetaContainer &owner,
                               std::unique_ptr<IPropertyInvoker> invoker);
 private:
     const IPropertyInvoker* invoker() const;
@@ -107,7 +107,7 @@ private:
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    static MetaProperty* create(const char *name, MetaContainer &owner,
+    static MetaProperty* create(std::string_view const &name, MetaContainer &owner,
                               std::unique_ptr<IPropertyInvoker> invoker,
                               CreateAccessKey)
     { return create(name, owner, std::move(invoker)); }

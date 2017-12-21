@@ -2,22 +2,22 @@
 
 namespace rtti {
 
-MetaConstructor::MetaConstructor(std::string &&name, MetaContainer &owner,
+MetaConstructor::MetaConstructor(std::string_view const &name, MetaContainer &owner,
                                  std::unique_ptr<IConstructorInvoker> constructor)
-    : MetaItem{*new MetaConstructorPrivate{std::move(name), owner, std::move(constructor)}}
+    : MetaItem{*new MetaConstructorPrivate{name, owner, std::move(constructor)}}
 {}
 
-MetaConstructor* MetaConstructor::create(char const *name, MetaContainer &owner,
+MetaConstructor* MetaConstructor::create(std::string_view const &name, MetaContainer &owner,
                                          std::unique_ptr<IConstructorInvoker> constructor)
 {
     if (!constructor)
         return nullptr;
 
-    auto temp = name ? std::string{name} : constructor->signature();
-    auto result = const_cast<MetaConstructor*>(owner.getConstructor(temp.c_str()));
+    auto signature = constructor->signature(name.empty() ? CONSTRUCTOR_SIG : name);
+    auto result = const_cast<MetaConstructor*>(owner.getConstructor(signature));
     if (!result)
     {
-        result = new MetaConstructor{std::move(temp), owner, std::move(constructor)};
+        result = new MetaConstructor{signature, owner, std::move(constructor)};
         INVOKE_PROTECTED(owner, addItem, result);
     }
     return result;

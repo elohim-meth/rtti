@@ -3,11 +3,11 @@
 
 namespace rtti {
 
-MetaEnum::MetaEnum(const char *name, const MetaContainer &owner, MetaType_ID typeId)
+MetaEnum::MetaEnum(std::string_view const &name, const MetaContainer &owner, MetaType_ID typeId)
     : MetaItem{*new MetaEnumPrivate{name, owner, typeId}}
 {}
 
-MetaEnum *MetaEnum::create(const char *name, MetaContainer &owner, MetaType_ID typeId)
+MetaEnum *MetaEnum::create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId)
 {
     auto result = const_cast<MetaEnum*>(owner.getEnum(name));
     if (!result)
@@ -18,7 +18,7 @@ MetaEnum *MetaEnum::create(const char *name, MetaContainer &owner, MetaType_ID t
     return result;
 }
 
-void MetaEnum::addElement(const char *name, variant &&value)
+void MetaEnum::addElement(std::string_view const &name, variant &&value)
 {
     auto d = d_func();
     d->m_elements.set(name, std::move(value));

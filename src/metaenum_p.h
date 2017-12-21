@@ -9,7 +9,7 @@ namespace rtti {
 class DLL_LOCAL MetaEnumPrivate: public MetaItemPrivate
 {
 public:
-    MetaEnumPrivate(const char *name, const MetaContainer &owner, MetaType_ID typeId)
+    MetaEnumPrivate(std::string_view const &name, const MetaContainer &owner, MetaType_ID typeId)
         : MetaItemPrivate{name, owner}, m_typeId{typeId}
     {}
 

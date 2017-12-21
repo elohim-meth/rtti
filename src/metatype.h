@@ -74,7 +74,7 @@ public:
 
     MetaType() noexcept = default;
     explicit MetaType(MetaType_ID typeId) noexcept;
-    explicit MetaType(char const *name) noexcept;
+    explicit MetaType(std::string_view const &name) noexcept;
 
     bool valid() const noexcept
     {

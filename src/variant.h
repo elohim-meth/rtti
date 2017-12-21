@@ -477,7 +477,7 @@ public:
     MetaClass const* metaClass() const
     {
         auto const &info = classInfo();
-        return MetaClass::findByTypeId(info.typeId);
+        return MetaClass::find(info.typeId);
     }
 
     template<typename T>
@@ -706,9 +706,9 @@ private:
             if (!fromType.valid())
                 return false;
 
-            auto fromClass = MetaClass::findByTypeId(info.typeId);
-            auto toClass = MetaClass::findByTypeId(metaTypeId<C>());
-            if (!fromClass && !toClass)
+            auto fromClass = MetaClass::find(info.typeId);
+            auto toClass = MetaClass::find(metaTypeId<C>());
+            if (!fromClass || !toClass)
                 return false;
             return fromClass->inheritedFrom(toClass);
         }
@@ -794,9 +794,9 @@ private:
             if (!fromType.valid())
                 return nullptr;
 
-            auto fromClass = MetaClass::findByTypeId(info.typeId);
-            auto toClass = MetaClass::findByTypeId(metaTypeId<C>());
-            if (!fromClass && !toClass)
+            auto fromClass = MetaClass::find(info.typeId);
+            auto toClass = MetaClass::find(metaTypeId<C>());
+            if (!fromClass || !toClass)
                 return nullptr;
 
             return fromClass->cast(toClass, info.instance, {});
@@ -893,9 +893,9 @@ private:
             if (!fromType.valid())
                 return nullptr;
 
-            auto fromClass = MetaClass::findByTypeId(info.typeId);
-            auto toClass = MetaClass::findByTypeId(metaTypeId<C>());
-            if (!fromClass && !toClass)
+            auto fromClass = MetaClass::find(info.typeId);
+            auto toClass = MetaClass::find(metaTypeId<C>());
+            if (!fromClass || !toClass)
                 return nullptr;
 
             return fromClass->cast(toClass, info.instance, {});

@@ -1,8 +1,6 @@
 ﻿#ifndef METACONTAINER_P_H
 #define METACONTAINER_P_H
 
-#include "c_string.h"
-
 #include "metaitem_p.h"
 #include "metacontainer.h"
 
@@ -22,14 +20,14 @@ public:
 
     bool add(MetaItem *value);
     MetaItem* get(std::size_t index) const;
-    MetaItem* get(char const *name) const;
+    MetaItem* get(std::string_view const &name) const;
     std::size_t size() const;
     template<typename F> void for_each(F &&func) const;
 
 private:
     mutable std::mutex m_lock;
     std::vector<item_t> m_items;
-    std::map<CString, std::size_t> m_names;
+    std::unordered_map<std::string_view, std::size_t> m_names;
 };
 
 template<typename F>
@@ -54,11 +52,11 @@ public:
     { return m_lists[category]->get(index); }
     std::size_t size(MetaCategory category) const
     { return m_lists[category]->size(); }
-    MetaItem* item(MetaCategory category, char const *name) const
+    MetaItem* item(MetaCategory category, std::string_view const &name) const
     { return m_lists[category]->get(name); }
-
 protected:
     bool addItem(MetaItem *value);
+    MetaItem* findMethod(MetaCategory category, std::string_view const &name) const;
 
 private:
     internal::MetaItemList m_namespaces;

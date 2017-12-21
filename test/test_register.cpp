@@ -157,7 +157,7 @@ void register_rtti()
                     return std::stod(value);
                 });
     rtti::MetaType::registerConverter<char*, double>(
-                [] (const char *value)
+                [] (char const *value)
                 {
                     char *end;
                     return std::strtod(value, &end);

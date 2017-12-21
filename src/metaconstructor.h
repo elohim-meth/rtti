@@ -25,9 +25,9 @@ public:
     }
 
 protected:
-    explicit MetaConstructor(std::string &&name, MetaContainer &owner,
+    explicit MetaConstructor(std::string_view const &name, MetaContainer &owner,
                              std::unique_ptr<IConstructorInvoker> constructor);
-    static MetaConstructor* create(char const *name, MetaContainer &owner,
+    static MetaConstructor* create(std::string_view const &name, MetaContainer &owner,
                                    std::unique_ptr<IConstructorInvoker> constructor);
 
 private:
@@ -37,7 +37,7 @@ private:
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    static MetaConstructor* create(char const *name, MetaContainer &owner,
+    static MetaConstructor* create(std::string_view const &name, MetaContainer &owner,
                                    std::unique_ptr<IConstructorInvoker> constructor,
                                    CreateAccessKey)
     { return create(name, owner, std::move(constructor)); }

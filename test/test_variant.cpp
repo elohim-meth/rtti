@@ -17,7 +17,7 @@ public:
     { PRINT_PRETTY_FUNC }
     PrivatePimpl& operator=(const PrivatePimpl&) = delete;
     PrivatePimpl& operator=(PrivatePimpl&&) = delete;
-    explicit PrivatePimpl(const char *value)
+    explicit PrivatePimpl(char const *value)
         : m_value{value}
     { PRINT_PRETTY_FUNC }
     explicit PrivatePimpl(std::string const &value)

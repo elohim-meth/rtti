@@ -14,7 +14,7 @@ namespace rtti {
 namespace {
 
 #define DEFINE_STATIC_TYPE_INFO(NAME, TYPEID) \
-TypeInfo{CString{#NAME}, sizeof(NAME), \
+TypeInfo{#NAME, sizeof(NAME), \
          MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, \
          pointer_arity<NAME>::value, \
          const_bitset<NAME>::value, \
@@ -23,7 +23,7 @@ TypeInfo{CString{#NAME}, sizeof(NAME), \
         },
 
 static std::array<TypeInfo, 38> const fundamentalTypes = {{
-    TypeInfo{CString{"void"}, 0, MetaType_ID{0}, MetaType_ID{0}, 0, 0, internal::type_flags<void>::value, nullptr},
+    TypeInfo{"void", 0, MetaType_ID{0}, MetaType_ID{0}, 0, 0, internal::type_flags<void>::value, nullptr},
     FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
     }};
 
@@ -39,15 +39,15 @@ public:
     ~CustomTypes();
 
     TypeInfo const* getTypeInfo(MetaType_ID typeId) const;
-    TypeInfo const*  getTypeInfo(char const *name) const;
-    TypeInfo const* addTypeInfo(char const *name, std::size_t size,
+    TypeInfo const* getTypeInfo(std::string_view const &name) const;
+    TypeInfo const* addTypeInfo(std::string_view const &name, std::size_t size,
                                 MetaType_ID decay, std::uint16_t arity,
                                 std::uint16_t const_mask, TypeFlags flags,
                                 metatype_manager_t const *manager);
 private:
     mutable std::mutex m_lock;
     std::vector<std::unique_ptr<TypeInfo>> m_items;
-    std::unordered_map<CString, std::size_t> m_names;
+    std::unordered_map<std::string_view, std::size_t> m_names;
 
     static bool Destroyed;
     friend CustomTypes* customTypes();
@@ -56,11 +56,11 @@ private:
 bool CustomTypes::Destroyed = false;
 
 #define DEFINE_STATIC_TYPE_MAP(NAME, INDEX) \
-{CString{#NAME}, INDEX},
+{#NAME, INDEX},
 
 CustomTypes::CustomTypes()
     : m_names {
-          {CString{"void"}, 0},
+          {"void", 0},
           FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_MAP)
 }
 {}
@@ -92,15 +92,14 @@ TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
     return nullptr;
 }
 
-const TypeInfo* CustomTypes::getTypeInfo(char const *name) const
+const TypeInfo* CustomTypes::getTypeInfo(std::string_view const &name) const
 {
-    if (!name)
+    if (name.empty())
         return nullptr;
 
-    auto temp = CString{name};
     std::lock_guard<std::mutex> lock{m_lock};
-    auto search = m_names.find(temp);
-    if (search != std::end(m_names))
+    if (auto search = m_names.find(name);
+        search != std::end(m_names))
     {
         auto index = search->second;
         if (index < fundamentalTypes.size())
@@ -113,7 +112,7 @@ const TypeInfo* CustomTypes::getTypeInfo(char const *name) const
     return nullptr;
 }
 
-inline TypeInfo const* CustomTypes::addTypeInfo(char const *name, std::size_t size,
+inline TypeInfo const* CustomTypes::addTypeInfo(std::string_view const &name, std::size_t size,
                                             MetaType_ID decay, uint16_t arity,
                                             uint16_t const_mask, TypeFlags flags,
                                             metatype_manager_t const *manager)
@@ -126,12 +125,11 @@ inline TypeInfo const* CustomTypes::addTypeInfo(char const *name, std::size_t si
     if (decay.value() == MetaType::InvalidTypeId)
         decay = MetaType_ID{type};
 
-    auto temp = CString{name};
-    auto result = new TypeInfo{temp, size, MetaType_ID{type},
+    auto result = new TypeInfo{name, size, MetaType_ID{type},
                                decay, arity, const_mask, flags,
                                manager};
     m_items.emplace_back(result);
-    m_names.emplace(std::move(temp), type);
+    m_names.emplace(name, type);
     return result;
 }
 
@@ -157,11 +155,11 @@ MetaType::MetaType(MetaType_ID typeId) noexcept
         m_typeInfo = types->getTypeInfo(typeId);
 }
 
-rtti::MetaType::MetaType(char const *name) noexcept
+rtti::MetaType::MetaType(std::string_view const &name) noexcept
 {
     auto *types = customTypes();
     if (types)
-        m_typeInfo = types->getTypeInfo(name);
+        m_typeInfo = types->getTypeInfo(name.data());
 
 }
 

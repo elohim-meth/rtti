@@ -24,18 +24,18 @@ public:
     variant const& element(std::string_view const &name) const;
     void for_each_element(enum_element_t const &func) const;
 protected:
-    explicit MetaEnum(const char *name, const MetaContainer &owner, MetaType_ID typeId);
-    static MetaEnum* create(const char *name, MetaContainer &owner, MetaType_ID typeId);
+    explicit MetaEnum(std::string_view const &name, const MetaContainer &owner, MetaType_ID typeId);
+    static MetaEnum* create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId);
 
-    void addElement(const char *name, variant &&value);
+    void addElement(std::string_view const &name, variant &&value);
 private:
     DECLARE_ACCESS_KEY(CreateAccessKey)
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    static MetaEnum* create(const char *name, MetaContainer &owner, MetaType_ID typeId, CreateAccessKey)
+    static MetaEnum* create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId, CreateAccessKey)
     { return create(name, owner, typeId); }
-    void addElement(const char *name, variant &&value, CreateAccessKey)
+    void addElement(std::string_view const &name, variant &&value, CreateAccessKey)
     { addElement(name, std::move(value)); }
 };
 

@@ -9,9 +9,9 @@ namespace rtti {
 class DLL_LOCAL MetaMethodPrivate: public MetaItemPrivate
 {
 public:
-    MetaMethodPrivate(std::string &&name, const MetaContainer &owner,
+    MetaMethodPrivate(std::string_view const &name, const MetaContainer &owner,
                       std::unique_ptr<IMethodInvoker> invoker)
-        : MetaItemPrivate{std::move(name), owner},
+        : MetaItemPrivate{name, owner},
           m_invoker{std::move(invoker)}
     {}
 

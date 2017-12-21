@@ -110,7 +110,7 @@ inline void BaseClassList::for_each(F &&func) const
 class DLL_LOCAL MetaClassPrivate: public MetaContainerPrivate
 {
 public:
-    MetaClassPrivate(const char *name, const MetaContainer &owner, MetaType_ID typeId)
+    MetaClassPrivate(std::string_view const &name, const MetaContainer &owner, MetaType_ID typeId)
         : MetaContainerPrivate{name, owner}, m_typeId{typeId}
     {}
 private:

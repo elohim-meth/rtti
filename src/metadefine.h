@@ -109,7 +109,7 @@ struct method_invoker<F, void_static_func>
     { return metaTypeId<void>(); }
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
-    static std::string signature(char const *name)
+    static std::string signature(std::string_view const &name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -169,7 +169,7 @@ struct method_invoker<F, return_static_func>
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
 
-    static std::string signature(char const *name)
+    static std::string signature(std::string_view const &name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -227,7 +227,7 @@ struct method_invoker<F, void_member_func>
     { return metaTypeId<void>(); }
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
-    static std::string signature(char const *name)
+    static std::string signature(std::string_view const &name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -330,7 +330,7 @@ struct method_invoker<F, return_member_func>
     { return metaTypeId<Result>(); }
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
-    static std::string signature(char const *name)
+    static std::string signature(std::string_view const &name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -448,7 +448,7 @@ struct MethodInvoker: IMethodInvoker
     std::vector<MetaType_ID> parametersTypeId() const override
     { return invoker_t::parametersTypeId(); }
 
-    std::string signature(char const *name) const override
+    std::string signature(std::string_view const &name) const override
     { return invoker_t::signature(name); }
 
     variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
@@ -517,9 +517,9 @@ struct ConstructorInvoker: IConstructorInvoker
         return {metaTypeId<Args>()...};
     }
 
-    std::string signature(char const*) const override
+    std::string signature(std::string_view const &name) const override
     {
-        return signature(argument_indexes_t{});
+        return signature(name, argument_indexes_t{});
     }
 
     variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
@@ -544,32 +544,37 @@ struct ConstructorInvoker: IConstructorInvoker
                           argument, argument, argument, argument, argument) const override
     { assert(false); return variant::empty_variant; }
 private:
-    static constexpr char const* signature(mpl::index_sequence<>)
+    static constexpr char const* signature(std::string_view const &,
+                                           mpl::index_sequence<>)
     {
-        return "default constructor";
+        return DEFAULT_CONSTRUCTOR_SIG;
     }
 
-    static std::string signature(mpl::index_sequence<0>)
+    static std::string signature(std::string_view const &name,
+                                 mpl::index_sequence<0>)
     {
         using Arg = argument_get_t<0>;
-        if (std::is_same_v<std::decay_t<Arg>, C>)
+        if constexpr(std::is_same_v<std::decay_t<Arg>, C>)
         {
             if constexpr(std::is_rvalue_reference_v<Arg>)
-                return "move constructor";
+                return MOVE_CONSTRUCTOR_SIG;
             else
-                return "copy constructor";
+                return COPY_CONSTRUCTOR_SIG;
         }
-        return ::rtti::signature<Args...>::get("constructor");
+        else
+            return ::rtti::signature<Args...>::get(name);
     }
 
     template<std::size_t ...I>
-    static std::string signature(mpl::index_sequence<I...>)
+    static std::string signature(std::string_view const &name,
+                                 mpl::index_sequence<I...>)
     {
-        return ::rtti::signature<Args...>::get("constructor");
+        return ::rtti::signature<Args...>::get(name);
     }
 
     template<std::size_t ...I>
-    static variant invoke(argument_array_t const &args, mpl::index_sequence<I...>)
+    static variant invoke(argument_array_t const &args,
+                          mpl::index_sequence<I...>)
     {
         return C(args[I]->value<argument_get_t<I>>()...);
     }
@@ -813,7 +818,7 @@ public:
     using this_t = meta_define<T, MB>;
 
     template<typename V>
-    this_t _attribute(char const *name, V &&value)
+    this_t _attribute(std::string_view const &name, V &&value)
     {
         assert(m_currentItem);
         if (m_currentItem)
@@ -821,13 +826,7 @@ public:
         return std::move(*this);
     }
 
-    template<typename V>
-    this_t _attribute(std::string const &name, V &&value)
-    {
-        return _attribute(name.c_str(), std::forward<V>(value));
-    }
-
-    meta_define<void, this_t> _namespace(char const *name)
+    meta_define<void, this_t> _namespace(std::string_view const &name)
     {
         static_assert(std::is_void_v<T>, "Namespace can be defined only in another namespace");
         assert(m_currentContainer && m_currentContainer->category() == mcatNamespace && m_containerStack);
@@ -838,13 +837,8 @@ public:
         return meta_define<void, this_t>{m_currentItem, m_currentContainer, m_containerStack};
     }
 
-    meta_define<void, this_t> _namespace(std::string const &name)
-    {
-        return _namespace(name.c_str());
-    }
-
     template<typename C>
-    meta_define<C, this_t> _class(char const *name)
+    meta_define<C, this_t> _class(std::string_view const &name)
     {
         static_assert(std::is_class_v<C>, "Template argument <C> must be class");
         static_assert(!std::is_same_v<T, C>, "Recursive class definition");
@@ -858,16 +852,10 @@ public:
         m_currentItem = m_currentContainer;
 
         meta_define<C, this_t> result {m_currentItem, m_currentContainer, m_containerStack};
-        result.define_default_constructor(std::is_default_constructible<C>{});
-        result.define_copy_constructor(std::is_copy_constructible<C>{});
-        result.define_move_constructor(std::is_move_constructible<C>{});
+        result.define_default_constructor();
+        result.define_copy_constructor();
+        result.define_move_constructor();
         return std::move(result);
-    }
-
-    template<typename C>
-    meta_define<C, this_t> _class(std::string const &name)
-    {
-        return _class<C>(name.c_str());
     }
 
     template<typename C>
@@ -902,21 +890,15 @@ public:
     }
 
     template<typename E>
-    this_t _enum(char const *name)
+    this_t _enum(std::string_view const &name)
     {
         assert(m_currentContainer);
         m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>(), {});
         return std::move(*this);
     }
 
-    template<typename E>
-    this_t _enum(std::string const &name)
-    {
-        return _enum<E>(name.c_str());
-    }
-
     template<typename V>
-    this_t _element(char const *name, V &&value)
+    this_t _element(std::string_view const &name, V &&value)
     {
         assert(m_currentItem);
         auto category = m_currentItem->category();
@@ -929,14 +911,8 @@ public:
         return std::move(*this);
     }
 
-    template<typename V>
-    this_t _element(std::string const &name, V &&value)
-    {
-        return _element(name.c_str(), std::forward<V>(value));
-    }
-
     template<typename ...Args>
-    this_t _constructor(char const *name = nullptr)
+    this_t _constructor(std::string_view const &name = nullptr)
     {
         static_assert(std::is_class_v<T>, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
@@ -948,14 +924,8 @@ public:
         return std::move(*this);
     }
 
-    template<typename ...Args>
-    this_t _constructor(std::string const &name)
-    {
-        return _constructor<Args...>(name.c_str());
-    }
-
     template<typename F>
-    this_t _method(char const *name, F &&func)
+    this_t _method(std::string_view const &name, F &&func)
     {
         static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Method can be defined in namespace or class");
@@ -967,14 +937,8 @@ public:
         return std::move(*this);
     }
 
-    template<typename F>
-    this_t _method(std::string const &name, F &&func)
-    {
-        return _method(name.c_str(), std::forward<F>(func));
-    }
-
     template<typename P>
-    this_t _property(char const *name, P &&prop)
+    this_t _property(std::string_view const &name, P &&prop)
     {
         static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Propery can be defined in namespace or class");
@@ -986,7 +950,7 @@ public:
     }
 
     template<typename G, typename S>
-    this_t _property(char const *name, G &&get, S &&set)
+    this_t _property(std::string_view const &name, G &&get, S &&set)
     {
         static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Propery can be defined in namespace or class");
@@ -1049,22 +1013,22 @@ private:
         )
     }
 
-    void define_default_constructor(std::false_type) {}
-    void define_default_constructor(std::true_type)
+    void define_default_constructor()
     {
-        _constructor();
+        if constexpr(std::is_default_constructible_v<T>)
+            _constructor();
     }
 
-    void define_copy_constructor(std::false_type) {}
-    void define_copy_constructor(std::true_type)
+    void define_copy_constructor()
     {
-        _constructor<T const &>();
+        if constexpr(std::is_copy_constructible_v<T>)
+            _constructor<T const &>();
     }
 
-    void define_move_constructor(std::false_type) {}
-    void define_move_constructor(std::true_type)
+    void define_move_constructor()
     {
-        _constructor<T&&>();
+        if constexpr(std::is_move_constructible_v<T>)
+            _constructor<T&&>();
     }
 
     template<typename L>

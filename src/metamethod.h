@@ -19,7 +19,7 @@ struct DLL_PUBLIC IMethodInvoker
     virtual bool isStatic() const = 0;
     virtual MetaType_ID returnTypeId() const = 0;
     virtual std::vector<MetaType_ID> parametersTypeId() const = 0;
-    virtual std::string signature(const char *name = nullptr) const = 0;
+    virtual std::string signature(std::string_view const &name) const = 0;
     virtual variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
                                   argument arg2 = argument{}, argument arg3 = argument{},
                                   argument arg4 = argument{}, argument arg5 = argument{},
@@ -60,9 +60,9 @@ public:
             return interface->invoke_method(std::forward<Args>(args)...);
     }
 protected:
-    explicit MetaMethod(std::string &&name, MetaContainer &owner,
+    explicit MetaMethod(std::string_view const &name, MetaContainer &owner,
                         std::unique_ptr<IMethodInvoker> invoker);
-    static MetaMethod* create(const char *name, MetaContainer &owner,
+    static MetaMethod* create(std::string_view const &name, MetaContainer &owner,
                               std::unique_ptr<IMethodInvoker> invoker);
 private:
     const IMethodInvoker* invoker() const;
@@ -71,9 +71,8 @@ private:
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    static MetaMethod* create(const char *name, MetaContainer &owner,
-                              std::unique_ptr<IMethodInvoker> invoker,
-                              CreateAccessKey)
+    static MetaMethod* create(std::string_view const &name, MetaContainer &owner,
+                              std::unique_ptr<IMethodInvoker> invoker, CreateAccessKey)
     { return create(name, owner, std::move(invoker)); }
 
 };

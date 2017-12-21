@@ -22,7 +22,7 @@ bool MetaNamespace::isGlobal() const
     return (d->owner() == nullptr);
 }
 
-MetaNamespace* MetaNamespace::create(const char *name, MetaContainer &owner)
+MetaNamespace* MetaNamespace::create(std::string_view const &name, MetaContainer &owner)
 {
     auto result = const_cast<MetaNamespace*>(owner.getNamespace(name));
     if (!result)

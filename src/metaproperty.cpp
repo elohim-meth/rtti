@@ -7,26 +7,15 @@ namespace rtti {
 // MetaProperty
 //--------------------------------------------------------------------------------------------------------------------------------
 
-const IPropertyInvoker* MetaProperty::invoker() const
-{
-    auto d = d_func();
-    return d->m_invoker.get();
-}
-
-MetaCategory MetaProperty::category() const
-{
-    return mcatProperty;
-}
-
-MetaProperty::MetaProperty(const char *name, MetaContainer &owner,
+MetaProperty::MetaProperty(std::string_view const &name, MetaContainer &owner,
                            std::unique_ptr<IPropertyInvoker> invoker)
     : MetaItem{*new MetaPropertyPrivate{name, owner, std::move(invoker)}}
 {}
 
-MetaProperty* MetaProperty::create(const char *name, MetaContainer &owner,
+MetaProperty* MetaProperty::create(std::string_view const &name, MetaContainer &owner,
                                    std::unique_ptr<IPropertyInvoker> invoker)
 {
-    if (!name || !invoker)
+    if (name.empty() || !invoker)
         return nullptr;
 
     auto result = const_cast<MetaProperty*>(owner.getProperty(name));
@@ -36,6 +25,17 @@ MetaProperty* MetaProperty::create(const char *name, MetaContainer &owner,
         INVOKE_PROTECTED(owner, addItem, result);
     }
     return result;
+}
+
+const IPropertyInvoker* MetaProperty::invoker() const
+{
+    auto d = d_func();
+    return d->m_invoker.get();
+}
+
+MetaCategory MetaProperty::category() const
+{
+    return mcatProperty;
 }
 
 } // namespace rtti

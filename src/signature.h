@@ -12,7 +12,7 @@ namespace rtti {
 template<typename ...Args>
 struct signature
 {
-    static std::string get(const char *name)
+    static std::string get(std::string_view const &name)
     {
         return get(name, argument_indexes_t{});
     }
@@ -23,11 +23,11 @@ private:
     using argument_indexes_t = mpl::index_sequence_for_t<Args...>;
 
     template<std::size_t ...I>
-    static std::string get(const char *name, mpl::index_sequence<I...>)
+    static std::string get(std::string_view const &name, mpl::index_sequence<I...>)
     {
         constexpr auto size = sizeof...(I);
         std::ostringstream os;
-        os << (name ? name : "")  << "(";
+        os << name << "(";
         EXPAND (
             os << mpl::type_name<argument_get_t<I>>() << (I < size - 1 ? ", " : "")
         );

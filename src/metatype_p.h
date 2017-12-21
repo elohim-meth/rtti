@@ -4,9 +4,6 @@
 #include <bitset>
 
 #include "metatype.h"
-
-#include <c_string.h>
-
 #include "global.h"
 
 namespace rtti {
@@ -14,7 +11,7 @@ namespace rtti {
 struct DLL_LOCAL TypeInfo {
     using const_bitset_t = std::bitset<16>;
 
-    CString const name;
+    std::string_view const name;
     std::size_t const size;
     MetaType_ID const type;
     MetaType_ID const decay;
@@ -25,11 +22,11 @@ struct DLL_LOCAL TypeInfo {
 
     mutable MetaClass *metaClass = nullptr;
 
-    constexpr TypeInfo(CString name, std::size_t size,
+    constexpr TypeInfo(std::string_view const &name, std::size_t size,
                        MetaType_ID type, MetaType_ID decay,
                        std::uint16_t arity, std::uint16_t const_mask,
                        TypeFlags flags, metatype_manager_t const *manager)
-        : name{std::move(name)},
+        : name{name},
           size{size}, type{type},
           decay{decay}, arity{arity},
           const_mask{const_mask},
