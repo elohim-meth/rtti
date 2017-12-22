@@ -1004,8 +1004,7 @@ private:
     static void addBaseTypeList(MetaClass *item, mpl::index_sequence<I...>)
     {
         // check that every type is class
-        typename mpl::typelist_map<L, check_is_class>::type tmp;
-        (void) tmp;
+        static_assert(mpl::is_typelist_v<mpl::typelist_map_t<L, check_is_class>>, "");
 
         EXPAND(
             item->addBaseClass(metaTypeId<mpl::typelist_get_t<L, I>>(),

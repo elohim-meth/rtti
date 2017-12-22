@@ -14,7 +14,7 @@ struct DLL_PUBLIC IPropertyInvoker
     virtual bool readOnly() const = 0;
     virtual variant get_static() const = 0;
     virtual void set_static(argument arg) const = 0;
-    virtual variant get_field(const variant &instance) const = 0;
+    virtual variant get_field(variant const &instance) const = 0;
     virtual void set_field(variant &instance, argument arg) const = 0;
     virtual void set_field(variant const &instance, argument arg) const = 0;
     virtual ~IPropertyInvoker() = default;
@@ -52,7 +52,7 @@ protected:
     static MetaProperty* create(std::string_view const &name, MetaContainer &owner,
                               std::unique_ptr<IPropertyInvoker> invoker);
 private:
-    const IPropertyInvoker* invoker() const;
+    IPropertyInvoker const* invoker() const;
 
     variant get_impl(mpl::index_sequence<>) const
     {

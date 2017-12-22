@@ -27,7 +27,7 @@ MetaProperty* MetaProperty::create(std::string_view const &name, MetaContainer &
     return result;
 }
 
-const IPropertyInvoker* MetaProperty::invoker() const
+IPropertyInvoker const* MetaProperty::invoker() const
 {
     auto d = d_func();
     return d->m_invoker.get();
