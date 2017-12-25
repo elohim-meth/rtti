@@ -85,7 +85,6 @@ public:
     bool decayed() const noexcept
     { return valid() && (typeId() == decayId()); }
     void setTypeId(MetaType_ID typeId);
-    //char const* typeName() const noexcept;
     std::string_view typeName() const noexcept;
     std::size_t typeSize() const noexcept;
     TypeFlags typeFlags() const noexcept;
@@ -100,6 +99,9 @@ public:
     bool isArray() const noexcept;
     uint16_t pointerArity() const noexcept;
     static bool compatible(MetaType fromType, MetaType toType) noexcept;
+
+    void* construct(void *copy = nullptr, bool movable = false) const;
+    void destruct(void *instance) const;
 
     static bool hasConverter(MetaType fromType, MetaType toType) noexcept;
     static bool hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId) noexcept;
@@ -121,7 +123,7 @@ public:
     template<typename From, typename To>
     static void unregisterConverter();
 private:
-    static MetaType_ID registerMetaType(char const *name, std::size_t size,
+    static MetaType_ID registerMetaType(std::string_view const &name, std::size_t size,
                                         MetaType_ID decay, uint16_t arity, uint16_t const_mask,
                                         TypeFlags flags, metatype_manager_t const *manager);
 
@@ -157,7 +159,7 @@ private:
 public:
     TypeInfo const* typeInfo(TypeInfoKey) const
     { return m_typeInfo; }
-    static MetaType_ID registerMetaType(char const *name, std::size_t size,
+    static MetaType_ID registerMetaType(std::string_view const &name, std::size_t size,
                                         MetaType_ID decay, uint16_t arity, uint16_t const_mask,
                                         TypeFlags flags, metatype_manager_t const *manager,
                                         RegisterTypeKey)
@@ -432,12 +434,12 @@ class meta_type final
             decay = metaTypeId<Decay>();
 
         auto const &name = mpl::type_name<T>();
-        auto const flags = type_flags<T>::value;
-        auto const size = sizeof(T);
-        std::uint16_t const arity = pointer_arity<NoRef>::value;
-        std::uint16_t const const_mask = const_bitset<NoRef>::value;
+        auto constexpr flags = type_flags<T>::value;
+        auto constexpr size = sizeof(T);
+        std::uint16_t constexpr arity = pointer_arity<NoRef>::value;
+        std::uint16_t constexpr const_mask = const_bitset<NoRef>::value;
         auto *manager = type_function_table_for<U>();
-        meta_id = MetaType::registerMetaType(name.c_str(), size, decay,
+        meta_id = MetaType::registerMetaType(name, size, decay,
                                              arity, const_mask, flags,
                                              manager, {});
     }

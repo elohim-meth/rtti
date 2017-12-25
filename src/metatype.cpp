@@ -262,7 +262,7 @@ bool MetaType::compatible(MetaType fromType, MetaType toType) noexcept
     return true;
 }
 
-MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
+MetaType_ID MetaType::registerMetaType(std::string_view const &name, std::size_t size,
                                        MetaType_ID decay, std::uint16_t arity,
                                        std::uint16_t const_mask, TypeFlags flags,
                                        metatype_manager_t const *manager)
@@ -282,39 +282,56 @@ MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
 // Low level construction
 //--------------------------------------------------------------------------------------------------------------------------------
 
-void* MetaType::allocate() const
+inline void* MetaType::allocate() const
 {
     return m_typeInfo->manager->f_allocate();
 }
 
-void MetaType::deallocate(void *ptr) const
+inline void MetaType::deallocate(void *ptr) const
 {
     return m_typeInfo->manager->f_deallocate(ptr);
 }
 
-void MetaType::default_construct(void *where) const
+inline void MetaType::default_construct(void *where) const
 {
     m_typeInfo->manager->f_default_construct(where);
 }
 
-void MetaType::copy_construct(void const *source, void *where) const
+inline void MetaType::copy_construct(void const *source, void *where) const
 {
     m_typeInfo->manager->f_copy_construct(source, where);
 }
 
-void MetaType::move_construct(void *source, void *where) const
+inline void MetaType::move_construct(void *source, void *where) const
 {
     m_typeInfo->manager->f_move_construct(source, where);
 }
 
-void MetaType::move_or_copy(void *source, bool movable, void *where) const
+inline void MetaType::move_or_copy(void *source, bool movable, void *where) const
 {
     m_typeInfo->manager->f_move_or_copy(source, movable, where);
 }
 
-void MetaType::destroy(void *ptr) const noexcept
+inline void MetaType::destroy(void *ptr) const noexcept
 {
     m_typeInfo->manager->f_destroy(ptr);
+}
+
+void* MetaType::construct(void *copy, bool movable) const
+{
+    auto result = allocate();
+    copy ? move_or_copy(copy, movable, result)
+         : default_construct(result);
+    return result;
+}
+
+void MetaType::destruct(void *instance) const
+{
+    if (instance)
+    {
+        destroy(instance);
+        deallocate(instance);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
