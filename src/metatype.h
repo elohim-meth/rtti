@@ -100,6 +100,8 @@ public:
     uint16_t pointerArity() const noexcept;
     static bool compatible(MetaType fromType, MetaType toType) noexcept;
 
+    MetaClass const* metaClass() const noexcept;
+
     void* construct(void *copy = nullptr, bool movable = false) const;
     void destruct(void *instance) const;
 
@@ -393,7 +395,7 @@ struct type_flags {
     using no_ref = std::remove_reference_t<T>;
     using no_ptr = std::remove_pointer_t<no_ref>;
     using base = base_type_t<T>;
-    static Flags const value =
+    static Flags constexpr value =
           (std::is_const_v<no_ref>                 ? Flags::Const                  : Flags::None)
         | (std::is_pointer_v<no_ref>               ? Flags::Pointer                : Flags::None)
         | (std::is_member_pointer_v<no_ref>        ? Flags::MemberPointer          : Flags::None)
