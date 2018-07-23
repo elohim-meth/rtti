@@ -587,7 +587,7 @@ struct property_type<P*>: mpl::identity<P>
 {};
 
 template<typename C, typename T>
-struct property_type<T (C::*)>: mpl::identity<T>
+struct property_type<T C::*>: mpl::identity<T>
 {};
 
 template<typename P>
@@ -596,7 +596,7 @@ using property_type_t = typename property_type<P>::type;
 template<typename P> struct property_class;
 
 template<typename C, typename T>
-struct property_class<T (C::*)>: mpl::identity<C>
+struct property_class<T C::*>: mpl::identity<C>
 {};
 
 template<typename P>
