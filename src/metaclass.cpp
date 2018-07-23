@@ -39,21 +39,13 @@ MetaClass* MetaClass::create(std::string_view const &name, MetaContainer &owner,
 MetaClass const* MetaClass::find(MetaType_ID typeId)
 {
     auto type = MetaType{typeId};
-    if (type.valid())
-        return type.typeInfo({})->metaClass;
-    return nullptr;
+    return type.metaClass();
 }
 
 MetaClass const* MetaClass::find(std::string_view const &name)
 {
-    if (name.empty())
-        return nullptr;
-
     auto type = MetaType{name};
-    if (type.valid())
-        return type.typeInfo({})->metaClass;
-
-    return nullptr;
+    return type.metaClass();
 }
 
 MetaType_ID MetaClass::metaTypeId() const

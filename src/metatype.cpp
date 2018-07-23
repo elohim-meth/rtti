@@ -150,14 +150,14 @@ inline CustomTypes* customTypes()
 
 MetaType::MetaType(MetaType_ID typeId) noexcept
 {
-    if (auto *types = customTypes(); types)
+    if (auto *types = customTypes())
         m_typeInfo = types->getTypeInfo(typeId);
 }
 
 rtti::MetaType::MetaType(std::string_view const &name) noexcept
 {
-    if (auto *types = customTypes(); types)
-        m_typeInfo = types->getTypeInfo(name.data());
+    if (auto *types = customTypes())
+        m_typeInfo = types->getTypeInfo(name);
 
 }
 
@@ -262,7 +262,7 @@ bool MetaType::compatible(MetaType fromType, MetaType toType) noexcept
     return true;
 }
 
-MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
+MetaType_ID MetaType::registerMetaType(std::string_view const &name, std::size_t size,
                                        MetaType_ID decay, std::uint16_t arity,
                                        std::uint16_t const_mask, TypeFlags flags,
                                        metatype_manager_t const *manager)
@@ -278,43 +278,66 @@ MetaType_ID MetaType::registerMetaType(char const *name, std::size_t size,
     return result->type;
 }
 
+MetaClass const* MetaType::metaClass() const noexcept
+{
+    return m_typeInfo ? m_typeInfo->metaClass
+                      : nullptr;
+}
+
 //--------------------------------------------------------------------------------------------------------------------------------
 // Low level construction
 //--------------------------------------------------------------------------------------------------------------------------------
 
-void* MetaType::allocate() const
+inline void* MetaType::allocate() const
 {
     return m_typeInfo->manager->f_allocate();
 }
 
-void MetaType::deallocate(void *ptr) const
+inline void MetaType::deallocate(void *ptr) const
 {
     return m_typeInfo->manager->f_deallocate(ptr);
 }
 
-void MetaType::default_construct(void *where) const
+inline void MetaType::default_construct(void *where) const
 {
     m_typeInfo->manager->f_default_construct(where);
 }
 
-void MetaType::copy_construct(void const *source, void *where) const
+inline void MetaType::copy_construct(void const *source, void *where) const
 {
     m_typeInfo->manager->f_copy_construct(source, where);
 }
 
-void MetaType::move_construct(void *source, void *where) const
+inline void MetaType::move_construct(void *source, void *where) const
 {
     m_typeInfo->manager->f_move_construct(source, where);
 }
 
-void MetaType::move_or_copy(void *source, bool movable, void *where) const
+inline void MetaType::move_or_copy(void *source, bool movable, void *where) const
 {
     m_typeInfo->manager->f_move_or_copy(source, movable, where);
 }
 
-void MetaType::destroy(void *ptr) const noexcept
+inline void MetaType::destroy(void *ptr) const noexcept
 {
     m_typeInfo->manager->f_destroy(ptr);
+}
+
+void* MetaType::construct(void *copy, bool movable) const
+{
+    auto result = allocate();
+    copy ? move_or_copy(copy, movable, result)
+         : default_construct(result);
+    return result;
+}
+
+void MetaType::destruct(void *instance) const
+{
+    if (instance)
+    {
+        destroy(instance);
+        deallocate(instance);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -407,12 +430,9 @@ inline MetaTypeFunctionList<internal::ConvertFunctionBase>* customConverters()
 bool MetaType::hasConverter(MetaType fromType, MetaType toType) noexcept
 {
     if (fromType.valid() && toType.valid())
-    {
-        auto list = customConverters();
-        if (list)
+        if (auto list = customConverters())
             return list->find({fromType.m_typeInfo->decay,
                                toType.m_typeInfo->decay});
-    }
     return false;
 }
 
@@ -429,29 +449,23 @@ bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
-    {
-        auto list = customConverters();
-        if (list)
+        if (auto list = customConverters())
             return list->add({fromType.m_typeInfo->decay,
                               toType.m_typeInfo->decay},
                              &converter);
-    }
     return false;
 }
 
 bool MetaType::convert(void const *from, MetaType fromType, void *to, MetaType toType)
 {
     if (fromType.valid() && toType.valid())
-    {
-        auto list = customConverters();
-        if (list)
+        if (auto list = customConverters())
         {
             auto converter = list->get({fromType.m_typeInfo->decay,
                                         toType.m_typeInfo->decay});
             assert(converter);
             return converter->invoke(from, to);
         }
-    }
     return false;
 }
 
@@ -467,12 +481,9 @@ void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
     auto fromType = MetaType{fromTypeId};
     auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
-    {
-        auto list = customConverters();
-        if (list)
+        if (auto list = customConverters())
             list->remove({fromType.m_typeInfo->decay,
                           toType.m_typeInfo->decay});
-    }
 }
 
 } //namespace rtti
