@@ -288,37 +288,37 @@ MetaClass const* MetaType::metaClass() const noexcept
 // Low level construction
 //--------------------------------------------------------------------------------------------------------------------------------
 
-inline void* MetaType::allocate() const
+void* MetaType::allocate() const
 {
     return m_typeInfo->manager->f_allocate();
 }
 
-inline void MetaType::deallocate(void *ptr) const
+void MetaType::deallocate(void *ptr) const
 {
     return m_typeInfo->manager->f_deallocate(ptr);
 }
 
-inline void MetaType::default_construct(void *where) const
+void MetaType::default_construct(void *where) const
 {
     m_typeInfo->manager->f_default_construct(where);
 }
 
-inline void MetaType::copy_construct(void const *source, void *where) const
+void MetaType::copy_construct(void const *source, void *where) const
 {
     m_typeInfo->manager->f_copy_construct(source, where);
 }
 
-inline void MetaType::move_construct(void *source, void *where) const
+void MetaType::move_construct(void *source, void *where) const
 {
     m_typeInfo->manager->f_move_construct(source, where);
 }
 
-inline void MetaType::move_or_copy(void *source, bool movable, void *where) const
+void MetaType::move_or_copy(void *source, bool movable, void *where) const
 {
     m_typeInfo->manager->f_move_or_copy(source, movable, where);
 }
 
-inline void MetaType::destroy(void *ptr) const noexcept
+void MetaType::destroy(void *ptr) const noexcept
 {
     m_typeInfo->manager->f_destroy(ptr);
 }
