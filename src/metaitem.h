@@ -8,7 +8,7 @@
 
 namespace rtti {
 
-enum MetaCategory: int {
+enum MetaCategory: unsigned int {
     mcatNamespace,
     mcatClass,
     mcatProperty,

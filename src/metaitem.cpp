@@ -5,7 +5,7 @@ namespace rtti {
 
 namespace {
 std::string const empty_string = {};
-}
+} // namespace
 
 namespace internal {
 
