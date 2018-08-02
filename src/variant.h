@@ -472,7 +472,7 @@ public:
     explicit operator bool() const noexcept
     { return !empty(); }
 
-    MetaType_ID typeId() const
+    MetaType_ID typeId() const noexcept
     { return internalTypeId(); }
     MetaClass const* metaClass() const
     {
@@ -948,8 +948,7 @@ namespace std {
 template<>
 struct hash<rtti::variant>: public std::__hash_base<std::size_t, rtti::variant>
 {
-    using this_t = hash<rtti::variant>;
-    typename this_t::result_type operator()(typename this_t::argument_type const &value) const
+    std::size_t operator()(rtti::variant const &value) const noexcept
     {
         if (!value)
             return 0;
