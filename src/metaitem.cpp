@@ -63,7 +63,7 @@ MetaItemPrivate::~MetaItemPrivate() = default;
 //--------------------------------------------------------------------------------------------------------------------------------
 
 MetaItem::MetaItem(std::string_view const &name, MetaContainer const &owner)
-    : d_ptr(new MetaItemPrivate{name, owner})
+    : MetaItem(*new MetaItemPrivate{name, owner})
 {}
 
 MetaItem::MetaItem(MetaItemPrivate &value)
