@@ -600,6 +600,9 @@ void test_variant_1()
         assert(mEmpty->invoke(copy).to<bool>());
         assert(!mEmpty->invoke(move).to<bool>());
         assert(mValue->invoke(move).cvalue<std::string>() == "Hello, World");
+        //auto val = mValue->invoke(move);
+        //val.value<std::string>() = "New String";
+        mValue->invoke(move).value<std::string>() = "New String";
 
     }
 
