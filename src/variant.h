@@ -517,9 +517,9 @@ public:
     template<typename T>
     T&& value() &&
     {
-        using U = std::remove_cv_t<std::remove_reference_t<T>>;
+        using U = std::remove_reference_t<T>;
         auto fromId = internalTypeId(type_attribute::NONE);
-        auto toId = metaTypeId<U>();
+        auto toId = metaTypeId<std::add_rvalue_reference_t<U>>();
         auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return std::move(*result);
     }

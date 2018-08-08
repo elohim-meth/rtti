@@ -600,10 +600,25 @@ void test_variant_1()
         assert(mEmpty->invoke(copy).to<bool>());
         assert(!mEmpty->invoke(move).to<bool>());
         assert(mValue->invoke(move).cvalue<std::string>() == "Hello, World");
-        //auto val = mValue->invoke(move);
-        //val.value<std::string>() = "New String";
-        mValue->invoke(move).value<std::string>() = "New String";
 
+        try {
+            mValue->invoke(move).value<std::string>() = "New String"; assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); };
+        try {
+            auto val = mValue->invoke(move);
+            val.value<std::string>() = "New String";
+            assert(false);
+        } catch (const bad_cast &e) { LOG_RED(e.what()); };
+
+        mValue = mcQptr->getMethod<TestQPointer&>("value"); assert(mValue);
+        mValue->invoke(move).value<std::string>() = "New String";
+        assert(mValue->invoke(move).cvalue<std::string>() == "New String");
+
+        {
+            auto val = mValue->invoke(move);
+            val.value<std::string>() = "Other String";
+            assert(mValue->invoke(move).cvalue<std::string>() == "Other String");
+        }
     }
 
     std::printf("\n");
