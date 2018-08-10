@@ -617,7 +617,8 @@ void test_variant_1()
         {
             auto val = mValue->invoke(move);
             val.value<std::string>() = "Other String";
-            assert(mValue->invoke(move).cvalue<std::string>() == "Other String");
+            auto qp = std::move(move).value<TestQPointer>();
+            assert(qp.value() == "Other String");
         }
     }
 
