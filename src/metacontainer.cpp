@@ -24,7 +24,7 @@ bool MetaItemList::add(MetaItem *value)
     if (!value)
         return false;
 
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::unique_lock<std::shared_mutex> lock{m_lock};
     auto itemFound = (std::find_if(
                           std::cbegin(m_items), std::cend(m_items),
                           [value] (item_t const &item) {
@@ -46,7 +46,7 @@ bool MetaItemList::add(MetaItem *value)
 
 inline MetaItem* MetaItemList::get(std::size_t index) const
 {
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::shared_lock<std::shared_mutex> lock{m_lock};
     if (index < m_items.size())
         return m_items[index].get();
     return nullptr;
@@ -57,7 +57,7 @@ inline MetaItem* MetaItemList::get(std::string_view const &name) const
     if (name.empty())
         return nullptr;
 
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::shared_lock<std::shared_mutex> lock{m_lock};
     if (auto it = m_names.find(name); it != std::end(m_names))
         if (auto index = it->second; index < m_items.size())
             return m_items[index].get();
@@ -67,7 +67,7 @@ inline MetaItem* MetaItemList::get(std::string_view const &name) const
 
 std::size_t MetaItemList::size() const
 {
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::shared_lock<std::shared_mutex> lock{m_lock};
     return m_items.size();
 }
 

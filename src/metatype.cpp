@@ -354,14 +354,14 @@ public:
 
     ~MetaTypeFunctionList()
     {
-        std::lock_guard<std::mutex> lock{m_lock};
+        std::unique_lock<std::shared_mutex> lock{m_lock};
         m_items.clear();
         Destroyed = true;
     }
 
     bool find(key_t const &key) const
     {
-        std::lock_guard<std::mutex> lock{m_lock};
+        std::shared_lock<std::shared_mutex> lock{m_lock};
         return (m_items.find(key) != std::end(m_items));
     }
 
@@ -370,7 +370,7 @@ public:
         if (!func)
             return false;
 
-        std::lock_guard<std::mutex> lock{m_lock};
+        std::unique_lock<std::shared_mutex> lock{m_lock};
         auto search = m_items.find(key);
         if (search != std::end(m_items))
             return false;
@@ -381,7 +381,7 @@ public:
 
     F const* get(key_t const &key) const
     {
-        std::lock_guard<std::mutex> lock{m_lock};
+        std::shared_lock<std::shared_mutex> lock{m_lock};
         auto search = m_items.find(key);
         if (search != std::end(m_items))
             return search->second;
@@ -390,7 +390,7 @@ public:
 
     void remove(key_t const &key)
     {
-        std::lock_guard<std::mutex> lock{m_lock};
+        std::unique_lock<std::shared_mutex> lock{m_lock};
         m_items.erase(key);
     }
 private:
@@ -405,7 +405,7 @@ private:
         }
     };
 
-    mutable std::mutex m_lock;
+    mutable std::shared_mutex m_lock;
     std::unordered_map<key_t, F const*, hash_key> m_items;
 
     static bool Destroyed;
