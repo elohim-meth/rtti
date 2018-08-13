@@ -4,7 +4,7 @@
 #include "metaitem.h"
 #include "variant.h"
 
-#include <mutex>
+#include <shared_mutex>
 #include <vector>
 #include <map>
 #include <string>
@@ -30,11 +30,12 @@ public:
     template<typename T>
     void set(std::string_view const &name, T &&value);
     variant const& get(std::size_t index) const;
-    variant const& get(const std::string_view &name) const;
+    variant const& get(std::string_view const &name) const;
     std::string const& name(std::size_t index) const;
 
     std::size_t size() const
     {
+        std::shared_lock<std::shared_mutex> lock{m_lock};
         return m_items.size();
     }
 
@@ -42,8 +43,8 @@ public:
     inline void for_each(F &&func) const;
 
 private:
-    mutable std::mutex m_lock;
-    std::vector<std::unique_ptr<NamedVariant>> m_items;
+    mutable std::shared_mutex m_lock;
+    std::vector<NamedVariant> m_items;
     std::unordered_map<std::string_view, std::size_t> m_names;
 };
 
@@ -53,27 +54,26 @@ inline void NamedVariantList::set(std::string_view const &name, T &&value)
     if (name.empty())
         return;
 
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::unique_lock<std::shared_mutex> lock{m_lock};
     if (auto search = m_names.find(name); search == std::end(m_names))
     {
-        auto const &item = m_items.emplace_back(
-            std::make_unique<NamedVariant>(name, std::forward<T>(value)));
-        m_names.emplace(item->name, m_items.size() - 1);
+        auto const &item = m_items.emplace_back(name, std::forward<T>(value));
+        m_names.emplace(item.name, m_items.size() - 1);
     }
     else
     {
         auto index = search->second;
-        m_items.at(index)->value = std::forward<T>(value);
+        m_items.at(index).value = std::forward<T>(value);
     }
 }
 
 template<typename F>
 inline void NamedVariantList::for_each(F &&func) const
 {
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::shared_lock<std::shared_mutex> lock{m_lock};
     for(auto const &item: m_items)
     {
-        if (!func(item->name, item->value))
+        if (!func(item.name, item.value))
             break;
     }
 }

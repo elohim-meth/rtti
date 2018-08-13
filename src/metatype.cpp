@@ -2,7 +2,7 @@
 #include "metatype.h"
 
 #include <ostream>
-#include <mutex>
+#include <shared_mutex>
 #include <vector>
 #include <array>
 #include <unordered_map>
@@ -45,7 +45,7 @@ public:
                                 std::uint16_t const_mask, TypeFlags flags,
                                 metatype_manager_t const *manager);
 private:
-    mutable std::mutex m_lock;
+    mutable std::shared_mutex m_lock;
     std::vector<std::unique_ptr<TypeInfo>> m_items;
     std::unordered_map<std::string_view, std::size_t> m_names;
 
@@ -69,7 +69,7 @@ CustomTypes::CustomTypes()
 
 CustomTypes::~CustomTypes()
 {
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::unique_lock<std::shared_mutex> lock{m_lock};
     m_items.clear();
     m_names.clear();
     Destroyed = true;
@@ -85,7 +85,7 @@ TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
         return &fundamentalTypes[type];
     type -= fundamentalTypes.size();
 
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::shared_lock<std::shared_mutex> lock{m_lock};
     if (type < m_items.size())
         return m_items[type].get();
 
@@ -97,7 +97,7 @@ TypeInfo const* CustomTypes::getTypeInfo(std::string_view const &name) const
     if (name.empty())
         return nullptr;
 
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::shared_lock<std::shared_mutex> lock{m_lock};
     if (auto search = m_names.find(name);
         search != std::end(m_names))
     {
@@ -117,7 +117,7 @@ TypeInfo const* CustomTypes::addTypeInfo(std::string_view const &name, std::size
                                             uint16_t const_mask, TypeFlags flags,
                                             metatype_manager_t const *manager)
 {
-    std::lock_guard<std::mutex> lock{m_lock};
+    std::unique_lock<std::shared_mutex> lock{m_lock};
     auto type = static_cast<MetaType_ID::type>(
                 fundamentalTypes.size() + m_items.size());
 

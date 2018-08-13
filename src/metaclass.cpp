@@ -17,7 +17,7 @@ MetaClass::MetaClass(std::string_view const &name, MetaContainer const &owner, M
     if (!type.valid())
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
                                   + std::to_string(typeId.value())};
-
+    // TODO: Protect with mutex!
     auto &metaClass = type.typeInfo({})->metaClass;
     if (metaClass)
         throw duplicate_metaclass{std::string{"Class "} + type.typeName()
