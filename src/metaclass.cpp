@@ -17,12 +17,11 @@ MetaClass::MetaClass(std::string_view const &name, MetaContainer const &owner, M
     if (!type.valid())
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
                                   + std::to_string(typeId.value())};
-    // TODO: Protect with mutex!
     auto &metaClass = type.typeInfo({})->metaClass;
     if (metaClass)
         throw duplicate_metaclass{std::string{"Class "} + type.typeName()
-                + " already registered as: " + metaClass->qualifiedName()};
-    metaClass = this;
+                + " already registered as: " + metaClass.load()->qualifiedName()};
+    metaClass.store(this);
 }
 
 MetaClass* MetaClass::create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId)
@@ -90,7 +89,7 @@ void MetaClass::addBaseClass(MetaType_ID typeId, cast_func_t caster)
     if (!type.valid())
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
                                   + std::to_string(typeId.value())};
-    auto base = type.typeInfo({})->metaClass;
+    auto base = type.typeInfo({})->metaClass.load();
     if (!base)
         throw unregistered_metaclass{std::string{"Base class "}
                                      + type.typeName()
@@ -107,7 +106,7 @@ void MetaClass::addDerivedClass(MetaType_ID typeId)
     if (!type.valid())
         throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
                                   + std::to_string(typeId.value())};
-    auto derived = type.typeInfo({})->metaClass;
+    auto derived = type.typeInfo({})->metaClass.load();
     if (!derived)
         throw unregistered_metaclass{std::string{"Derived class "}
                                      + type.typeName()

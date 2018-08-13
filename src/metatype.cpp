@@ -280,7 +280,7 @@ MetaType_ID MetaType::registerMetaType(std::string_view const &name, std::size_t
 
 MetaClass const* MetaType::metaClass() const noexcept
 {
-    return m_typeInfo ? m_typeInfo->metaClass
+    return m_typeInfo ? m_typeInfo->metaClass.load()
                       : nullptr;
 }
 

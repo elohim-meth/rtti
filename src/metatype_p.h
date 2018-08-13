@@ -2,6 +2,7 @@
 #define METATYPE_P_H
 
 #include <bitset>
+#include <atomic>
 
 #include "metatype.h"
 #include "global.h"
@@ -20,7 +21,7 @@ struct DLL_LOCAL TypeInfo {
     TypeFlags const flags;
     metatype_manager_t const *manager;
 
-    mutable MetaClass *metaClass = nullptr;
+    mutable std::atomic<MetaClass*> metaClass = nullptr;
 
     constexpr TypeInfo(std::string_view const &name, std::size_t size,
                        MetaType_ID type, MetaType_ID decay,
