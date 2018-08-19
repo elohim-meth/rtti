@@ -45,9 +45,11 @@ set(HEADERS
 add_library(rtti SHARED ${SOURCES} ${HEADERS})
 target_compile_options(rtti PRIVATE -fvisibility=hidden)
 target_compile_definitions(rtti PRIVATE -DBUILD_SHARED -DBUILD_DLL)
+target_link_libraries (rtti PRIVATE pthread)
 set_property(TARGET rtti PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIRECTORY})
 set_property(TARGET rtti PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BIN_DIRECTORY})
 set_property(TARGET rtti PROPERTY LIBRARY_OUTPUT_DIRECTORY ${BIN_DIRECTORY})
 
 add_library(rtti_static STATIC ${SOURCES} ${HEADERS})
+target_link_libraries (rtti_static PRIVATE pthread)
 set_property(TARGET rtti_static PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${LIB_DIRECTORY})
