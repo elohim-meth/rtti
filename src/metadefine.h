@@ -823,7 +823,7 @@ public:
         assert(m_currentItem);
         if (m_currentItem)
             m_currentItem->setAttribute(name, std::forward<V>(value), {});
-        return std::move(*this);
+        return *this;
     }
 
     meta_define<void, this_t> _namespace(std::string_view const &name)
@@ -855,7 +855,7 @@ public:
         result.define_default_constructor();
         result.define_copy_constructor();
         result.define_move_constructor();
-        return std::move(result);
+        return result;
     }
 
     template<typename C>
@@ -874,7 +874,7 @@ public:
         using holder_t = internal::DefinitionCallbackHolder<T, std::decay_t<F>>;
         m_currentContainer->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
                                                   new holder_t{std::forward<F>(func)}}, {});
-        return std::move(*this);
+        return *this;
     }
 
     template<typename ...B>
@@ -886,7 +886,7 @@ public:
         addBaseTypeList<mpl::type_list<B...>>(
                     static_cast<MetaClass*>(m_currentContainer),
                     mpl::index_sequence_for_t<B...>{});
-        return std::move(*this);
+        return *this;
     }
 
     template<typename E>
@@ -894,7 +894,7 @@ public:
     {
         assert(m_currentContainer);
         m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>(), {});
-        return std::move(*this);
+        return *this;
     }
 
     template<typename V>
@@ -908,11 +908,11 @@ public:
             auto e = static_cast<MetaEnum*>(m_currentItem);
             e->addElement(name, std::forward<V>(value), {});
         }
-        return std::move(*this);
+        return *this;
     }
 
     template<typename ...Args>
-    this_t _constructor(std::string_view const &name = nullptr)
+    this_t _constructor(std::string_view const &name = "")
     {
         static_assert(std::is_class_v<T>, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
@@ -921,7 +921,7 @@ public:
                                     new internal::ConstructorInvoker<T, Args...>{}},
                                 {});
         register_converting_constructor<mpl::type_list<Args...>>(is_converting_constructor_t<T, Args...>{});
-        return std::move(*this);
+        return *this;
     }
 
     template<typename F>
@@ -934,7 +934,7 @@ public:
                            std::unique_ptr<IMethodInvoker>{
                                 new internal::MethodInvoker<std::decay_t<F>>{std::forward<F>(func)}},
                            {});
-        return std::move(*this);
+        return *this;
     }
 
     template<typename P>
@@ -946,7 +946,7 @@ public:
         MetaProperty::create(name, *m_currentContainer, std::unique_ptr<IPropertyInvoker>{
                                 new internal::PropertyInvoker<std::decay_t<P>>{std::forward<P>(prop)}},
                             {});
-        return std::move(*this);
+        return *this;
     }
 
     template<typename G, typename S>
@@ -959,7 +959,7 @@ public:
                                 new internal::PropertyInvokerEx<std::decay_t<G>, std::decay_t<S>>{
                                      std::forward<G>(get), std::forward<S>(set)}},
                              {});
-        return std::move(*this);
+        return *this;
     }
 
     MB _end()
@@ -975,11 +975,6 @@ public:
 
 protected:
     meta_define() = default;
-    meta_define(meta_define const&) = delete;
-    meta_define& operator=(meta_define const&) = delete;
-    meta_define(meta_define&&) = default;
-    meta_define& operator=(meta_define&&) = default;
-
     meta_define(MetaItem *currentItem, MetaContainer *currentContainer,
                 internal::container_stack_t *containerStack)
         : m_currentItem{currentItem},

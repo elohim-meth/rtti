@@ -180,8 +180,9 @@ void MetaType::setTypeId(MetaType_ID typeId)
 
 std::string_view MetaType::typeName() const noexcept
 {
+    using namespace std::string_view_literals;
     return m_typeInfo ? m_typeInfo->name
-                      : nullptr;
+                      : ""sv;
 }
 
 std::size_t MetaType::typeSize() const noexcept
