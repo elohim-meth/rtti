@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-#include <rtti/rtti.h>
+#include <rtti/metadefine.h>
 
 template<typename T>
 void define_std_vector(rtti::meta_define<std::vector<T>> define)
@@ -49,9 +49,9 @@ void define_std_vector(rtti::meta_define<std::vector<T>> define)
         .template _method<const_reference(V::*)() const>("back", &V::back)
 
         .template _method<reference (V::*)(size_type)>("[]", &V::operator[])
-        .template _method<const_reference (V::*)(size_type) const>("[]", &V::operator[])
+        .template _method<const_reference (V::*)(size_type) const>("const []", &V::operator[])
         .template _method<reference (V::*)(size_type)>("at", &V::at)
-        .template _method<const_reference (V::*)(size_type) const>("at", &V::at)
+        .template _method<const_reference (V::*)(size_type) const>("const at", &V::at)
 
         .template _method<void (V::*)(value_type const&)>("push_back", &V::push_back)
         .template _method<void (V::*)(value_type &&)>("push_back", &V::push_back)
@@ -157,5 +157,7 @@ void register_std_unique_ptr()
 
 void define_test_namespace(rtti::meta_define<void> define);
 void register_rtti();
+
+void test_rtti_1();
 
 #endif // TEST_REGISTER_H

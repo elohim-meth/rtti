@@ -17,10 +17,14 @@ set(HEADERS
 )
 
 add_executable(TestDll ${SOURCES} ${HEADERS})
-target_include_directories(TestDll PRIVATE "../include")
-target_compile_definitions(TestDll PRIVATE -DBUILD_SHARED)
 #target_compile_options(TestDll PRIVATE "-Wa,-mbig-obj")
-target_link_libraries (TestDll rtti)
-set_property(TARGET TestDll PROPERTY RUNTIME_OUTPUT_DIRECTORY ${BIN_DIRECTORY})
+target_link_libraries (TestDll RTTI::rtti)
 
 target_compile_definitions(TestDll PRIVATE $<$<CONFIG:Debug>:DEBUG>)
+
+install(
+    TARGETS TestDll
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

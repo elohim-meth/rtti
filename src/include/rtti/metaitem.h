@@ -1,10 +1,11 @@
 ﻿#ifndef METAITEM_H
 #define METAITEM_H
 
-#include "global.h"
+#include <rtti/defines.h>
 
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace rtti {
 
@@ -28,7 +29,7 @@ namespace internal {
 class MetaItemList;
 } //namespace internal
 
-class DLL_PUBLIC MetaItem
+class RTTI_API MetaItem
 {
     DECLARE_PRIVATE(MetaItem)
 public:
@@ -54,9 +55,11 @@ protected:
 
     virtual void checkDeferredDefine() const;
 
-    void setAttribute(std::string_view const &name, variant const &value);
-    void setAttribute(std::string_view const &name, variant &&value);
-    std::unique_ptr<MetaItemPrivate> d_ptr;
+    RTTI_PRIVATE void setAttribute(std::string_view const &name,
+                                   variant const &value);
+    RTTI_PRIVATE void setAttribute(std::string_view const &name,
+                                   variant &&value);
+    RTTI_PRIVATE std::unique_ptr<MetaItemPrivate> d_ptr;
 
 private:
     DECLARE_ACCESS_KEY(SetAttributeKey)
@@ -64,9 +67,13 @@ private:
     };
     friend class rtti::internal::MetaItemList;
 public:
-    void setAttribute(std::string_view const &name, variant const &value, SetAttributeKey)
+    RTTI_PRIVATE void setAttribute(std::string_view const &name,
+                                   variant const &value,
+                                   SetAttributeKey)
     { setAttribute(name, value); }
-    void setAttribute(std::string_view const &name, variant &&value, SetAttributeKey)
+    RTTI_PRIVATE void setAttribute(std::string_view const &name,
+                                   variant &&value,
+                                   SetAttributeKey)
     { setAttribute(name, std::move(value)); }
 };
 

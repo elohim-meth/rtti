@@ -1,9 +1,9 @@
 ﻿#include "test_variant.h"
 
-#include <rtti/rtti.h>
+#include <rtti/metadefine.h>
 
-#include <finally.h>
-#include <debug.h>
+#include <rtti/finally.h>
+#include "debug.h"
 
 namespace {
 

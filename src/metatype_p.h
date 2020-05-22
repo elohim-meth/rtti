@@ -4,12 +4,12 @@
 #include <bitset>
 #include <atomic>
 
-#include "metatype.h"
-#include "global.h"
+#include <rtti/metatype.h>
+#include <rtti/defines.h>
 
 namespace rtti {
 
-struct DLL_LOCAL TypeInfo {
+struct RTTI_PRIVATE TypeInfo {
     using const_bitset_t = std::bitset<16>;
 
     std::string_view const name;

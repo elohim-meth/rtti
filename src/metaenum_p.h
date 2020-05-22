@@ -1,12 +1,12 @@
 ﻿#ifndef METAENUM_P_H
 #define METAENUM_P_H
 
-#include "metaenum.h"
+#include <rtti/metaenum.h>
 #include "metaitem_p.h"
 
 namespace rtti {
 
-class DLL_LOCAL MetaEnumPrivate: public MetaItemPrivate
+class RTTI_PRIVATE MetaEnumPrivate: public MetaItemPrivate
 {
 public:
     MetaEnumPrivate(std::string_view const &name, const MetaContainer &owner, MetaType_ID typeId)

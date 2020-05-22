@@ -13,7 +13,11 @@ MetaEnum *MetaEnum::create(std::string_view const &name, MetaContainer &owner, M
     if (!result)
     {
         result = new MetaEnum{name, owner, typeId};
-        INVOKE_PROTECTED(owner, addItem, result);
+        if (!INVOKE_PROTECTED(owner, addItem, result))
+        {
+            delete result;
+            result = const_cast<MetaEnum*>(owner.getEnum(name));
+        }
     }
     return result;
 }

@@ -5,12 +5,12 @@
 
 namespace rtti {
 
-struct DLL_PUBLIC IConstructorInvoker: IMethodInvoker
+struct RTTI_API IConstructorInvoker: IMethodInvoker
 {};
 
 class MetaConstructorPrivate;
 
-class DLL_PUBLIC MetaConstructor final: public MetaItem
+class RTTI_API MetaConstructor final: public MetaItem
 {
     DECLARE_PRIVATE(MetaConstructor)
 public:

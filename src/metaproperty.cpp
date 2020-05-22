@@ -22,7 +22,11 @@ MetaProperty* MetaProperty::create(std::string_view const &name, MetaContainer &
     if (!result)
     {
         result = new MetaProperty{name, owner, std::move(invoker)};
-        INVOKE_PROTECTED(owner, addItem, result);
+        if (!INVOKE_PROTECTED(owner, addItem, result))
+        {
+            delete result;
+            result = const_cast<MetaProperty*>(owner.getProperty(name));
+        }
     }
     return result;
 }

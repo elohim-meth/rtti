@@ -1,11 +1,11 @@
 ﻿#ifndef METACLASS_H
 #define METACLASS_H
 
-#include "metacontainer.h"
-#include "metatype.h"
-#include "metaerror.h"
+#include <rtti/metacontainer.h>
+#include <rtti/metatype.h>
+#include <rtti/metaerror.h>
 
-#include <sfinae.h>
+#include <rtti/sfinae.h>
 
 namespace rtti {
 
@@ -16,7 +16,7 @@ To const* meta_cast(From const*, std::true_type);
 
 class MetaClassPrivate;
 
-class DLL_PUBLIC MetaClass final: public MetaContainer
+class RTTI_API MetaClass final: public MetaContainer
 {
     DECLARE_PRIVATE(MetaClass)
 public:
@@ -32,16 +32,16 @@ public:
     MetaClass const* derivedClass(std::size_t index) const;
     bool inheritedFrom(MetaClass const *base) const;
 protected:
-    explicit MetaClass(std::string_view const &name, MetaContainer const &owner, MetaType_ID typeId);
-    static MetaClass* create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId);
+    RTTI_PRIVATE explicit MetaClass(std::string_view const &name, MetaContainer const &owner, MetaType_ID typeId);
+    RTTI_PRIVATE static MetaClass* create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId);
 
-    void addBaseClass(MetaType_ID typeId, cast_func_t caster);
-    void addDerivedClass(MetaType_ID typeId);
-    void const* cast(MetaClass const *base, void const *instance) const;
-    void* cast(MetaClass const *base, void *instance) const;
+    RTTI_PRIVATE void addBaseClass(MetaType_ID typeId, cast_func_t caster);
+    RTTI_PRIVATE void addDerivedClass(MetaType_ID typeId);
+    RTTI_PRIVATE void const* cast(MetaClass const *base, void const *instance) const;
+    RTTI_PRIVATE void* cast(MetaClass const *base, void *instance) const;
 
-    MetaMethod const* getMethodInternal(std::string_view const &name) const override;
-    MetaProperty const* getPropertyInternal(std::string_view const &name) const override;
+    RTTI_PRIVATE MetaMethod const* getMethodInternal(std::string_view const &name) const override;
+    RTTI_PRIVATE MetaProperty const* getPropertyInternal(std::string_view const &name) const override;
 
 private:
     DECLARE_ACCESS_KEY(CreateAccessKey)
@@ -55,18 +55,27 @@ private:
     };
 
 public:
-    static MetaClass* create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId, CreateAccessKey)
+    RTTI_PRIVATE static MetaClass* create(std::string_view const &name,
+                                          MetaContainer &owner,
+                                          MetaType_ID typeId,
+                                          CreateAccessKey)
     { return create(name, owner, typeId); }
-    void addBaseClass(MetaType_ID typeId, cast_func_t caster, CreateAccessKey)
+    RTTI_PRIVATE void addBaseClass(MetaType_ID typeId,
+                                   cast_func_t caster,
+                                   CreateAccessKey)
     { addBaseClass(typeId, caster); }
 
-    void const* cast(MetaClass const *base, void const *instance, CastAccessKey) const
+    RTTI_PRIVATE void const* cast(MetaClass const *base,
+                                  void const *instance,
+                                  CastAccessKey) const
     { return cast(base, instance); }
-    void* cast(MetaClass const *base, void *instance, CastAccessKey) const
+    RTTI_PRIVATE void* cast(MetaClass const *base,
+                            void *instance,
+                            CastAccessKey) const
     { return cast(base, instance); }
 };
 
-struct DLL_PUBLIC ClassInfo
+struct RTTI_API ClassInfo
 {
     MetaType_ID typeId;
     void const *instance = nullptr;
@@ -77,30 +86,16 @@ struct DLL_PUBLIC ClassInfo
     {}
 };
 
-#ifdef __clang__
-
 #define DECLARE_CLASSINFO \
 public: \
-    _Pragma("clang diagnostic push") \
-    _Pragma("clang diagnostic ignored \"-Winconsistent-missing-override\"") \
+    DISABLE_WARNINGS_PUSH \
+    DISABLE_WARNING_MISSING_OVERRIDE \
     virtual rtti::ClassInfo classInfo() const \
     { \
         return {rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(), this}; \
     } \
-    _Pragma("clang diagnostic pop") \
+    DISABLE_WARNINGS_POP \
 private:
-
-#else
-
-#define DECLARE_CLASSINFO \
-public: \
-    virtual rtti::ClassInfo classInfo() const \
-    { \
-        return {rtti::metaTypeId<typename std::decay<decltype(*this)>::type>(), this}; \
-    } \
-private:
-
-#endif
 
 namespace internal {
 

@@ -1,12 +1,13 @@
 ﻿#include "metacontainer_p.h"
-#include "metaenum.h"
-#include "metamethod.h"
-#include "metaproperty.h"
-#include "metaconstructor.h"
-#include "metaclass.h"
-#include "metanamespace.h"
 
-#include <finally.h>
+#include <rtti/metaenum.h>
+#include <rtti/metamethod.h>
+#include <rtti/metaproperty.h>
+#include <rtti/metaconstructor.h>
+#include <rtti/metaclass.h>
+#include <rtti/metanamespace.h>
+
+#include <rtti/finally.h>
 
 #include <algorithm>
 #include <cassert>

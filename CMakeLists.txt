@@ -1,30 +1,32 @@
-﻿project(rtti CXX)
-cmake_minimum_required(VERSION 3.1.0)
+﻿cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-#message(STATUS ${CMAKE_CXX_COMPILER_ID})
+project(rtti-for-cpp)
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
-        message(FATAL_ERROR "GCC version must be at least 7.0!")
-    endif()
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-        message(FATAL_ERROR "Clang version must be at least 5.0!")
-    endif()
-else()
-    message(FATAL_ERROR "You are using an unsupported compiler!")
+# Add custom cmake modules
+# list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
+# If the user did not customize the install prefix,
+# set it to live under build so we don't inadverently pollute /usr/local
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path" FORCE)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra")
-set(CMAKE_DEBUG_POSTFIX "d")
+# Set default build type
+if(NOT DEFINED CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected, default is Release")
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+message(STATUS "rtti build type: ${CMAKE_BUILD_TYPE}")
 
-set(BIN_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
-set(LIB_DIRECTORY "${PROJECT_SOURCE_DIR}/lib")
+# Build shared library by default
+option(BUILD_SHARED_LIBS "Build shared library" ON)
 
-include_directories(../common/include)
+include (GNUInstallDirs)
 
-add_subdirectory(./src)
-add_subdirectory(./test)
+add_subdirectory(src)
+add_subdirectory(test)
+
+########################################################################################################################
+## Tests
+########################################################################################################################
+

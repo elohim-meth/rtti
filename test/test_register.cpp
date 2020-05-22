@@ -1,4 +1,5 @@
-﻿#include "test_register.h"
+﻿#include "debug.h"
+#include "test_register.h"
 
 namespace {
 
@@ -103,6 +104,7 @@ void register_rtti()
     rtti::MetaType::registerConverter<int, long int>();
     rtti::MetaType::registerConverter<long int, int>();
     rtti::MetaType::registerConverter<int, long long int>();
+    rtti::MetaType::registerConverter<int, unsigned long long int>();
     rtti::MetaType::registerConverter<float, double>();
     rtti::MetaType::registerConverter<float, long double>();
     rtti::MetaType::registerConverter<double, long double>();
@@ -172,4 +174,32 @@ void register_rtti()
     // std::ostringstream
     register_fromString_converter<bool>();
 
+}
+
+void test_rtti_1()
+{
+    auto mcVectorInt = rtti::MetaNamespace::global()->getNamespace("std")->getClass("vector<int>");
+    auto constructor = mcVectorInt->getConstructor("constructor(std::initializer_list<int>)");
+    auto list = {1,2,3,4,5};
+    auto vec = constructor->invoke(list);
+    {
+        auto method = mcVectorInt->getMethod("const at");
+        auto element = method->invoke(vec, 4);
+        assert(element.to<int>() == 5);
+
+        // Should throw because const method at was used
+        try { element.value<int>() = 6; assert(false);
+        } catch (const rtti::runtime_error &e) { LOG_RED(e.what()); };
+    }
+
+    {
+        auto method = mcVectorInt->getMethod("at");
+        auto element = method->invoke(vec, 4);
+        assert(element.to<int>() == 5);
+
+        // Should not throw
+        element.value<int>() = 6;
+        auto &vec1 = vec.value<std::vector<int>>();
+        assert(vec1.at(4) == 6);
+    }
 }

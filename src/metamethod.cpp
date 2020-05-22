@@ -34,7 +34,11 @@ MetaMethod* MetaMethod::create(std::string_view const &name, MetaContainer &owne
     if (!result)
     {
         result = new MetaMethod{signature, owner, std::move(invoker)};
-        INVOKE_PROTECTED(owner, addItem, result);
+        if (!INVOKE_PROTECTED(owner, addItem, result))
+        {
+            delete result;
+            result = const_cast<MetaMethod*>(owner.getMethod(signature));
+        }
     }
     return result;
 }

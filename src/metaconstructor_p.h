@@ -2,11 +2,11 @@
 #define METACONSTRUCTOR_P_H
 
 #include "metacontainer_p.h"
-#include "metaconstructor.h"
+#include <rtti/metaconstructor.h>
 
 namespace rtti {
 
-class DLL_LOCAL MetaConstructorPrivate: public MetaItemPrivate
+class RTTI_PRIVATE MetaConstructorPrivate: public MetaItemPrivate
 {
 public:
     MetaConstructorPrivate(std::string_view const &name, MetaContainer const &owner,

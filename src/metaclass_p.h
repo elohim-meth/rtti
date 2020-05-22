@@ -1,7 +1,7 @@
 ﻿#ifndef METACLASS_P_H
 #define METACLASS_P_H
 
-#include "metaclass.h"
+#include <rtti/metaclass.h>
 #include "metacontainer_p.h"
 
 #include <algorithm>
@@ -10,7 +10,7 @@ namespace rtti {
 
 namespace internal {
 
-class DLL_LOCAL DerivedClassList
+class RTTI_PRIVATE DerivedClassList
 {
 public:
     void add(MetaType_ID value)
@@ -46,7 +46,7 @@ private:
     std::vector<MetaType_ID> m_items;
 };
 
-class DLL_LOCAL BaseClassList
+class RTTI_PRIVATE BaseClassList
 {
 public:
     using item_t = std::pair<MetaType_ID, MetaClass::cast_func_t>;
@@ -84,7 +84,8 @@ private:
     bool find_imp(MetaType_ID value) const
     {
         auto search = std::find_if(std::begin(m_items), std::end(m_items),
-                                   [value](const item_t &item) {
+        [value](const item_t &item)
+        {
             return (value == item.first);
         });
         return (search != std::end(m_items));
@@ -107,7 +108,7 @@ inline void BaseClassList::for_each(F &&func) const
 
 } // namespace internal
 
-class DLL_LOCAL MetaClassPrivate: public MetaContainerPrivate
+class RTTI_PRIVATE MetaClassPrivate: public MetaContainerPrivate
 {
 public:
     MetaClassPrivate(std::string_view const &name, const MetaContainer &owner, MetaType_ID typeId)

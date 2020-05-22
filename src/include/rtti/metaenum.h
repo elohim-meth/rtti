@@ -10,7 +10,7 @@ namespace rtti {
 
 class MetaEnumPrivate;
 
-class DLL_PUBLIC MetaEnum final: public MetaItem
+class RTTI_API MetaEnum final: public MetaItem
 {
     DECLARE_PRIVATE(MetaEnum)
 public:

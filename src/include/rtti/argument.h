@@ -1,19 +1,17 @@
 ﻿#ifndef ARGUMENT_H
 #define ARGUMENT_H
 
-#include "metatype.h"
-#include "metaerror.h"
-#include "variant.h"
-
-#include <finally.h>
+#include <rtti/defines.h>
+#include <rtti/metatype.h>
+#include <rtti/metaerror.h>
+#include <rtti/variant.h>
+#include <rtti/finally.h>
 
 #include <utility>
 
-#include "global.h"
-
 namespace rtti {
 
-class DLL_PUBLIC argument final
+class RTTI_API argument final
 {
 public:
     argument() noexcept = default;
@@ -81,7 +79,7 @@ private:
         {
             assert(!m_buffer);
             m_buffer = toType.allocate();
-            FINALLY_NAME(freeOnExcept) {
+            FINALLY_EX(freeOnExcept) {
                 toType.deallocate(m_buffer);
                 m_buffer = nullptr;
             };
@@ -126,7 +124,7 @@ private:
         {
             assert(!m_buffer);
             m_buffer = toType.allocate();
-            FINALLY_NAME(freeOnExcept) {
+            FINALLY_EX(freeOnExcept) {
                 toType.deallocate(m_buffer);
                 m_buffer = nullptr;
             };

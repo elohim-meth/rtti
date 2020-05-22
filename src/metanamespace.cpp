@@ -28,7 +28,11 @@ MetaNamespace* MetaNamespace::create(std::string_view const &name, MetaContainer
     if (!result)
     {
         result = new MetaNamespace{name, owner};
-        INVOKE_PROTECTED(owner, addItem, result);
+        if (!INVOKE_PROTECTED(owner, addItem, result))
+        {
+            delete result;
+            result = const_cast<MetaNamespace*>(owner.getNamespace(name));
+        }
     }
     return result;
 }

@@ -10,7 +10,7 @@
 
 namespace rtti {
 
-struct DLL_PUBLIC IMethodInvoker
+struct RTTI_API IMethodInvoker
 {
     enum {
         MaxNumberOfArguments = 10
@@ -42,7 +42,7 @@ struct DLL_PUBLIC IMethodInvoker
 
 class MetaMethodPrivate;
 
-class DLL_PUBLIC MetaMethod final: public MetaItem
+class RTTI_API MetaMethod final: public MetaItem
 {
     DECLARE_PRIVATE(MetaMethod)
 public:

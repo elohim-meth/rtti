@@ -2,12 +2,12 @@
 #define METACONTAINER_P_H
 
 #include "metaitem_p.h"
-#include "metacontainer.h"
+#include <rtti/metacontainer.h>
 
 namespace rtti {
 namespace internal {
 
-class DLL_LOCAL MetaItemList
+class RTTI_PRIVATE MetaItemList
 {
 public:
     // Need custom deleter since MetaItem destructor is protected
@@ -43,7 +43,7 @@ inline void MetaItemList::for_each(F &&func) const
 
 } // namespace internal
 
-class DLL_LOCAL MetaContainerPrivate: public MetaItemPrivate
+class RTTI_PRIVATE MetaContainerPrivate: public MetaItemPrivate
 {
 public:
     using MetaItemPrivate::MetaItemPrivate;

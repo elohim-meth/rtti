@@ -1,11 +1,11 @@
 ﻿#ifndef VARIANT_H
 #define VARIANT_H
 
-#include "metatype.h"
-#include "metaerror.h"
-#include "metaclass.h"
+#include <rtti/metatype.h>
+#include <rtti/metaerror.h>
+#include <rtti/metaclass.h>
 
-#include <finally.h>
+#include <rtti/finally.h>
 
 #include <cassert>
 
@@ -56,7 +56,7 @@ struct unwrap_reference<T, true>: mpl::identity<typename T::type>
 template<typename T>
 using unwrap_reference_t = typename unwrap_reference<T>::type;
 
-union DLL_PUBLIC variant_type_storage
+union RTTI_API variant_type_storage
 {
     void *ptr;
     std::aligned_storage_t<STORAGE_SIZE, STORAGE_ALIGN> buffer;
@@ -64,7 +64,7 @@ union DLL_PUBLIC variant_type_storage
 
 enum class type_attribute {NONE, LREF, RREF, LREF_CONST};
 
-struct DLL_PUBLIC variant_function_table
+struct RTTI_API variant_function_table
 {
     using type_t = MetaType_ID(*)(type_attribute);
     using access_t = void const* (*) (variant_type_storage const&);
@@ -431,7 +431,7 @@ inline variant_function_table const* variant_function_table_for<void>() noexcept
 
 } // namespace internal
 
-class DLL_PUBLIC variant final
+class RTTI_API variant final
 {
 public:
     variant() = default;

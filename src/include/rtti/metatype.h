@@ -1,15 +1,15 @@
 ﻿#ifndef METATYPE_H
 #define METATYPE_H
 
-#include "misc_traits.h"
-#include "metaerror.h"
+#include <rtti/misc_traits.h>
+#include <rtti/metaerror.h>
 
-#include <typename.h>
-#include <tagged_id.h>
+#include <rtti/typename.h>
+#include <rtti/tagged_id.h>
 
 #include <limits>
 
-#include "global.h"
+#include <rtti/defines.h>
 
 namespace rtti {
 
@@ -66,7 +66,7 @@ enum class TypeFlags: std::uint32_t {
 
 BITMASK_ENUM(TypeFlags)
 
-class DLL_PUBLIC MetaType final {
+class RTTI_API MetaType final {
 public:
     enum : MetaType_ID::type {
         InvalidTypeId = MetaType_ID::Default
@@ -112,12 +112,16 @@ public:
 
     template<typename From, typename To, typename Func>
     static bool registerConverter(Func &&func);
+
     template<typename From, typename To>
     static bool registerConverter(To(*func)(From));
+
     template<typename From, typename To>
     static bool registerConverter();
+
     template<typename From, typename To>
     static bool registerConverter(To(From::*func)() const);
+
     template<typename From, typename To>
     static bool registerConverter(To(From::*func)(bool*) const);
 
@@ -125,24 +129,28 @@ public:
     template<typename From, typename To>
     static void unregisterConverter();
 private:
-    static MetaType_ID registerMetaType(std::string_view const &name, std::size_t size,
-                                        MetaType_ID decay, uint16_t arity, uint16_t const_mask,
-                                        TypeFlags flags, metatype_manager_t const *manager);
+    static MetaType_ID registerMetaType(
+        std::string_view const &name, std::size_t size,
+        MetaType_ID decay, uint16_t arity, uint16_t const_mask,
+        TypeFlags flags, metatype_manager_t const *manager);
 
-    void* allocate() const;
-    void deallocate(void *ptr) const;
-    void default_construct(void *where) const;
-    void copy_construct(void const *source, void *where) const;
-    void move_construct(void *source, void *where) const;
-    void move_or_copy(void *source, bool movable, void *where) const;
-    void destroy(void *ptr) const noexcept;
+    RTTI_PRIVATE void* allocate() const;
+    RTTI_PRIVATE void deallocate(void *ptr) const;
+    RTTI_PRIVATE void default_construct(void *where) const;
+    RTTI_PRIVATE void copy_construct(void const *source, void *where) const;
+    RTTI_PRIVATE void move_construct(void *source, void *where) const;
+    RTTI_PRIVATE void move_or_copy(void *source, bool movable, void *where) const;
+    RTTI_PRIVATE void destroy(void *ptr) const noexcept;
 
     template<typename From, typename To, typename Func>
     static bool registerConverter_imp(Func &&func);
+
     template<typename From, typename To>
     static bool registerConverter_imp(To(From::*func)() const);
+
     template<typename From, typename To>
     static bool registerConverter_imp(To(From::*func)(bool*) const);
+
     static bool registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
                                   internal::ConvertFunctionBase const &converter);
     static bool convert(void const *from, MetaType fromType, void *to, MetaType toType);
@@ -173,7 +181,7 @@ template <typename T> MetaType_ID metaTypeId();
 
 namespace internal {
 
-struct DLL_LOCAL type_function_table
+struct RTTI_PRIVATE type_function_table
 {
     using allocate_t = void* (*) ();
     using deallocate_t = void (*) (void*);
@@ -523,7 +531,7 @@ To default_convert(From value)
     return value;
 }
 
-struct DLL_LOCAL ConvertFunctionBase
+struct RTTI_PRIVATE ConvertFunctionBase
 {
     using converter_t = bool(*)(ConvertFunctionBase const&, void const*, void*);
 
@@ -546,7 +554,7 @@ private:
 };
 
 template<typename From, typename To, typename F>
-struct DLL_LOCAL ConvertFunctor: ConvertFunctionBase
+struct RTTI_PRIVATE ConvertFunctor: ConvertFunctionBase
 {
     using this_t = ConvertFunctor<From, To, F>;
 
@@ -574,7 +582,7 @@ private:
 };
 
 template<typename From, typename To>
-struct DLL_LOCAL ConvertMethod: ConvertFunctionBase
+struct RTTI_PRIVATE ConvertMethod: ConvertFunctionBase
 {
     using this_t = ConvertMethod<From, To>;
     using func_t = To(From::*)() const;
@@ -601,7 +609,7 @@ private:
 };
 
 template<typename From, typename To>
-struct DLL_LOCAL ConvertMethodOk: ConvertFunctionBase
+struct RTTI_PRIVATE ConvertMethodOk: ConvertFunctionBase
 {
     using this_t = ConvertMethodOk<From, To>;
     using func_t = To(From::*)(bool*) const;
@@ -758,6 +766,6 @@ FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_METATYPE_ID)
 
 } //namespace rtti
 
-DLL_PUBLIC std::ostream& operator<<(std::ostream &stream, rtti::MetaType const &value);
+RTTI_API std::ostream& operator<<(std::ostream &stream, rtti::MetaType const &value);
 
 #endif // METATYPE_H

@@ -1,5 +1,5 @@
 ﻿#include "metaitem_p.h"
-#include "metacontainer.h"
+#include <rtti/metacontainer.h>
 
 namespace rtti {
 

@@ -1,12 +1,12 @@
 ﻿#ifndef METAPROPERTY_P_H
 #define METAPROPERTY_P_H
 
-#include "metaproperty.h"
+#include <rtti/metaproperty.h>
 #include "metaitem_p.h"
 
 namespace rtti {
 
-class DLL_LOCAL MetaPropertyPrivate: public MetaItemPrivate
+class RTTI_PRIVATE MetaPropertyPrivate: public MetaItemPrivate
 {
 public:
     MetaPropertyPrivate(std::string_view const &name, MetaContainer const &owner,

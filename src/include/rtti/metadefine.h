@@ -1,17 +1,17 @@
 ﻿#ifndef METADEFINE_H
 #define METADEFINE_H
 
-#include "metaconstructor.h"
-#include "metamethod.h"
-#include "metaproperty.h"
-#include "metaenum.h"
-#include "metaclass.h"
-#include "metanamespace.h"
-#include "metacontainer.h"
-#include "metaitem.h"
-#include "signature.h"
+#include <rtti/metaconstructor.h>
+#include <rtti/metamethod.h>
+#include <rtti/metaproperty.h>
+#include <rtti/metaenum.h>
+#include <rtti/metaclass.h>
+#include <rtti/metanamespace.h>
+#include <rtti/metacontainer.h>
+#include <rtti/metaitem.h>
+#include <rtti/signature.h>
 
-#include <function_traits.h>
+#include <rtti/function_traits.h>
 
 #include <stack>
 #include <cassert>
@@ -884,8 +884,8 @@ public:
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
 
         addBaseTypeList<mpl::type_list<B...>>(
-                    static_cast<MetaClass*>(m_currentContainer),
-                    mpl::index_sequence_for_t<B...>{});
+            static_cast<MetaClass*>(m_currentContainer),
+            mpl::index_sequence_for_t<B...>{});
         return *this;
     }
 
@@ -917,9 +917,7 @@ public:
         static_assert(std::is_class_v<T>, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
         MetaConstructor::create(name, *m_currentContainer,
-                                std::unique_ptr<IConstructorInvoker>{
-                                    new internal::ConstructorInvoker<T, Args...>{}},
-                                {});
+            std::unique_ptr<IConstructorInvoker>{new internal::ConstructorInvoker<T, Args...>{}}, {});
         register_converting_constructor<mpl::type_list<Args...>>(is_converting_constructor_t<T, Args...>{});
         return *this;
     }
@@ -931,9 +929,7 @@ public:
                       "Method can be defined in namespace or class");
         assert(m_currentContainer);
         MetaMethod::create(name, *m_currentContainer,
-                           std::unique_ptr<IMethodInvoker>{
-                                new internal::MethodInvoker<std::decay_t<F>>{std::forward<F>(func)}},
-                           {});
+            std::unique_ptr<IMethodInvoker>{new internal::MethodInvoker<std::decay_t<F>>{std::forward<F>(func)}}, {});
         return *this;
     }
 
@@ -1038,7 +1034,7 @@ private:
     template<typename, typename> friend class rtti::meta_define;
 };
 
-class DLL_PUBLIC meta_global: public meta_define<void>
+class RTTI_API meta_global: public meta_define<void>
 {
 protected:
     meta_global(MetaItem *currentItem, MetaContainer *currentContainer)
@@ -1049,10 +1045,10 @@ protected:
 private:
     internal::container_stack_t m_container;
 
-    friend DLL_PUBLIC meta_global global_define();
+    friend RTTI_API meta_global global_define();
 };
 
-DLL_PUBLIC meta_global global_define();
+RTTI_API meta_global global_define();
 
 } // namespace rtti
 

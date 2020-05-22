@@ -7,7 +7,7 @@
 
 namespace rtti {
 
-struct DLL_PUBLIC IPropertyInvoker
+struct RTTI_API IPropertyInvoker
 {
     virtual bool isStatic() const = 0;
     virtual MetaType_ID typeId() const = 0;
@@ -22,7 +22,7 @@ struct DLL_PUBLIC IPropertyInvoker
 
 class MetaPropertyPrivate;
 
-class DLL_PUBLIC MetaProperty final: public MetaItem
+class RTTI_API MetaProperty final: public MetaItem
 {
     DECLARE_PRIVATE(MetaProperty)
 public:

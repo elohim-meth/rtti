@@ -24,13 +24,13 @@ class MetaMethod;
 class MetaProperty;
 class MetaEnum;
 
-struct DLL_PUBLIC IDefinitionCallbackHolder
+struct RTTI_API IDefinitionCallbackHolder
 {
     virtual void invoke(MetaContainer&) = 0;
     virtual ~IDefinitionCallbackHolder() = default;
 };
 
-class DLL_PUBLIC MetaContainer: public MetaItem
+class RTTI_API MetaContainer: public MetaItem
 {
     DECLARE_PRIVATE(MetaContainer)
 public:
@@ -83,26 +83,26 @@ public:
 
     void forceDeferredDefine(ForceDeferred type = ForceDeferred::SelfOnly) const;
 protected:
-    explicit MetaContainer(std::string_view const &name, MetaContainer const &owner);
-    explicit MetaContainer(MetaContainerPrivate &value);
+    RTTI_PRIVATE explicit MetaContainer(std::string_view const &name, MetaContainer const &owner);
+    RTTI_PRIVATE explicit MetaContainer(MetaContainerPrivate &value);
 
-    bool addItem(MetaItem *value);
-    std::size_t count(MetaCategory category) const;
-    MetaItem const* item(MetaCategory category, std::size_t index) const;
-    MetaItem const* item(MetaCategory category, std::string_view const &name) const;
+    RTTI_PRIVATE bool addItem(MetaItem *value);
+    RTTI_PRIVATE std::size_t count(MetaCategory category) const;
+    RTTI_PRIVATE MetaItem const* item(MetaCategory category, std::size_t index) const;
+    RTTI_PRIVATE MetaItem const* item(MetaCategory category, std::string_view const &name) const;
 
-    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);
-    void checkDeferredDefine() const override;
+    RTTI_PRIVATE void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);
+    RTTI_PRIVATE void checkDeferredDefine() const override;
 
-    virtual MetaMethod const* getMethodInternal(std::string_view const &name) const;
-    virtual MetaProperty const* getPropertyInternal(std::string_view const &name) const;
+    RTTI_PRIVATE virtual MetaMethod const* getMethodInternal(std::string_view const &name) const;
+    RTTI_PRIVATE virtual MetaProperty const* getPropertyInternal(std::string_view const &name) const;
 
 private:
     DECLARE_ACCESS_KEY(DeferredDefineKey)
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback, DeferredDefineKey)
+    RTTI_PRIVATE void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback, DeferredDefineKey)
     { setDeferredDefine(std::move(callback)); }
 };
 

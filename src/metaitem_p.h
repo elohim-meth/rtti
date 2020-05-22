@@ -1,8 +1,8 @@
 ﻿#ifndef METAITEM_P_H
 #define METAITEM_P_H
 
-#include "metaitem.h"
-#include "variant.h"
+#include <rtti/metaitem.h>
+#include <rtti/variant.h>
 
 #include <shared_mutex>
 #include <vector>
@@ -13,7 +13,7 @@ namespace rtti {
 
 namespace internal {
 
-struct DLL_LOCAL NamedVariant
+struct RTTI_PRIVATE NamedVariant
 {
     template<typename T>
     NamedVariant(std::string_view const &name, T&& value)
@@ -24,7 +24,7 @@ struct DLL_LOCAL NamedVariant
     variant value;
 };
 
-class DLL_LOCAL NamedVariantList
+class RTTI_PRIVATE NamedVariantList
 {
 public:
     template<typename T>
@@ -80,7 +80,7 @@ inline void NamedVariantList::for_each(F &&func) const
 
 } //namespace internal
 
-class DLL_LOCAL MetaItemPrivate
+class RTTI_PRIVATE MetaItemPrivate
 {
 public:
     MetaItemPrivate() = delete;

@@ -1,5 +1,5 @@
 ﻿#include "metatype_p.h"
-#include "metatype.h"
+#include <rtti/metatype.h>
 
 #include <ostream>
 #include <shared_mutex>
@@ -29,7 +29,7 @@ static std::array<TypeInfo, 38> const fundamentalTypes = {{
 
 #undef DEFINE_STATIC_TYPE_INFO
 
-class DLL_LOCAL CustomTypes {
+class RTTI_PRIVATE CustomTypes {
 public:
     CustomTypes();
     CustomTypes(CustomTypes const&) = delete;
@@ -69,7 +69,7 @@ CustomTypes::CustomTypes()
 
 CustomTypes::~CustomTypes()
 {
-    std::unique_lock<std::shared_mutex> lock{m_lock};
+    std::unique_lock lock{m_lock};
     m_items.clear();
     m_names.clear();
     Destroyed = true;
@@ -85,7 +85,7 @@ TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
         return &fundamentalTypes[type];
     type -= fundamentalTypes.size();
 
-    std::shared_lock<std::shared_mutex> lock{m_lock};
+    std::shared_lock lock{m_lock};
     if (type < m_items.size())
         return m_items[type].get();
 
@@ -97,7 +97,7 @@ TypeInfo const* CustomTypes::getTypeInfo(std::string_view const &name) const
     if (name.empty())
         return nullptr;
 
-    std::shared_lock<std::shared_mutex> lock{m_lock};
+    std::shared_lock lock{m_lock};
     if (auto search = m_names.find(name);
         search != std::end(m_names))
     {
@@ -117,7 +117,7 @@ TypeInfo const* CustomTypes::addTypeInfo(std::string_view const &name, std::size
                                             uint16_t const_mask, TypeFlags flags,
                                             metatype_manager_t const *manager)
 {
-    std::unique_lock<std::shared_mutex> lock{m_lock};
+    std::unique_lock lock{m_lock};
     auto type = static_cast<MetaType_ID::type>(
                 fundamentalTypes.size() + m_items.size());
 

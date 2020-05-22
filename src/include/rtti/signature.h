@@ -1,9 +1,9 @@
 ﻿#ifndef SIGNATURE_H
 #define SIGNATURE_H
 
-#include <function_traits.h>
-#include <typelist.h>
-#include <typename.h>
+#include <rtti/function_traits.h>
+#include <rtti/typelist.h>
+#include <rtti/typename.h>
 
 #include <sstream>
 

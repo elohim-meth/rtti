@@ -1,13 +1,13 @@
 ﻿#ifndef METANAMESPACE_H
 #define METANAMESPACE_H
 
-#include "metacontainer.h"
+#include <rtti/metacontainer.h>
 
 namespace rtti {
 
 class MetaNamespacePrivate;
 
-class DLL_PUBLIC MetaNamespace final: public MetaContainer
+class RTTI_API MetaNamespace final: public MetaContainer
 {
     DECLARE_PRIVATE(MetaNamespace)
 public:

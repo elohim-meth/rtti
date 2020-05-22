@@ -5,13 +5,15 @@
 #include <iostream>
 #include <vector>
 
-#include <debug.h>
+#include "debug.h"
 
 int main(int argc, char* argv[])
 {
     (void) argc; (void) argv;
     try {
         register_rtti();
+        test_rtti_1();
+
         auto lambda = [](std::string_view const &name, const rtti::variant &value)
         {
             std::cout << name << " = " << value.to<std::string>() << std::endl;

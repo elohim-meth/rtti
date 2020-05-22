@@ -1,6 +1,6 @@
 ﻿#include "metaclass_p.h"
 #include "metatype_p.h"
-#include "metaerror.h"
+#include <rtti/metaerror.h>
 
 #include <cassert>
 
@@ -12,25 +12,30 @@ namespace rtti {
 
 MetaClass::MetaClass(std::string_view const &name, MetaContainer const &owner, MetaType_ID typeId)
     : MetaContainer{*new MetaClassPrivate{name, owner, typeId}}
-{
-    auto type = MetaType{typeId};
-    if (!type.valid())
-        throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
-                                  + std::to_string(typeId.value())};
-    auto &metaClass = type.typeInfo({})->metaClass;
-    if (metaClass)
-        throw duplicate_metaclass{std::string{"Class "} + type.typeName()
-                + " already registered as: " + metaClass.load()->qualifiedName()};
-    metaClass.store(this);
-}
+{}
 
 MetaClass* MetaClass::create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId)
 {
     auto result = const_cast<MetaClass*>(owner.getClass(name));
     if (!result)
     {
+        auto type = MetaType{typeId};
+        if (!type.valid())
+            throw invalid_metatype_id{std::string{"Invalid MetaType_ID: "}
+                                      + std::to_string(typeId.value())};
+        auto &metaClass = type.typeInfo({})->metaClass;
+        if (metaClass)
+            throw duplicate_metaclass{std::string{"Class "} + type.typeName()
+                + " already registered as: " + metaClass.load()->qualifiedName()};
+
         result = new MetaClass(name, owner, typeId);
-        INVOKE_PROTECTED(owner, addItem, result);
+        if (INVOKE_PROTECTED(owner, addItem, result))
+            metaClass.store(result);
+        else
+        {
+            delete result;
+            result = const_cast<MetaClass*>(owner.getClass(name));
+        }
     }
     return result;
 }

@@ -18,7 +18,11 @@ MetaConstructor* MetaConstructor::create(std::string_view const &name, MetaConta
     if (!result)
     {
         result = new MetaConstructor{signature, owner, std::move(constructor)};
-        INVOKE_PROTECTED(owner, addItem, result);
+        if (!INVOKE_PROTECTED(owner, addItem, result))
+        {
+            delete result;
+            result = const_cast<MetaConstructor*>(owner.getConstructor(signature));
+        }
     }
     return result;
 }

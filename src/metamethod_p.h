@@ -2,11 +2,11 @@
 #define METAMETHOD_P_H
 
 #include "metaitem_p.h"
-#include "metamethod.h"
+#include <rtti/metamethod.h>
 
 namespace rtti {
 
-class DLL_LOCAL MetaMethodPrivate: public MetaItemPrivate
+class RTTI_PRIVATE MetaMethodPrivate: public MetaItemPrivate
 {
 public:
     MetaMethodPrivate(std::string_view const &name, const MetaContainer &owner,

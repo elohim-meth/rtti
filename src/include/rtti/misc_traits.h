@@ -1,8 +1,10 @@
 ﻿#ifndef MISC_TRAITS_H
 #define MISC_TRAITS_H
 
-#include <typelist.h>
-#include <sfinae.h>
+#include <rtti/typelist.h>
+#include <rtti/sfinae.h>
+
+#include <string>
 
 namespace rtti {
 
