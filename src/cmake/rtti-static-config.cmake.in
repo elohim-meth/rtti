@@ -1,0 +1,9 @@
+﻿set(@PROJECT_NAME@_VERSION @PROJECT_VERSION@)
+
+@PACKAGE_INIT@
+
+if (NOT TARGET @PROJECT_NAME@::@PKG@)
+    include("${CMAKE_CURRENT_LIST_DIR}/@TARGET_NAME@.cmake")
+endif()
+
+check_required_components("@PKG@")
