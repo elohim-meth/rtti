@@ -519,7 +519,8 @@ struct ConstructorInvoker: IConstructorInvoker
 
     std::string signature(std::string_view const &name) const override
     {
-        return signature(name, argument_indexes_t{});
+        using  args_size_t = std::integral_constant<int, sizeof... (Args)>;
+        return signature(name, args_size_t{});
     }
 
     variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
@@ -545,13 +546,13 @@ struct ConstructorInvoker: IConstructorInvoker
     { assert(false); return variant::empty_variant; }
 private:
     static constexpr char const* signature(std::string_view const &,
-                                           mpl::index_sequence<>)
+                                           std::integral_constant<int, 0>)
     {
         return DEFAULT_CONSTRUCTOR_SIG;
     }
 
     static std::string signature(std::string_view const &name,
-                                 mpl::index_sequence<0>)
+                                 std::integral_constant<int, 1>)
     {
         using Arg = argument_get_t<0>;
         if constexpr(std::is_same_v<std::decay_t<Arg>, C>)
@@ -562,12 +563,12 @@ private:
                 return COPY_CONSTRUCTOR_SIG;
         }
         else
-            return ::rtti::signature<Args...>::get(name);
+            return rtti::signature<Args...>::get(name);
     }
 
-    template<std::size_t ...I>
+    template<int N>
     static std::string signature(std::string_view const &name,
-                                 mpl::index_sequence<I...>)
+                                 std::integral_constant<int, N>)
     {
         return ::rtti::signature<Args...>::get(name);
     }
