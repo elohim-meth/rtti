@@ -495,7 +495,7 @@ public:
     }
 
     template<typename T>
-    T& value() &
+    T& ref() &
     {
         using U = std::remove_reference_t<T>;
         auto fromId = internalTypeId(type_attribute::LREF);
@@ -505,7 +505,7 @@ public:
     }
 
     template<typename T>
-    T const& value() const &
+    T const& ref() const &
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
@@ -515,17 +515,27 @@ public:
     }
 
     template<typename T>
-    T&& value() &&
+    T const& ref() &&
+    {
+        using U = std::add_const_t<std::remove_reference_t<T>>;
+        auto fromId = internalTypeId(type_attribute::NONE);
+        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
+        auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
+        return std::move(*result);
+    }
+
+    template<typename T>
+    T&& rref() &&
     {
         using U = std::remove_reference_t<T>;
-        auto fromId = internalTypeId(type_attribute::NONE);
+        auto fromId = internalTypeId(type_attribute::RREF);
         auto toId = metaTypeId<std::add_rvalue_reference_t<U>>();
         auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return std::move(*result);
     }
 
     template<typename T>
-    T const& cvalue()
+    T const& cref()
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF);
@@ -535,7 +545,7 @@ public:
     }
 
     template<typename T>
-    T const& cvalue() const
+    T const& cref() const
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
         auto fromId = internalTypeId(type_attribute::LREF_CONST);

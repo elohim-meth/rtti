@@ -1,29 +1,23 @@
-﻿set(SOURCES
-    ./test_dll.cpp
-    ./test_register.cpp
-    ./test_variant.cpp
-    ./test_cast.cpp
-    ./rtti_std_vector.cpp
-    ./rtti_std_string.cpp
-    ./rtti_std_unique_ptr.cpp
-    ./rtti_test_namespace.cpp
+﻿find_package(Catch2 REQUIRED)
+
+add_executable(test_global_ns test.cpp)
+target_link_libraries(test_global_ns Catch2::Catch2 RTTI::rtti)
+
+set_target_properties(test_global_ns PROPERTIES
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+    DEBUG_POSTFIX "d"
 )
 
-set(HEADERS
-    ./test_dll.h
-    ./test_register.h
-    ./test_variant.h
-    ./test_cast.h
-)
+include(Catch)
+catch_discover_tests(test_global_ns)
 
-add_executable(TestDll ${SOURCES} ${HEADERS})
-#target_compile_options(TestDll PRIVATE "-Wa,-mbig-obj")
-target_link_libraries (TestDll RTTI::rtti)
-
-target_compile_definitions(TestDll PRIVATE $<$<CONFIG:Debug>:DEBUG>)
+#add_test(NAME test_global_ns COMMAND $<TARGET_FILE:${TESTNAME}>)
+#add_test(NAME test_global_ns COMMAND $<TARGET_FILE:test_global_ns>)
+#set_tests_properties(test_global_ns PROPERTIES ENVIRONMENT "PATH=$ENV{PATH}")
 
 install(
-    TARGETS TestDll
+    TARGETS test_global_ns
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

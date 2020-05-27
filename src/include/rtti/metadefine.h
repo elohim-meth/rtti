@@ -290,7 +290,7 @@ private:
         if (type.isClass())
         {
             if constexpr(is_const_method::value)
-                (instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
+                (instance.ref<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
             else
                 throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
                                        mpl::type_name<class_ref_t>()};
@@ -307,7 +307,7 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            (instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
+            (instance.ref<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
         else if (type.isClassPtr())
             (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
 
@@ -402,7 +402,7 @@ private:
         if (type.isClass())
         {
             if constexpr(is_const_method::value)
-                return reference_get((instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
+                return reference_get((instance.ref<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
             else
                 throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
                                        mpl::type_name<class_ref_t>()};
@@ -419,7 +419,7 @@ private:
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            return reference_get((instance.value<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
+            return reference_get((instance.ref<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
         else if (type.isClassPtr())
             return reference_get((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...));
 
@@ -675,7 +675,7 @@ struct property_invoker<P, member_pointer>
     {
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
-            return std::ref(instance.value<C const>().*property);
+            return std::ref(instance.ref<C const>().*property);
         else if (type.isClassPtr())
             return std::ref(instance.to<C const *>()->*property);
         return variant::empty_variant;
@@ -704,7 +704,7 @@ struct property_invoker<P, member_pointer>
         {
             auto type = MetaType{instance.typeId()};
             if (type.isClass())
-                instance.value<C>().*property = arg.value<T>();
+                instance.ref<C>().*property = arg.value<T>();
             else if (type.isClassPtr())
                 instance.to<C*>()->*property = arg.value<T>();
         }

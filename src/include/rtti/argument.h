@@ -71,7 +71,7 @@ private:
         {
             auto *v = static_cast<variant*>(ptr);
             if (variant::internalIs<T>(*v, typeId(), {}))
-                return std::move(*v).value<Decay>();
+                return std::move(*v).rref<Decay>();
         }
 
         auto fromType = MetaType{typeId()};
@@ -116,7 +116,7 @@ private:
         {
             auto *v = static_cast<variant const*>(ptr);
             if (variant::internalIs<T>(*v, typeId(), {}))
-                return v->value<Decay>();
+                return v->ref<Decay>();
         }
 
         auto fromType = MetaType{typeId()};
@@ -161,7 +161,7 @@ private:
         {
             auto *v = static_cast<variant*>(ptr);
             if (variant::internalIs<T>(*v, typeId(), {}))
-                return v->value<Decay>();
+                return v->ref<Decay>();
         }
         auto fromType = MetaType{typeId()};
         throw bad_argument_cast{std::string{"Incompatible types: "} +

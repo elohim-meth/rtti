@@ -24,9 +24,15 @@ option(BUILD_SHARED_LIBS "Build shared library" ON)
 include (GNUInstallDirs)
 
 add_subdirectory(src)
-add_subdirectory(test)
 
 ########################################################################################################################
 ## Tests
 ########################################################################################################################
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    include(CTest)
+endif()
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+    add_subdirectory(test)
+endif()
