@@ -1,16 +1,16 @@
-﻿project(RTTI VERSION 1.0.0 LANGUAGES CXX)
-
-# create version
+﻿# create version
 configure_file(
-    ${PROJECT_SOURCE_DIR}/cmake/version.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.h.in
     ${PROJECT_BINARY_DIR}/include/rtti/version.h @ONLY)
 
+set(PKG rtti)
+set(NAMESPACE RTTI)
+
 # define target
-string(TOLOWER ${PROJECT_NAME} PKG)
 add_library(${PKG})
 
 # define namespace alias
-add_library(${PROJECT_NAME}::${PKG} ALIAS ${PKG})
+add_library(${NAMESPACE}::${PKG} ALIAS ${PKG})
 
 # set C++ standard
 target_compile_features(${PKG} PUBLIC cxx_std_17)
@@ -32,12 +32,12 @@ if (BUILD_SHARED_LIBS)
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN ON
     )
-    message(STATUS "rtti library type: SHARED")
+    message(STATUS "${PKG} library type: SHARED")
 else()
     set_target_properties(${PKG} PROPERTIES
         OUTPUT_NAME "${PKG}-static"
     )
-    message(STATUS "rtti library type: STATIC")
+    message(STATUS "${PKG} library type: STATIC")
 endif()
 
 # set up directory structure
@@ -60,53 +60,22 @@ if (NOT BUILD_SHARED_LIBS)
     target_compile_definitions(${PKG} PRIVATE -DRTTI_STATIC)
 endif()
 
-set(SOURCES
-    argument.cpp
-    metatype.cpp
-    variant.cpp
-    metaitem.cpp
-    metacontainer.cpp
-    metanamespace.cpp
-    metaclass.cpp
-    metaconstructor.cpp
-    metamethod.cpp
-    metaproperty.cpp
-    metaenum.cpp
-    metadefine.cpp
+file(GLOB PUBLIC_HEADERS
+    LIST_DIRECTORIES false
+    CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/include/rtti/*.h"
 )
 
-set(HEADERS
-    include/rtti/export.h
-    include/rtti/defines.h
-    include/rtti/finally.h
-    include/rtti/sfinae.h
-    include/rtti/function_traits.h
-    include/rtti/misc_traits.h
-    include/rtti/signature.h
-    include/rtti/tagged_id.h
-    include/rtti/typename.h
-    include/rtti/argument.h
-    include/rtti/variant.h
-    include/rtti/metaerror.h
-    include/rtti/metatype.h
-    metatype_p.h
-    include/rtti/metaitem.h
-    metaitem_p.h
-    include/rtti/metacontainer.h
-    metacontainer_p.h
-    include/rtti/metanamespace.h
-    metanamespace_p.h
-    include/rtti/metaclass.h
-    metaclass_p.h
-    include/rtti/metamethod.h
-    metamethod_p.h
-    include/rtti/metaenum.h
-    metaenum_p.h
-    include/rtti/metaconstructor.h
-    metaconstructor_p.h
-    include/rtti/metaproperty.h
-    metaproperty_p.h
-    include/rtti/metadefine.h
+file(GLOB PRIVATE_HEADERS
+    LIST_DIRECTORIES false
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+)
+
+file(GLOB SOURCES
+    LIST_DIRECTORIES false
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
 )
 
 target_include_directories(${PKG}
@@ -117,7 +86,7 @@ target_include_directories(${PKG}
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src)
 
-target_sources(${PKG} PRIVATE ${SOURCES} ${HEADERS})
+target_sources(${PKG} PRIVATE ${PUBLIC_HEADERS} ${PRIVATE_HEADERS} ${SOURCES})
 
 ########################################################################################################################
 ## INSTALL && EXPORT
@@ -137,7 +106,7 @@ set(PROJECT_INSTALL_CMAKE_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PKG_NAME}-${PROJE
 
 # Generate config and version
 configure_package_config_file(
-    ${PROJECT_SOURCE_DIR}/cmake/${CONFIG_NAME}.cmake.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${CONFIG_NAME}.cmake.in
     ${PROJECT_BINARY_DIR}/cmake/${CONFIG_NAME}.cmake
     INSTALL_DESTINATION ${PROJECT_INSTALL_CMAKE_DIR}
 )

@@ -27,7 +27,5 @@
 *.out
 *.app
 
-/CMakeLists.txt.user
-/build
-/bin/TestDll
-/help
+/CMakeLists.txt.*
+/build*
