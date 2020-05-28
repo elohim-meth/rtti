@@ -79,7 +79,39 @@ void variant::clear() noexcept
 
 bool variant::empty() const noexcept
 {
-    return manager == internal::variant_function_table_for<void>();
+    return (manager == internal::variant_function_table_for<void>());
 }
+
+bool variant::operator==(variant const &value) const
+{
+    if (empty() && value.empty())
+        return true;
+    if (empty() || value.empty())
+        return false;
+
+    auto mt_left = MetaType{this->internalTypeId(type_attribute::LREF_CONST)};
+    auto mt_right = MetaType{value.internalTypeId(type_attribute::LREF_CONST)};
+
+    if (MetaType::compatible(mt_right, mt_left))
+    {
+        if (mt_right.decayId() == mt_left.decayId())
+        {
+            auto ptr = value.raw_data_ptr();
+            if (mt_right.isArray())
+                ptr = *reinterpret_cast<void const * const *>(ptr);
+
+            return manager->f_compare_eq(storage, ptr);
+        }
+    }
+
+    if (mt_left.isClass() && mt_right.isClass())
+    {
+
+    }
+
+
+    return false;
+}
+
 
 } // namespace rtti

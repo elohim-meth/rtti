@@ -65,6 +65,7 @@ enum class TypeFlags: std::uint32_t {
 };
 
 BITMASK_ENUM(TypeFlags)
+std::ostream& operator<<(std::ostream &stream, TypeFlags value);
 
 class RTTI_API MetaType final {
 public:
@@ -190,6 +191,8 @@ struct RTTI_PRIVATE type_function_table
     using move_construct_t = void (*) (void*, void*);
     using move_or_copy_t = void (*) (void*, bool, void*);
     using destroy_t = void (*) (void*);
+    // comparators
+    using compare_eq_t = bool (*) (void const*, void const*);
 
     allocate_t const f_allocate = nullptr;
     deallocate_t const f_deallocate = nullptr;
@@ -198,20 +201,28 @@ struct RTTI_PRIVATE type_function_table
     move_construct_t const f_move_construct = nullptr;
     move_or_copy_t const f_move_or_copy = nullptr;
     destroy_t const f_destroy = nullptr;
+    compare_eq_t const f_compare_eq = nullptr;
 
-    constexpr type_function_table(
-                            allocate_t allocate, deallocate_t deallocate,
-                            default_construct_t default_construct,
-                            copy_construct_t copy_construct,
-                            move_construct_t move_construct,
-                            move_or_copy_t move_or_copy,
-                            destroy_t destroy) noexcept
-        : f_allocate{allocate}, f_deallocate{deallocate},
-          f_default_construct{default_construct},
-          f_copy_construct{copy_construct},
-          f_move_construct{move_construct},
-          f_move_or_copy{move_or_copy},
-          f_destroy{destroy}
+    constexpr type_function_table
+    (
+        allocate_t allocate,
+        deallocate_t deallocate,
+        default_construct_t default_construct,
+        copy_construct_t copy_construct,
+        move_construct_t move_construct,
+        move_or_copy_t move_or_copy,
+        destroy_t destroy,
+        compare_eq_t compare_eq
+    ) noexcept
+    :
+        f_allocate{allocate},
+        f_deallocate{deallocate},
+        f_default_construct{default_construct},
+        f_copy_construct{copy_construct},
+        f_move_construct{move_construct},
+        f_move_or_copy{move_or_copy},
+        f_destroy{destroy},
+        f_compare_eq{compare_eq}
     {}
 };
 
@@ -278,6 +289,20 @@ struct type_function_table_impl
         if constexpr(!std::is_trivially_destructible_v<T>)
             if (ptr)
                 static_cast<T*>(ptr)->~T();
+    }
+
+    static bool compare_eq(void const *lhs, void const *rhs)
+        noexcept(has_nt_eq_v<T, T>)
+    {
+        if constexpr(has_eq_v<T, T>)
+        {
+            if (lhs == rhs)
+                return true;
+            if (!lhs || !rhs)
+                return false;
+            return (*static_cast<T const*>(lhs) == *static_cast<T const *>(rhs));
+        }
+        else throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't EQ_comparable");
     }
 };
 
@@ -364,6 +389,25 @@ struct type_function_table_impl<T[N]>
                     begin->~Base();
             }
     }
+
+    static bool compare_eq(void const *lhs, void const *rhs)
+        noexcept(has_nt_eq_v<T, T>)
+    {
+        if constexpr(has_eq_v<T, T>)
+        {
+            if (lhs == rhs)
+                return true;
+            if (!lhs || !rhs)
+                return false;
+
+            auto *first1 = static_cast<Base const*>(lhs);
+            auto *last1 = static_cast<Base const*>(lhs) + Length;
+            auto *first2 = static_cast<Base const*>(rhs);
+            return std::equal(first1, last1, first2);
+        }
+        else throw runtime_error("Type T = " + mpl::type_name<T>() + "isn't EQ_Comparable");
+    }
+
 };
 
 template <typename T>
@@ -392,7 +436,8 @@ inline type_function_table const* type_function_table_for() noexcept
         &type_function_table_impl<T>::copy_construct,
         &type_function_table_impl<T>::move_construct,
         &type_function_table_impl<T>::move_or_copy,
-        &type_function_table_impl<T>::destroy
+        &type_function_table_impl<T>::destroy,
+        &type_function_table_impl<T>::compare_eq
     };
     return &result;
 }
@@ -764,8 +809,9 @@ FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_METATYPE_ID)
 
 #undef DEFINE_STATIC_METATYPE_ID
 
+RTTI_API std::ostream& operator<<(std::ostream &stream, MetaType value);
+
 } //namespace rtti
 
-RTTI_API std::ostream& operator<<(std::ostream &stream, rtti::MetaType const &value);
 
 #endif // METATYPE_H

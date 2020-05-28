@@ -5,25 +5,12 @@
 
 #include <type_traits>
 
-namespace mpl {
-
-template<typename ...>
-struct void_type
-{
-    using type = void;
-};
-
-template<typename ...T>
-using void_t = typename void_type<T...>::type;
-
-} // namespace mpl
-
 #define HAS_TYPE(NAME) \
 template<typename, typename = void> \
 struct has_type_##NAME: std::false_type \
 {}; \
 template<typename T> \
-struct has_type_##NAME<T, mpl::void_t<typename T::NAME>>: std::true_type \
+struct has_type_##NAME<T, std::void_t<typename T::NAME>>: std::true_type \
 {};
 
 #define HAS_METHOD(NAME) \
@@ -33,7 +20,7 @@ struct has_method_##NAME##_helper: std::false_type \
 {}; \
 \
 template<typename T> \
-struct has_method_##NAME##_helper<T, true, mpl::void_t<decltype(&T::NAME)>>: \
+struct has_method_##NAME##_helper<T, true, std::void_t<decltype(&T::NAME)>>: \
     has_method_##NAME##_helper<decltype(&T::NAME)> \
 {}; \
 \
@@ -45,7 +32,7 @@ struct has_method_##NAME##_helper<Signature, false> \
   using T = typename mpl::function_traits<Signature>::class_type; \
   static_assert(!std::is_void<T>::value, "Void class type"); \
 \
-  template<typename C, typename = mpl::void_t<decltype(static_cast<Signature>(&C::NAME))>> \
+  template<typename C, typename = std::void_t<decltype(static_cast<Signature>(&C::NAME))>> \
   static auto check(int) -> std::true_type; \
   template<typename> \
   static auto check (...) -> std::false_type; \
@@ -68,7 +55,7 @@ struct can_call_method_##NAME: std::false_type \
 {}; \
 template<typename T, typename ...Args> \
 struct can_call_method_##NAME<T, void(Args...), \
-    mpl::void_t<internal::result_of_call_method_##NAME<T, Args...>> \
+    std::void_t<internal::result_of_call_method_##NAME<T, Args...>> \
     >: std::true_type \
 {}; \
 template<typename T, typename R, typename ...Args> \
@@ -90,7 +77,7 @@ struct lambda_has_capture: std::true_type
 {};
 
 template <typename T>
-struct lambda_has_capture<T, void_t<decltype(+std::declval<T>())>> : std::false_type
+struct lambda_has_capture<T, std::void_t<decltype(+std::declval<T>())>> : std::false_type
 {};
 
 } // namespace mpl

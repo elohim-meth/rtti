@@ -13,10 +13,10 @@ namespace rtti {
 
 namespace internal {
 
-struct RTTI_PRIVATE NamedVariant
+struct RTTI_PRIVATE named_variant
 {
     template<typename T>
-    NamedVariant(std::string_view const &name, T&& value)
+    named_variant(std::string_view const &name, T&& value)
         : name{name}, value{std::forward<T>(value)}
     {}
 
@@ -44,7 +44,7 @@ public:
 
 private:
     mutable std::shared_mutex m_lock;
-    std::vector<NamedVariant> m_items;
+    std::vector<std::unique_ptr<named_variant>> m_items;
     std::unordered_map<std::string_view, std::size_t> m_names;
 };
 
@@ -57,13 +57,14 @@ inline void NamedVariantList::set(std::string_view const &name, T &&value)
     std::unique_lock<std::shared_mutex> lock{m_lock};
     if (auto search = m_names.find(name); search == std::end(m_names))
     {
-        auto const &item = m_items.emplace_back(name, std::forward<T>(value));
-        m_names.emplace(item.name, m_items.size() - 1);
+        auto const &item = m_items.emplace_back(
+            new named_variant{name, std::forward<T>(value)});
+        m_names.emplace(item->name, m_items.size() - 1);
     }
     else
     {
         auto index = search->second;
-        m_items.at(index).value = std::forward<T>(value);
+        m_items.at(index)->value = std::forward<T>(value);
     }
 }
 
@@ -73,7 +74,7 @@ inline void NamedVariantList::for_each(F &&func) const
     std::shared_lock<std::shared_mutex> lock{m_lock};
     for(auto const &item: m_items)
     {
-        if (!func(item.name, item.value))
+        if (!func(item->name, item->value))
             break;
     }
 }

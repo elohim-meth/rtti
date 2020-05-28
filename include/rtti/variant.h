@@ -73,6 +73,7 @@ struct RTTI_API variant_function_table
     using copy_t = void (*) (variant_type_storage const&, variant_type_storage&);
     using move_t = void (*) (variant_type_storage&, variant_type_storage&);
     using destroy_t = void (*) (variant_type_storage&);
+    using compare_eq_t = bool (*) (variant_type_storage const&, void const*);
     using info_t = ClassInfo (*) (variant_type_storage const&);
 
     type_t const f_type = nullptr;
@@ -82,18 +83,31 @@ struct RTTI_API variant_function_table
     copy_t const f_copy = nullptr;
     move_t const f_move = nullptr;
     destroy_t const f_destroy = nullptr;
+    compare_eq_t const f_compare_eq = nullptr;
     info_t const f_info = nullptr;
 
-    variant_function_table(type_t type, access_t access,
-                           copy_construct_t copy_construct,
-                           move_construct_t move_construct,
-                           copy_t copy, move_t move,
-                           destroy_t destroy, info_t info) noexcept
-        : f_type{type}, f_access{access},
-          f_copy_construct{copy_construct},
-          f_move_construct{move_construct},
-          f_copy{copy}, f_move{move},
-          f_destroy{destroy}, f_info(info)
+    variant_function_table
+    (
+        type_t type,
+        access_t access,
+        copy_construct_t copy_construct,
+        move_construct_t move_construct,
+        copy_t copy,
+        move_t move,
+        destroy_t destroy,
+        compare_eq_t compare_eq,
+        info_t info
+    ) noexcept
+    :
+        f_type{type},
+        f_access{access},
+        f_copy_construct{copy_construct},
+        f_move_construct{move_construct},
+        f_copy{copy},
+        f_move{move},
+        f_destroy{destroy},
+        f_compare_eq{compare_eq},
+        f_info(info)
     {}
 };
 
@@ -154,6 +168,12 @@ struct variant_function_table_impl<T, true, false>
     {
         type_manager_t<Decay>::destroy(&value.buffer);
     }
+
+    static bool compare_eq(variant_type_storage const &lhs, void const *rhs)
+        noexcept(has_nt_eq_v<Decay, Decay>)
+    {
+        return type_manager_t<Decay>::compare_eq(&lhs.buffer, rhs);
+    }
 private:
     using U = std::remove_cv_t<T>;
     using ULref = std::add_lvalue_reference_t<U>;
@@ -209,6 +229,13 @@ struct variant_function_table_impl<T, true, true>
 
     static void destroy(variant_type_storage&) noexcept
     { /* do nothing */ }
+
+    static bool compare_eq(variant_type_storage const &lhs, void const *rhs)
+        noexcept(has_nt_eq_v<Decay, Decay>)
+    {
+        return type_manager_t<Decay>::compare_eq(lhs.ptr, rhs);
+    }
+
 private:
     using Wrapper = remove_all_cv_t<T>;
     using U = unwrap_reference_t<Wrapper>;
@@ -274,6 +301,12 @@ struct variant_function_table_impl<T, false, false>
         type_manager_t<Decay>::deallocate(value.ptr);
     }
 
+    static bool compare_eq(variant_type_storage const &lhs, void const *rhs)
+        noexcept(has_nt_eq_v<Decay, Decay>)
+    {
+        return type_manager_t<Decay>::compare_eq(lhs.ptr, rhs);
+    }
+
 private:
     using U = std::remove_cv_t<T>;
     using ULref = std::add_lvalue_reference_t<U>;
@@ -337,6 +370,11 @@ struct variant_function_table_impl<T[N], false, false>
         type_manager_t<Decay>::deallocate(value.ptr);
     }
 
+    static bool compare_eq(variant_type_storage const &lhs, void const *rhs)
+        noexcept(has_nt_eq_v<Decay, Decay>)
+    {
+        return type_manager_t<Decay>::compare_eq(lhs.ptr, rhs);
+    }
 private:
     using U = Decay;
     using ULref = std::add_lvalue_reference_t<U>;
@@ -408,6 +446,7 @@ inline variant_function_table const* variant_function_table_for() noexcept
         &variant_function_table_impl<T>::copy,
         &variant_function_table_impl<T>::move,
         &variant_function_table_impl<T>::destroy,
+        &variant_function_table_impl<T>::compare_eq,
         &class_info_get<T>::info
     };
     return &result;
@@ -424,6 +463,7 @@ inline variant_function_table const* variant_function_table_for<void>() noexcept
         [] (variant_type_storage const&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&, variant_type_storage&) noexcept {},
         [] (variant_type_storage&) noexcept {},
+        [] (variant_type_storage const&, void const*) noexcept -> bool { return false; },
         [] (variant_type_storage const&) noexcept { return ClassInfo(); }
     };
     return &result;
@@ -471,6 +511,8 @@ public:
     bool empty() const noexcept;
     explicit operator bool() const noexcept
     { return !empty(); }
+
+    bool operator==(variant const &value) const;
 
     MetaType_ID typeId() const noexcept
     { return internalTypeId(); }

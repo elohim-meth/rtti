@@ -487,12 +487,18 @@ void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
                           toType.m_typeInfo->decay});
 }
 
+std::ostream& operator<<(std::ostream &stream, TypeFlags )
+{
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream &stream, MetaType value)
+{
+    return stream
+        << value.typeId().value() << ':'
+        << value.typeName() << ':'
+        << value.typeFlags();
+}
+
 } //namespace rtti
 
-std::ostream& operator<<(std::ostream &stream, rtti::MetaType const &value)
-{
-    return stream << value.typeId().value() << ":"
-                  << value.typeName() << ":"
-                  << static_cast<std::underlying_type_t<rtti::TypeFlags>>(value.typeFlags());
-
-}

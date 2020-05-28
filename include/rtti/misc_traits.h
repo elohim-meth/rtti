@@ -318,6 +318,38 @@ struct has_move_constructor<T, true>:
 template<typename T>
 using has_move_constructor_t = typename has_move_constructor<T>::type;
 
+//-----------------------------------------------------------------------------------------------------------------------------
+
+template<typename T, typename U, typename = std::void_t<>>
+struct has_eq: std::false_type
+{};
+
+template<typename T, typename U, typename = std::void_t<>>
+struct has_nt_eq: std::false_type
+{};
+
+template<typename T, typename U>
+struct has_eq<T, U, std::void_t<decltype(std::declval<T>() == std::declval<U>())>>
+    : std::true_type
+{};
+
+template<typename T, typename U>
+struct has_nt_eq<T, U, std::void_t<decltype(std::declval<T>() == std::declval<U>())>>
+    : std::bool_constant<noexcept(std::declval<T>() == std::declval<U>())>
+{};
+
+template<typename T, typename U>
+using has_eq_t = typename has_eq<T, U>::type;
+
+template<typename T, typename U>
+constexpr auto has_eq_v = has_eq<T, U>::value;
+
+template<typename T, typename U>
+using has_nt_eq_t = typename has_nt_eq<T, U>::type;
+
+template<typename T, typename U>
+constexpr auto has_nt_eq_v = has_nt_eq<T, U>::value;
+
 } // namespace rtti
 
 #endif // MISC_TRAITS_H

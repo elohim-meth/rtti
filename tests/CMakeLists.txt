@@ -1,21 +1,22 @@
-﻿find_package(Catch2 REQUIRED)
+﻿find_package(DocTest REQUIRED)
 
-add_executable(catch_tests
-    catch_test_main.cpp
+add_executable(doctest_tests
+    doctest_main.cpp
     register_rtti.cpp
 )
-target_sources(catch_tests PRIVATE test_global_ns.cpp)
-target_link_libraries(catch_tests Catch2::Catch2 RTTI::rtti)
+target_sources(doctest_tests PRIVATE test_global_ns.cpp)
+target_link_libraries(doctest_tests PRIVATE doctest::doctest RTTI::rtti)
 
-set_target_properties(catch_tests PROPERTIES
+set_target_properties(doctest_tests PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin
 )
 
 # Integrate Catch test in CTest
-include(Catch)
-catch_discover_tests(catch_tests)
+include(doctest)
+doctest_discover_tests(doctest_tests)
 
-# Add target to run tests
-add_custom_target(check ALL COMMAND catch_tests)
+# Add target to run tests automatically
+add_custom_target(check ALL
+    COMMAND doctest_tests)
