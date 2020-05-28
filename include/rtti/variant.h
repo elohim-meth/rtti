@@ -514,6 +514,44 @@ public:
 
     bool operator==(variant const &value) const;
 
+    template<typename T>
+    bool operator==(T const &value) const
+    {
+        return (*this == variant{std::cref(value)});
+    }
+
+    template<typename T>
+    bool operator!=(T const &value) const
+    {
+        return !(*this == value);
+    }
+
+    template<typename T>
+    bool eq(T const &value) const
+    {
+        if (*this == variant{std::cref(value)})
+            return true;
+
+        std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
+        auto from = internalTypeId(type_attribute::LREF_CONST);
+        auto to = metaTypeId<T>();
+
+        if (MetaType::hasConverter(from, to) &&
+            MetaType::convert(raw_data_ptr(), from, buffer, to))
+        {
+            FINALLY { type_manager_t<T>::destroy(&buffer); };
+            return (value == *static_cast<T const*>(&buffer));
+        }
+
+        return false;
+    }
+
+    template<typename T>
+    bool neq(T const &value) const
+    {
+        return !eq(value);
+    }
+
     MetaType_ID typeId() const noexcept
     { return internalTypeId(); }
     MetaClass const* metaClass() const

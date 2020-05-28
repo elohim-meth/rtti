@@ -35,6 +35,7 @@ void register_rtti()
 
     // default convert
     rtti::MetaType::registerConverter<char*, std::string>();
+    rtti::MetaType::registerConverter<char*, std::string_view>();
 
     rtti::MetaType::registerConverter<bool, char>();
 

@@ -20,7 +20,9 @@ TEST_CASE("Test global namespace")
             REQUIRE(ns_Global->attributeName(0) == "Description");
             auto &v = ns_Global->attribute("Description");
             REQUIRE(v.to<std::string>() == "Global namespace");
+            REQUIRE(v.to<std::string_view>() == "Global namespace");
             REQUIRE(v == rtti::variant{"Global namespace"});
+            REQUIRE(v == "Global namespace");
             REQUIRE_THROWS(v.ref<std::string>());
             REQUIRE(std::strcmp(v.ref<char const*>(), "Global namespace") == 0);
         }
@@ -30,6 +32,7 @@ TEST_CASE("Test global namespace")
             REQUIRE(ns_Global->attributeName(1) == "string_attr");
             auto &v = ns_Global->attribute("string_attr");
             REQUIRE(v.ref<std::string>() == "Hello, World!");
+            REQUIRE(v == "Hello, World!"s);
         }
 
         SUBCASE("Boolean attribute")
@@ -37,6 +40,7 @@ TEST_CASE("Test global namespace")
             REQUIRE(ns_Global->attributeName(2) == "bool_attr");
             auto &v = ns_Global->attribute("bool_attr");
             REQUIRE(v.ref<bool>() == true);
+            REQUIRE(v == true);
         }
 
         SUBCASE("Double attribute")
@@ -44,6 +48,7 @@ TEST_CASE("Test global namespace")
             REQUIRE(ns_Global->attributeName(3) == "double_attr");
             auto &v = ns_Global->attribute("double_attr");
             REQUIRE(v.ref<double>() == 3.14);
+            REQUIRE(v == 3.14);
         }
 
         SUBCASE("Integer attribute")
@@ -53,6 +58,7 @@ TEST_CASE("Test global namespace")
             REQUIRE(v.ref<int>() == 256);
             REQUIRE_THROWS(v.ref<int64_t>());
             REQUIRE(v.to<int64_t>() == 256);
+            REQUIRE(v == 256);
         }
 
         SUBCASE("Enum attribute")
