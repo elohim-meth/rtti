@@ -104,12 +104,6 @@ bool variant::operator==(variant const &value) const
         }
     }
 
-    if (mt_left.isClass() && mt_right.isClass())
-    {
-
-    }
-
-
     return false;
 }
 
