@@ -3,8 +3,7 @@
 
 #include <ostream>
 #include <shared_mutex>
-#include <vector>
-#include <array>
+#include <forward_list>
 #include <unordered_map>
 #include <memory>
 #include <cassert>
@@ -12,22 +11,6 @@
 namespace rtti {
 
 namespace {
-
-#define DEFINE_STATIC_TYPE_INFO(NAME, TYPEID) \
-TypeInfo{#NAME, sizeof(NAME), \
-         MetaType_ID{TYPEID}, MetaType_ID{TYPEID}, \
-         pointer_arity<NAME>::value, \
-         const_bitset<NAME>::value, \
-         internal::type_flags<NAME>::value, \
-         internal::type_function_table_for<NAME>() \
-        },
-
-static std::array<TypeInfo, 38> const fundamentalTypes = {{
-    TypeInfo{"void", 0, MetaType_ID{0}, MetaType_ID{0}, 0, 0, internal::type_flags<void>::value, nullptr},
-    FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_INFO)
-    }};
-
-#undef DEFINE_STATIC_TYPE_INFO
 
 class RTTI_PRIVATE CustomTypes {
 public:
@@ -38,16 +21,17 @@ public:
     CustomTypes& operator=(CustomTypes &&) = delete;
     ~CustomTypes();
 
+    MetaType_ID getTypeId(TypeInfo const *type_info) const;
     TypeInfo const* getTypeInfo(MetaType_ID typeId) const;
-    TypeInfo const* getTypeInfo(std::string_view const &name) const;
-    TypeInfo const* addTypeInfo(std::string_view const &name, std::size_t size,
+    TypeInfo const* getTypeInfo(std::string_view name) const;
+    TypeInfo const* addTypeInfo(std::string_view name, std::size_t size,
                                 MetaType_ID decay, std::uint16_t arity,
                                 std::uint16_t const_mask, TypeFlags flags,
                                 metatype_manager_t const *manager);
 private:
     mutable std::shared_mutex m_lock;
-    std::vector<std::unique_ptr<TypeInfo>> m_items;
-    std::unordered_map<std::string_view, std::size_t> m_names;
+    std::forward_list<TypeInfo> m_items;
+    std::unordered_map<std::string_view, TypeInfo const*> m_names;
 
     static bool Destroyed;
     friend CustomTypes* customTypes();
@@ -55,17 +39,8 @@ private:
 
 bool CustomTypes::Destroyed = false;
 
-#define DEFINE_STATIC_TYPE_MAP(NAME, INDEX) \
-{#NAME, INDEX},
-
 CustomTypes::CustomTypes()
-    : m_names {
-          {"void", 0},
-          FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_TYPE_MAP)
-}
 {}
-
-#undef DEFINE_STATIC_TYPE_MAP
 
 CustomTypes::~CustomTypes()
 {
@@ -75,62 +50,51 @@ CustomTypes::~CustomTypes()
     Destroyed = true;
 }
 
-TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
+MetaType_ID CustomTypes::getTypeId(TypeInfo const *type_info) const
 {
-    auto type = std::size_t{typeId.value()};
-    if (type == MetaType::InvalidTypeId)
-        return nullptr;
-
-    if (type < fundamentalTypes.size())
-        return &fundamentalTypes[type];
-    type -= fundamentalTypes.size();
-
-    std::shared_lock lock{m_lock};
-    if (type < m_items.size())
-        return m_items[type].get();
-
-    return nullptr;
+    return MetaType_ID{reinterpret_cast<MetaType_ID::type>(type_info)};
 }
 
-TypeInfo const* CustomTypes::getTypeInfo(std::string_view const &name) const
+inline TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
+{
+    return reinterpret_cast<TypeInfo const*>(typeId.value());
+}
+
+TypeInfo const* CustomTypes::getTypeInfo(std::string_view name) const
 {
     if (name.empty())
         return nullptr;
 
     std::shared_lock lock{m_lock};
-    if (auto search = m_names.find(name);
-        search != std::end(m_names))
-    {
-        auto index = search->second;
-        if (index < fundamentalTypes.size())
-            return &fundamentalTypes[index];
+    if (auto it = m_names.find(name); it != std::end(m_names))
+        return it->second;
 
-        index -= fundamentalTypes.size();
-        if (index < m_items.size())
-            return m_items[index].get();
-    }
     return nullptr;
 }
 
-TypeInfo const* CustomTypes::addTypeInfo(std::string_view const &name, std::size_t size,
-                                            MetaType_ID decay, uint16_t arity,
-                                            uint16_t const_mask, TypeFlags flags,
-                                            metatype_manager_t const *manager)
+TypeInfo const* CustomTypes::addTypeInfo
+(
+    std::string_view name,
+    std::size_t size,
+    MetaType_ID decay,
+    uint16_t arity,
+    uint16_t const_mask,
+    TypeFlags flags,
+    metatype_manager_t const *manager
+)
 {
+    if (name.empty())
+        return nullptr;
+
     std::unique_lock lock{m_lock};
-    auto type = static_cast<MetaType_ID::type>(
-                fundamentalTypes.size() + m_items.size());
-
-    // this means that decay_t<type> = type
-    if (decay.value() == MetaType::InvalidTypeId)
-        decay = MetaType_ID{type};
-
-    auto result = new TypeInfo{name, size, MetaType_ID{type},
-                               decay, arity, const_mask, flags,
-                               manager};
-    m_items.emplace_back(result);
-    m_names.emplace(name, type);
-    return result;
+    if (auto it = m_names.find(name); it == std::end(m_names))
+    {
+        auto &result = m_items.emplace_front(name, size, decay, arity, const_mask, flags, manager);
+        m_names.emplace(name, &result);
+        return &result;
+    }
+    else
+        return it->second;
 }
 
 inline CustomTypes* customTypes()
@@ -154,7 +118,7 @@ MetaType::MetaType(MetaType_ID typeId) noexcept
         m_typeInfo = types->getTypeInfo(typeId);
 }
 
-rtti::MetaType::MetaType(std::string_view const &name) noexcept
+MetaType::MetaType(std::string_view name) noexcept
 {
     if (auto *types = customTypes())
         m_typeInfo = types->getTypeInfo(name);
@@ -163,8 +127,10 @@ rtti::MetaType::MetaType(std::string_view const &name) noexcept
 
 MetaType_ID MetaType::typeId() const noexcept
 {
-    return m_typeInfo ? m_typeInfo->type
-                      : MetaType_ID{};
+    if (auto *types = customTypes())
+        return types->getTypeId(m_typeInfo);
+
+    return MetaType_ID{};
 }
 
 MetaType_ID MetaType::decayId() const noexcept
@@ -173,16 +139,11 @@ MetaType_ID MetaType::decayId() const noexcept
                       : MetaType_ID{};
 }
 
-void MetaType::setTypeId(MetaType_ID typeId)
-{
-    *this = MetaType{typeId};
-}
-
 std::string_view MetaType::typeName() const noexcept
 {
     using namespace std::string_view_literals;
     return m_typeInfo ? m_typeInfo->name
-                      : ""sv;
+                      : "void"sv;
 }
 
 std::size_t MetaType::typeSize() const noexcept
@@ -194,7 +155,7 @@ std::size_t MetaType::typeSize() const noexcept
 TypeFlags MetaType::typeFlags() const noexcept
 {
     return m_typeInfo ? m_typeInfo->flags
-                      : TypeFlags::None;
+                      : TypeFlags::Void;
 }
 
 std::uint16_t MetaType::pointerArity() const noexcept
@@ -263,20 +224,26 @@ bool MetaType::compatible(MetaType fromType, MetaType toType) noexcept
     return true;
 }
 
-MetaType_ID MetaType::registerMetaType(std::string_view const &name, std::size_t size,
-                                       MetaType_ID decay, std::uint16_t arity,
-                                       std::uint16_t const_mask, TypeFlags flags,
-                                       metatype_manager_t const *manager)
+MetaType_ID MetaType::registerMetaType
+(
+    std::string_view name,
+    std::size_t size,
+    MetaType_ID decay,
+    std::uint16_t arity,
+    std::uint16_t const_mask,
+    TypeFlags flags,
+    metatype_manager_t const *manager
+)
 {
     auto *types = customTypes();
     if (!types)
         return MetaType_ID{};
 
-    auto result = types->getTypeInfo(name);
-    if (!result)
-        result = types->addTypeInfo(name, size, decay, arity,
-                                    const_mask, flags, manager);
-    return result->type;
+    auto result = types->addTypeInfo(
+        name, size, decay, arity,
+        const_mask, flags, manager);
+
+    return types->getTypeId(result);
 }
 
 MetaClass const* MetaType::metaClass() const noexcept
@@ -291,37 +258,52 @@ MetaClass const* MetaType::metaClass() const noexcept
 
 void* MetaType::allocate() const
 {
-    return m_typeInfo->manager->f_allocate();
+    return m_typeInfo
+        ? m_typeInfo->manager->f_allocate()
+        : nullptr;
 }
 
 void MetaType::deallocate(void *ptr) const
 {
-    return m_typeInfo->manager->f_deallocate(ptr);
+    if (m_typeInfo)
+        m_typeInfo->manager->f_deallocate(ptr);
 }
 
 void MetaType::default_construct(void *where) const
 {
-    m_typeInfo->manager->f_default_construct(where);
+    if (m_typeInfo)
+        m_typeInfo->manager->f_default_construct(where);
 }
 
 void MetaType::copy_construct(void const *source, void *where) const
 {
-    m_typeInfo->manager->f_copy_construct(source, where);
+    if (m_typeInfo)
+        m_typeInfo->manager->f_copy_construct(source, where);
 }
 
 void MetaType::move_construct(void *source, void *where) const
 {
-    m_typeInfo->manager->f_move_construct(source, where);
+    if (m_typeInfo)
+        m_typeInfo->manager->f_move_construct(source, where);
 }
 
 void MetaType::move_or_copy(void *source, bool movable, void *where) const
 {
-    m_typeInfo->manager->f_move_or_copy(source, movable, where);
+    if (m_typeInfo)
+        m_typeInfo->manager->f_move_or_copy(source, movable, where);
 }
 
 void MetaType::destroy(void *ptr) const noexcept
 {
-    m_typeInfo->manager->f_destroy(ptr);
+    if (m_typeInfo)
+        m_typeInfo->manager->f_destroy(ptr);
+}
+
+bool MetaType::compare_eq(void const *lhs, void const *rhs) const
+{
+    return m_typeInfo
+        ? m_typeInfo->manager->f_compare_eq(lhs, rhs)
+        : false;
 }
 
 void* MetaType::construct(void *copy, bool movable) const
@@ -355,14 +337,14 @@ public:
 
     ~MetaTypeFunctionList()
     {
-        std::unique_lock<std::shared_mutex> lock{m_lock};
+        std::unique_lock lock{m_lock};
         m_items.clear();
         Destroyed = true;
     }
 
     bool find(key_t const &key) const
     {
-        std::shared_lock<std::shared_mutex> lock{m_lock};
+        std::shared_lock lock{m_lock};
         return (m_items.find(key) != std::end(m_items));
     }
 
@@ -371,7 +353,7 @@ public:
         if (!func)
             return false;
 
-        std::unique_lock<std::shared_mutex> lock{m_lock};
+        std::unique_lock lock{m_lock};
         auto search = m_items.find(key);
         if (search != std::end(m_items))
             return false;
@@ -382,7 +364,7 @@ public:
 
     F const* get(key_t const &key) const
     {
-        std::shared_lock<std::shared_mutex> lock{m_lock};
+        std::shared_lock lock{m_lock};
         auto search = m_items.find(key);
         if (search != std::end(m_items))
             return search->second;
@@ -391,7 +373,7 @@ public:
 
     void remove(key_t const &key)
     {
-        std::unique_lock<std::shared_mutex> lock{m_lock};
+        std::unique_lock lock{m_lock};
         m_items.erase(key);
     }
 private:
@@ -451,8 +433,7 @@ bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
     auto toType = MetaType{toTypeId};
     if (fromType.valid() && toType.valid())
         if (auto list = customConverters())
-            return list->add({fromType.m_typeInfo->decay,
-                              toType.m_typeInfo->decay},
+            return list->add({fromType.m_typeInfo->decay, toType.m_typeInfo->decay},
                              &converter);
     return false;
 }

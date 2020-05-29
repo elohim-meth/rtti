@@ -92,6 +92,8 @@ TEST_CASE("Test global namespace")
         auto property = ns_Global->getProperty("gro_string");
         REQUIRE(property);
         REQUIRE(property->get().ref<std::string>() == "Hello, World!");
+        REQUIRE(property->get() == "Hello, World!"s);
+
         auto v = property->get();
         REQUIRE_THROWS(v.ref<std::string>());
         REQUIRE(v.cref<std::string>() == "Hello, World!");

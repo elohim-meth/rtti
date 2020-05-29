@@ -30,6 +30,20 @@ operator+(std::basic_string<_CharT, _Traits, _Alloc> &&lhs,
 template<bool B, typename T, typename F>
 constexpr auto conditional_v = std::conditional_t<B, T, F>::value;
 
+template<typename T>
+struct size_of: std::integral_constant<std::size_t, sizeof(T)>
+{};
+
+template<>
+struct size_of<void>: std::integral_constant<std::size_t, 0>
+{};
+
+template<typename T>
+constexpr auto size_of_v = size_of<T>::value;
+
+template<typename T>
+using size_of_t = typename size_of<T>::type;
+
 //-----------------------------------------------------------------------------------------------------------------------------
 
 template<typename T, std::size_t I>

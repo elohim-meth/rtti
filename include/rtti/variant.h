@@ -532,15 +532,28 @@ public:
         if (*this == variant{std::cref(value)})
             return true;
 
-        std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
-        auto from = internalTypeId(type_attribute::LREF_CONST);
-        auto to = metaTypeId<T>();
+        auto mt_self = MetaType{internalTypeId(type_attribute::NONE)};
+        auto mt_value = MetaType{metaTypeId<T>()};
 
-        if (MetaType::hasConverter(from, to) &&
-            MetaType::convert(raw_data_ptr(), from, buffer, to))
+        if (MetaType::hasConverter(mt_self, mt_value))
         {
-            FINALLY { type_manager_t<T>::destroy(&buffer); };
-            return (value == *static_cast<T const*>(&buffer));
+            std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
+            if (MetaType::convert(raw_data_ptr(), mt_self, &buffer, mt_value))
+            {
+                FINALLY { type_manager_t<T>::destroy(&buffer); };
+                return type_manager_t<T>::compare_eq(&value, &buffer);
+            }
+        }
+
+        if (MetaType::hasConverter(mt_value, mt_self))
+        {
+            auto *buffer = mt_self.allocate();
+            FINALLY { mt_self.deallocate(buffer); };
+            if (MetaType::convert(std::addressof(value), mt_value, buffer, mt_self))
+            {
+                FINALLY { mt_self.destroy(buffer); };
+                return mt_self.compare_eq(raw_data_ptr(), buffer);
+            }
         }
 
         return false;
@@ -729,10 +742,12 @@ public:
 private:
     void swap(variant &other) noexcept;
 
+    // Returns pointer to decayed type
     void const* raw_data_ptr() const noexcept
     { return manager->f_access(storage); }
     void * raw_data_ptr() noexcept
     { return const_cast<void*>(manager->f_access(storage)); }
+
     MetaType_ID internalTypeId(type_attribute attr = type_attribute::NONE) const noexcept
     { return manager->f_type(attr); }
     ClassInfo classInfo() const noexcept

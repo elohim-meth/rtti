@@ -11,7 +11,6 @@ std::string intToStr(int value, bool &ok)
 
 enum class operation { add, subtract, multiply, divide };
 
-
 void register_rtti()
 {
     using namespace std::literals;
@@ -36,6 +35,9 @@ void register_rtti()
     // default convert
     rtti::MetaType::registerConverter<char*, std::string>();
     rtti::MetaType::registerConverter<char*, std::string_view>();
+    // this is ERROR! c_str method is not a converting method!
+    //rtti::MetaType::registerConverter<std::string, char const*>(
+    //    [] (std::string const &value) { return value.c_str(); });
 
     rtti::MetaType::registerConverter<bool, char>();
 

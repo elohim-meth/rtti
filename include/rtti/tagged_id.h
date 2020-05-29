@@ -39,6 +39,11 @@ public:
     {
         return !(*this == value);
     }
+
+    constexpr bool valid() const noexcept
+    {
+        return m_val != Default;
+    }
 private:
     Type m_val;
 };

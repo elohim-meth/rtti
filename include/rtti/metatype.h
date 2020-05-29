@@ -13,16 +13,16 @@
 
 namespace rtti {
 
+namespace internal {
+
 struct meta_type_tag {};
-using MetaType_ID = mpl::ID<meta_type_tag, std::uint32_t,
-                       std::numeric_limits<std::uint32_t>::max()>;
 
 /* begin forward */
-namespace internal {
 struct type_function_table;
 template<typename T> struct type_function_table_impl;
 template<typename T> class meta_type;
 struct ConvertFunctionBase;
+
 } // namespace internal
 
 using metatype_manager_t = internal::type_function_table;
@@ -34,6 +34,8 @@ class MetaClass;
 class variant;
 class argument;
 /* end forward */
+
+using MetaType_ID = mpl::ID<internal::meta_type_tag, std::size_t, 0>;
 
 enum class TypeFlags: std::uint32_t {
     None                 = 0,
@@ -69,35 +71,32 @@ std::ostream& operator<<(std::ostream &stream, TypeFlags value);
 
 class RTTI_API MetaType final {
 public:
-    enum : MetaType_ID::type {
-        InvalidTypeId = MetaType_ID::Default
-    };
-
     MetaType() noexcept = default;
     explicit MetaType(MetaType_ID typeId) noexcept;
-    explicit MetaType(std::string_view const &name) noexcept;
+    explicit MetaType(std::string_view name) noexcept;
 
     bool valid() const noexcept
     {
-        return m_typeInfo != nullptr;
+        return (m_typeInfo != nullptr);
     }
     MetaType_ID typeId() const noexcept;
     MetaType_ID decayId() const noexcept;
     bool decayed() const noexcept
     { return valid() && (typeId() == decayId()); }
-    void setTypeId(MetaType_ID typeId);
     std::string_view typeName() const noexcept;
     std::size_t typeSize() const noexcept;
     TypeFlags typeFlags() const noexcept;
 
-    bool isConst() const noexcept;
-    bool isLvalueReference() const noexcept;
-    bool isRvalueReference() const noexcept;
-    bool isReference() const noexcept;
-    bool isClass() const noexcept;
-    bool isPointer() const noexcept;
-    bool isClassPtr() const noexcept;
-    bool isArray() const noexcept;
+    inline bool isConst() const noexcept;
+    inline bool isLvalueReference() const noexcept;
+    inline bool isRvalueReference() const noexcept;
+    inline bool isReference() const noexcept;
+    inline bool isClass() const noexcept;
+    inline bool isPointer() const noexcept;
+    inline bool isVoidPtr() const noexcept;
+    inline bool isClassPtr() const noexcept;
+    inline bool isArray() const noexcept;
+
     uint16_t pointerArity() const noexcept;
     static bool compatible(MetaType fromType, MetaType toType) noexcept;
 
@@ -130,8 +129,7 @@ public:
     template<typename From, typename To>
     static void unregisterConverter();
 private:
-    static MetaType_ID registerMetaType(
-        std::string_view const &name, std::size_t size,
+    static MetaType_ID registerMetaType(std::string_view name, std::size_t size,
         MetaType_ID decay, uint16_t arity, uint16_t const_mask,
         TypeFlags flags, metatype_manager_t const *manager);
 
@@ -142,6 +140,7 @@ private:
     RTTI_PRIVATE void move_construct(void *source, void *where) const;
     RTTI_PRIVATE void move_or_copy(void *source, bool movable, void *where) const;
     RTTI_PRIVATE void destroy(void *ptr) const noexcept;
+    RTTI_PRIVATE bool compare_eq(void const *lhs, void const *rhs) const;
 
     template<typename From, typename To, typename Func>
     static bool registerConverter_imp(Func &&func);
@@ -442,6 +441,10 @@ inline type_function_table const* type_function_table_for() noexcept
     return &result;
 }
 
+template<>
+inline type_function_table const* type_function_table_for<void>() noexcept
+{ return nullptr; }
+
 template <typename T>
 struct type_flags {
     using Flags = TypeFlags;
@@ -490,7 +493,7 @@ class meta_type final
 
         auto const &name = mpl::type_name<T>();
         auto constexpr flags = type_flags<T>::value;
-        auto constexpr size = sizeof(T);
+        auto constexpr size = size_of_v<T>;
         std::uint16_t constexpr arity = pointer_arity<NoRef>::value;
         std::uint16_t constexpr const_mask = const_bitset<NoRef>::value;
         auto *manager = type_function_table_for<U>();
@@ -512,6 +515,10 @@ inline MetaType_ID metaTypeId()
     static internal::meta_type<T> holder{};
     return holder.meta_id;
 }
+
+template<>
+inline MetaType_ID metaTypeId<void>()
+{ return MetaType_ID{}; }
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // Traits
@@ -547,6 +554,13 @@ inline bool MetaType::isClass() const noexcept
 inline bool MetaType::isPointer() const noexcept
 {
     return ((typeFlags() & TypeFlags::Pointer) == TypeFlags::Pointer);
+}
+
+inline bool MetaType::isVoidPtr() const noexcept
+{
+    auto flags = typeFlags();
+    return ((flags & TypeFlags::Void) == TypeFlags::Void) &&
+           ((flags & TypeFlags::Pointer) == TypeFlags::Pointer);
 }
 
 inline bool MetaType::isClassPtr() const noexcept
@@ -690,6 +704,8 @@ inline bool MetaType::hasConverter() noexcept
     return hasConverter(metaTypeId<From>(), metaTypeId<To>());
 }
 
+// Functor converter
+
 template<typename From, typename To, typename Func>
 inline bool MetaType::registerConverter_imp(Func &&func)
 {
@@ -719,6 +735,8 @@ inline bool MetaType::registerConverter()
     return registerConverter<From, To>(internal::default_convert<From, To>);
 }
 
+// Method converter
+
 template<typename From, typename To>
 inline bool MetaType::registerConverter_imp(To(From::*func)() const)
 {
@@ -733,6 +751,8 @@ inline bool MetaType::registerConverter(To(From::*func)() const)
     using T = full_decay_t<To>;
     return registerConverter_imp<F, T>(func);
 }
+
+// Method extended converter
 
 template<typename From, typename To>
 inline bool MetaType::registerConverter_imp(To(From::*func)(bool*) const)
@@ -754,60 +774,6 @@ inline void MetaType::unregisterConverter()
 {
     unregisterConverter(metaTypeId<From>(), metaTypeId<To>());
 }
-
-//--------------------------------------------------------------------------------------------------------------------------------
-// FUNDAMENTALS
-//--------------------------------------------------------------------------------------------------------------------------------
-
-template<> inline constexpr MetaType_ID metaTypeId<void>()
-{ return MetaType_ID{0}; }
-
-#define FOR_EACH_FUNDAMENTAL_TYPE(F)\
-    F(bool, 1) \
-    F(char, 2) \
-    F(signed char, 3) \
-    F(unsigned char, 4) \
-    F(short, 5) \
-    F(unsigned short, 6) \
-    F(int, 7) \
-    F(unsigned int, 8) \
-    F(long int, 9) \
-    F(long unsigned int, 10) \
-    F(long long int, 11) \
-    F(long long unsigned int, 12) \
-    F(float, 13) \
-    F(double, 14) \
-    F(long double, 15) \
-    F(char16_t, 16) \
-    F(char32_t, 17) \
-    F(wchar_t, 18) \
-    F(void*, 19) \
-    F(bool*, 20) \
-    F(char*, 21) \
-    F(signed char*, 22) \
-    F(unsigned char*, 23) \
-    F(short*, 24) \
-    F(unsigned short*, 25) \
-    F(int*, 26) \
-    F(unsigned int*, 27) \
-    F(long int*, 28) \
-    F(long unsigned int*, 29) \
-    F(long long int*, 30) \
-    F(long long unsigned int*, 31) \
-    F(float*, 32) \
-    F(double*, 33) \
-    F(long double*, 34) \
-    F(char16_t*, 35) \
-    F(char32_t*, 36) \
-    F(wchar_t*, 37)
-
-#define DEFINE_STATIC_METATYPE_ID(NAME, TYPEID) \
-template<> inline constexpr MetaType_ID metaTypeId<NAME>() \
-{ return MetaType_ID{TYPEID}; }
-
-FOR_EACH_FUNDAMENTAL_TYPE(DEFINE_STATIC_METATYPE_ID)
-
-#undef DEFINE_STATIC_METATYPE_ID
 
 RTTI_API std::ostream& operator<<(std::ostream &stream, MetaType value);
 
