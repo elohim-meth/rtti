@@ -85,7 +85,7 @@ void register_rtti()
     rtti::MetaType::registerConverter<double, long double>();
 
     register_toString_converter<bool>();
-    //register_toString_converter<int>();
+    register_toString_converter<int>();
     register_toString_converter<unsigned>();
     register_toString_converter<long>();
     register_toString_converter<unsigned long>();
