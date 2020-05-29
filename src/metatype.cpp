@@ -354,8 +354,7 @@ public:
             return false;
 
         std::unique_lock lock{m_lock};
-        auto search = m_items.find(key);
-        if (search != std::end(m_items))
+        if (auto search = m_items.find(key); search != std::end(m_items))
             return false;
 
         m_items.emplace(key, func);
@@ -365,8 +364,7 @@ public:
     F const* get(key_t const &key) const
     {
         std::shared_lock lock{m_lock};
-        auto search = m_items.find(key);
-        if (search != std::end(m_items))
+        if (auto search = m_items.find(key); search != std::end(m_items))
             return search->second;
         return nullptr;
     }

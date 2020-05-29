@@ -9,6 +9,37 @@ std::string intToStr(int value, bool &ok)
     return std::to_string(value);
 }
 
+template<typename From>
+bool register_toString_converter()
+{
+    auto lambda = [](From from) -> std::string
+    {
+        std::ostringstream os;
+        os.exceptions(std::ios::badbit | std::ios::failbit);
+        os << std::boolalpha << from;
+        return os.str();
+
+    };
+    return rtti::MetaType::registerConverter<From, std::string>(lambda);
+}
+
+template<typename To>
+bool register_fromString_converter()
+{
+    auto lambda = [](std::string const &from, bool &ok) -> To
+    {
+        std::istringstream is{from};
+        To to;
+        is >> std::boolalpha >> to;
+        ok = !is.fail();
+        return to;
+
+    };
+    return rtti::MetaType::registerConverter<std::string, To>(lambda);
+}
+
+
+
 enum class operation { add, subtract, multiply, divide };
 
 void register_rtti()
@@ -52,5 +83,27 @@ void register_rtti()
     rtti::MetaType::registerConverter<float, double>();
     rtti::MetaType::registerConverter<float, long double>();
     rtti::MetaType::registerConverter<double, long double>();
+
+    register_toString_converter<bool>();
+    //register_toString_converter<int>();
+    register_toString_converter<unsigned>();
+    register_toString_converter<long>();
+    register_toString_converter<unsigned long>();
+    register_toString_converter<long long>();
+    register_toString_converter<unsigned long long>();
+    register_toString_converter<float>();
+    register_toString_converter<double>();
+    register_toString_converter<long double>();
+
+    register_fromString_converter<bool>();
+    register_fromString_converter<int>();
+    register_fromString_converter<unsigned>();
+    register_fromString_converter<long>();
+    register_fromString_converter<unsigned long>();
+    register_fromString_converter<long long>();
+    register_fromString_converter<unsigned long long>();
+    register_fromString_converter<float>();
+    register_fromString_converter<double>();
+    register_fromString_converter<long double>();
 }
 

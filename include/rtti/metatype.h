@@ -630,10 +630,46 @@ struct RTTI_PRIVATE ConvertFunctor: ConvertFunctionBase
 
     static bool convert(ConvertFunctionBase const &self, void const *in, void *out)
     {
+        try
+        {
+            auto &_this = static_cast<this_t const&>(self);
+            auto from = static_cast<From const*>(in);
+            new (out) To(_this.m_func(*from));
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
+private:
+    F const m_func;
+};
+
+template<typename From, typename To, typename F>
+struct RTTI_PRIVATE ConvertFunctorOk: ConvertFunctionBase
+{
+    using this_t = ConvertFunctorOk<From, To, F>;
+
+    explicit ConvertFunctorOk(F const &func)
+        : ConvertFunctionBase{convert}, m_func(func)
+    {}
+    explicit ConvertFunctorOk(F &&func)
+        : ConvertFunctionBase{convert}, m_func(std::move(func))
+    {}
+    ~ConvertFunctorOk()
+    {
+        MetaType::unregisterConverter<From, To>();
+    }
+
+    static bool convert(ConvertFunctionBase const &self, void const *in, void *out)
+    {
         auto &_this = static_cast<this_t const&>(self);
         auto from = static_cast<From const*>(in);
-        new (out) To(_this.m_func(*from));
-        return true;
+        auto result = false;
+        new (out) To(_this.m_func(*from, result));
+        return result;
     }
 
 private:
@@ -657,10 +693,17 @@ struct RTTI_PRIVATE ConvertMethod: ConvertFunctionBase
 
     static bool convert(ConvertFunctionBase const &self, void const *in, void *out)
     {
-        auto &_this = static_cast<this_t const&>(self);
-        auto from = static_cast<From const*>(in);
-        new (out) To(from->*_this.m_func());
-        return true;
+        try
+        {
+            auto &_this = static_cast<this_t const&>(self);
+            auto from = static_cast<From const*>(in);
+            new (out) To(from->*_this.m_func());
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
     }
 
 private:
@@ -709,8 +752,17 @@ inline bool MetaType::hasConverter() noexcept
 template<typename From, typename To, typename Func>
 inline bool MetaType::registerConverter_imp(Func &&func)
 {
-    static internal::ConvertFunctor<From, To, Func> converter{std::forward<Func>(func)};
-    return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
+    auto constexpr is_functorOk = std::is_invocable_r_v<To, Func, From, bool&>;
+    if constexpr(is_functorOk)
+    {
+        static internal::ConvertFunctorOk<From, To, Func> converter{std::forward<Func>(func)};
+        return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
+    }
+    else
+    {
+        static internal::ConvertFunctor<From, To, Func> converter{std::forward<Func>(func)};
+        return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
+    }
 }
 
 template<typename From, typename To, typename Func>

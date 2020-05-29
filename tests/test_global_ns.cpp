@@ -59,6 +59,9 @@ TEST_CASE("Test global namespace")
             REQUIRE_THROWS(v.ref<int64_t>());
             REQUIRE(v.to<int64_t>() == 256);
             REQUIRE(v == 256);
+            REQUIRE_FALSE(v == "256"s);
+            REQUIRE(v.eq("256"s));
+            REQUIRE_FALSE(v.eq("ABC"s));
         }
 
         SUBCASE("Enum attribute")
@@ -100,4 +103,11 @@ TEST_CASE("Test global namespace")
         REQUIRE_THROWS(v.ref<std::string>() = "Test");
         REQUIRE_THROWS(property->set("Test"s));
     }
+
+    SUBCASE("Test global function")
+    {
+
+    }
+
+
 }

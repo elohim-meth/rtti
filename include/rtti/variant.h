@@ -541,7 +541,7 @@ public:
             if (MetaType::convert(raw_data_ptr(), mt_self, &buffer, mt_value))
             {
                 FINALLY { type_manager_t<T>::destroy(&buffer); };
-                return type_manager_t<T>::compare_eq(&value, &buffer);
+                return type_manager_t<T>::compare_eq(std::addressof(value), &buffer);
             }
         }
 
