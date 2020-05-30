@@ -286,13 +286,14 @@ private:
     static variant invoke_imp(F func, variant const &instance,
                               argument_array_t const &args, mpl::index_sequence<I...>)
     {
+        using namespace std::literals;
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
         {
             if constexpr(is_const_method::value)
                 (instance.ref<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
             else
-                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> "s +
                                        mpl::type_name<class_ref_t>()};
         }
         else if (type.isClassPtr())
@@ -398,13 +399,14 @@ private:
     static variant invoke_imp(F func, variant const &instance, argument_array_t const &args,
                               mpl::index_sequence<I...>)
     {
+        using namespace std::literals;
         auto type = MetaType{instance.typeId()};
         if (type.isClass())
         {
             if constexpr(is_const_method::value)
                 return reference_get((instance.ref<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
             else
-                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> "s +
                                        mpl::type_name<class_ref_t>()};
         }
         else if (type.isClassPtr())
@@ -683,13 +685,14 @@ struct property_invoker<P, member_pointer>
 
     static void set_field(P property, variant const &instance, argument const &arg)
     {
+        using namespace std::literals;
         if constexpr(std::is_const_v<T>)
             throw invoke_error{"Write to readonly property"};
         else
         {
             auto type = MetaType{instance.typeId()};
             if (type.isClass())
-                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> " +
+                throw bad_variant_cast{"Incompatible types: const rtti::variant& -> "s +
                                        mpl::type_name<class_ref_t>()};
             else if (type.isClassPtr())
                 instance.to<C*>()->*property = arg.value<T>();
@@ -819,7 +822,7 @@ public:
     using this_t = meta_define<T, MB>;
 
     template<typename V>
-    this_t _attribute(std::string_view const &name, V &&value)
+    this_t _attribute(std::string_view name, V &&value)
     {
         assert(m_currentItem);
         if (m_currentItem)
@@ -827,7 +830,7 @@ public:
         return *this;
     }
 
-    meta_define<void, this_t> _namespace(std::string_view const &name)
+    meta_define<void, this_t> _namespace(std::string_view name)
     {
         static_assert(std::is_void_v<T>, "Namespace can be defined only in another namespace");
         assert(m_currentContainer && m_currentContainer->category() == mcatNamespace && m_containerStack);
@@ -839,7 +842,7 @@ public:
     }
 
     template<typename C>
-    meta_define<C, this_t> _class(std::string_view const &name)
+    meta_define<C, this_t> _class(std::string_view name)
     {
         static_assert(std::is_class_v<C>, "Template argument <C> must be class");
         static_assert(!std::is_same_v<T, C>, "Recursive class definition");
@@ -891,7 +894,7 @@ public:
     }
 
     template<typename E>
-    this_t _enum(std::string_view const &name)
+    this_t _enum(std::string_view name)
     {
         assert(m_currentContainer);
         m_currentItem = MetaEnum::create(name, *m_currentContainer, metaTypeId<E>(), {});
@@ -899,7 +902,7 @@ public:
     }
 
     template<typename V>
-    this_t _element(std::string_view const &name, V &&value)
+    this_t _element(std::string_view name, V &&value)
     {
         assert(m_currentItem);
         auto category = m_currentItem->category();
@@ -913,7 +916,7 @@ public:
     }
 
     template<typename ...Args>
-    this_t _constructor(std::string_view const &name = "")
+    this_t _constructor(std::string_view name = "")
     {
         static_assert(std::is_class_v<T>, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
@@ -924,7 +927,7 @@ public:
     }
 
     template<typename F>
-    this_t _method(std::string_view const &name, F &&func)
+    this_t _method(std::string_view name, F &&func)
     {
         static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Method can be defined in namespace or class");
@@ -935,7 +938,7 @@ public:
     }
 
     template<typename P>
-    this_t _property(std::string_view const &name, P &&prop)
+    this_t _property(std::string_view name, P &&prop)
     {
         static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Propery can be defined in namespace or class");
@@ -947,7 +950,7 @@ public:
     }
 
     template<typename G, typename S>
-    this_t _property(std::string_view const &name, G &&get, S &&set)
+    this_t _property(std::string_view name, G &&get, S &&set)
     {
         static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Propery can be defined in namespace or class");

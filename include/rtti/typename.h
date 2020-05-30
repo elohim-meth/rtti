@@ -14,19 +14,18 @@ class TypeName final
 public:
     TypeName()
     {
-        char const *prettyFunc = __PRETTY_FUNCTION__;
-        char const *begin = std::strstr(prettyFunc, "T =");
-        if (begin) {
+        auto *prettyFunc = __PRETTY_FUNCTION__;
+        if (auto *begin = std::strstr(prettyFunc, "T ="))
+        {
             begin += sizeof("T =");
-            char const *end = std::strrchr(begin, ']');
-            if (end)
-                m_signature = std::string{begin, end};
+            if (auto *end = std::strrchr(begin, ']'))
+                m_signature = std::string_view{begin, static_cast<size_t>(end - begin)};
         }
     }
-    std::string const& signature() const noexcept
+    auto signature() const noexcept
     { return m_signature; }
 private:
-    std::string m_signature;
+    std::string_view m_signature;
 };
 
 }
@@ -35,7 +34,7 @@ private:
 // C++11 states that initialization of local statics is thread-safe
 // and constructor is called only once. Using __PRETTY_FUNCTION__ hack.
 template<typename T>
-std::string const& type_name()
+std::string_view type_name()
 {
     static internal::TypeName<T> const demangler;
     return demangler.signature();

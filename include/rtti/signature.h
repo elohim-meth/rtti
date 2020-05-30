@@ -56,10 +56,10 @@ struct signature
     static std::string get(std::string_view const &name)
     {
         std::ostringstream os;
-        auto it = prefix_ostream_iterator<std::string>{os, ", "};
-        os << name << "(";
+        auto it = prefix_ostream_iterator<std::string_view>{os, ", "};
+        os << name << '(';
         (it = ... = mpl::type_name<Args>());
-        os << ")";
+        os << ')';
         return os.str();
     }
 };
