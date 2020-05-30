@@ -123,7 +123,7 @@ public:
     static bool registerConverter(To(From::*func)() const);
 
     template<typename From, typename To>
-    static bool registerConverter(To(From::*func)(bool*) const);
+    static bool registerConverter(To(From::*func)(bool&) const);
 
     static void unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId);
     template<typename From, typename To>
@@ -149,7 +149,7 @@ private:
     static bool registerConverter_imp(To(From::*func)() const);
 
     template<typename From, typename To>
-    static bool registerConverter_imp(To(From::*func)(bool*) const);
+    static bool registerConverter_imp(To(From::*func)(bool&) const);
 
     static bool registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
                                   internal::ConvertFunctionBase const &converter);
@@ -169,7 +169,7 @@ private:
 public:
     TypeInfo const* typeInfo(TypeInfoKey) const
     { return m_typeInfo; }
-    static MetaType_ID registerMetaType(std::string_view const &name, std::size_t size,
+    static MetaType_ID registerMetaType(std::string_view name, std::size_t size,
                                         MetaType_ID decay, uint16_t arity, uint16_t const_mask,
                                         TypeFlags flags, metatype_manager_t const *manager,
                                         RegisterTypeKey)
@@ -714,7 +714,7 @@ template<typename From, typename To>
 struct RTTI_PRIVATE ConvertMethodOk: ConvertFunctionBase
 {
     using this_t = ConvertMethodOk<From, To>;
-    using func_t = To(From::*)(bool*) const;
+    using func_t = To(From::*)(bool&) const;
 
     explicit ConvertMethodOk(func_t func)
         : ConvertFunctionBase{convert}, m_func(func)
@@ -730,7 +730,7 @@ struct RTTI_PRIVATE ConvertMethodOk: ConvertFunctionBase
         auto &_this = static_cast<this_t const&>(self);
         auto from = static_cast<From const*>(in);
         auto result = false;
-        new (out) To(from->*_this.m_func(&result));
+        new (out) To(from->*_this.m_func(result));
         return result;
     }
 
@@ -752,15 +752,17 @@ inline bool MetaType::hasConverter() noexcept
 template<typename From, typename To, typename Func>
 inline bool MetaType::registerConverter_imp(Func &&func)
 {
+    using Fu = full_decay_t<Func>;
     auto constexpr is_functorOk = std::is_invocable_r_v<To, Func, From, bool&>;
+
     if constexpr(is_functorOk)
     {
-        static internal::ConvertFunctorOk<From, To, Func> converter{std::forward<Func>(func)};
+        static internal::ConvertFunctorOk<From, To, Fu> converter{std::forward<Func>(func)};
         return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
     }
     else
     {
-        static internal::ConvertFunctor<From, To, Func> converter{std::forward<Func>(func)};
+        static internal::ConvertFunctor<From, To, Fu> converter{std::forward<Func>(func)};
         return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
     }
 }
@@ -770,8 +772,7 @@ inline bool MetaType::registerConverter(Func &&func)
 {
     using F = full_decay_t<From>;
     using T = full_decay_t<To>;
-    using Fu = full_decay_t<Func>;
-    return registerConverter_imp<F, T>(std::forward<Fu>(func));
+    return registerConverter_imp<F, T>(std::forward<Func>(func));
 }
 
 template<typename From, typename To>
@@ -807,14 +808,14 @@ inline bool MetaType::registerConverter(To(From::*func)() const)
 // Method extended converter
 
 template<typename From, typename To>
-inline bool MetaType::registerConverter_imp(To(From::*func)(bool*) const)
+inline bool MetaType::registerConverter_imp(To(From::*func)(bool&) const)
 {
     static internal::ConvertMethodOk<From, To> converter{func};
     return registerConverter(metaTypeId<From>(), metaTypeId<To>(), converter);
 }
 
 template<typename From, typename To>
-inline bool MetaType::registerConverter(To(From::*func)(bool*) const)
+inline bool MetaType::registerConverter(To(From::*func)(bool&) const)
 {
     using F = full_decay_t<From>;
     using T = full_decay_t<To>;

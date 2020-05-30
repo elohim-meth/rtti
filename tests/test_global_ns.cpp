@@ -106,6 +106,47 @@ TEST_CASE("Test global namespace")
 
     SUBCASE("Test global function")
     {
+        auto method = ns_Global->getMethod("intToStr");
+        REQUIRE(method);
+        SUBCASE("Test invoke 1")
+        {
+            bool ok = false;
+            auto v = method->invoke(123, ok);
+            REQUIRE(((v.ref<std::string>() == "123") && ok));
+            REQUIRE(((v == "123"s) && ok));
+        }
+        SUBCASE("Test invoke 2")
+        {
+            rtti::variant ok = false;
+            rtti::variant number = 123;
+            auto v = method->invoke(number, ok);
+            REQUIRE(((v == "123"s) && ok.ref<bool>()));
+        }
+        SUBCASE("Test invoke 3")
+        {
+            bool ok = false;
+            rtti::variant v_ok = std::ref(ok);
+            auto v = method->invoke(123, ok);
+            REQUIRE(((v.ref<std::string>() == "123") && ok));
+            REQUIRE(((v == "123"s) && ok));
+        }
+        SUBCASE("Test invoke 4")
+        {
+            bool const ok = false;
+            rtti::variant v_ok = std::ref(ok);
+            bool ok1 = false;
+            rtti::variant const v_ok1 = false;
+            rtti::variant v_ok2 = std::cref(ok1);;
+            REQUIRE_THROWS(method->invoke(123, false));
+            REQUIRE_THROWS(method->invoke(123, ok));
+            REQUIRE_THROWS(method->invoke(123, v_ok));
+            REQUIRE_THROWS(method->invoke(123, v_ok1));
+            REQUIRE_THROWS(method->invoke(123, v_ok2));
+            rtti::variant number = 123.12;
+            REQUIRE_THROWS(method->invoke("ABC", ok1));
+            REQUIRE_THROWS(method->invoke(3.14, ok1));
+            REQUIRE_THROWS(method->invoke(number, ok1));
+        }
 
     }
 
