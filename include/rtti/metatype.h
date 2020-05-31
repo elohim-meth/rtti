@@ -249,7 +249,7 @@ struct type_function_table_impl
                 if (where)
                     new (where) T();
         }
-        else throw runtime_error("Type T = "s + mpl::type_name<T>() + "isn't DefaultConstructible");
+        else throw runtime_error("Type T = "s + type_name<T>() + "isn't DefaultConstructible");
     }
 
     static void copy_construct(void const *source, void *where)
@@ -261,7 +261,7 @@ struct type_function_table_impl
             if (source && where)
                 new (where) T(*static_cast<T const*>(source));
         }
-        else throw runtime_error("Type T = "s + mpl::type_name<T>() + "isn't CopyConstructible");
+        else throw runtime_error("Type T = "s + type_name<T>() + "isn't CopyConstructible");
 
     }
 
@@ -274,7 +274,7 @@ struct type_function_table_impl
             if (source && where)
                 new (where) T(std::move(*static_cast<T*>(source)));
         }
-        else throw runtime_error("Type T = "s + mpl::type_name<T>() + "isn't MoveConstructible");
+        else throw runtime_error("Type T = "s + type_name<T>() + "isn't MoveConstructible");
     }
 
     static void move_or_copy(void *source, [[maybe_unused]] bool movable, void *where)
@@ -305,7 +305,7 @@ struct type_function_table_impl
                 return false;
             return (*static_cast<T const*>(lhs) == *static_cast<T const *>(rhs));
         }
-        else throw runtime_error("Type T = "s + mpl::type_name<T>() + "isn't EQ_comparable");
+        else throw runtime_error("Type T = "s + type_name<T>() + "isn't EQ_comparable");
     }
 };
 
@@ -342,7 +342,7 @@ struct type_function_table_impl<T[N]>
                         new (begin) Base();
                 }
         }
-        else throw runtime_error("Type T = "s + mpl::type_name<Base>() + "isn't DefaultConstructible");
+        else throw runtime_error("Type T = "s + type_name<Base>() + "isn't DefaultConstructible");
     }
 
     static void copy_construct(void const *source, void *where)
@@ -357,7 +357,7 @@ struct type_function_table_impl<T[N]>
                 std::copy(it, it + Length, static_cast<Base*>(where));
             }
         }
-        else throw runtime_error("Type T = "s + mpl::type_name<Base>() + "isn't CopyConstructible");
+        else throw runtime_error("Type T = "s + type_name<Base>() + "isn't CopyConstructible");
     }
 
     static void move_construct(void *source, void *where)
@@ -372,7 +372,7 @@ struct type_function_table_impl<T[N]>
                 std::move(it, it + Length, static_cast<Base*>(where));
             }
         }
-        else throw runtime_error("Type T = "s + mpl::type_name<Base>() + "isn't MoveConstructible");
+        else throw runtime_error("Type T = "s + type_name<Base>() + "isn't MoveConstructible");
     }
 
     static void move_or_copy(void *source, [[maybe_unused]] bool movable, void *where)
@@ -413,7 +413,7 @@ struct type_function_table_impl<T[N]>
             auto *first2 = static_cast<Base const*>(rhs);
             return std::equal(first1, last1, first2);
         }
-        else throw runtime_error("Type T = "s + mpl::type_name<T>() + "isn't EQ_Comparable");
+        else throw runtime_error("Type T = "s + type_name<T>() + "isn't EQ_Comparable");
     }
 
 };
@@ -432,7 +432,7 @@ inline T move_or_copy(void *source, bool movable)
     if constexpr(std::is_copy_constructible_v<T>)
          return *static_cast<T*>(source);
 
-    throw runtime_error("Type T = "s + mpl::type_name<T>() + "isn't CopyConstructible");
+    throw runtime_error("Type T = "s + type_name<T>() + "isn't CopyConstructible");
 }
 
 template<typename T>
@@ -501,7 +501,7 @@ class meta_type final
         if constexpr(!std::is_same_v<T, Decay>)
             decay = metaTypeId<Decay>();
 
-        auto const &name = mpl::type_name<T>();
+        auto const &name = type_name<T>();
         auto constexpr flags = type_flags<T>::value;
         auto constexpr size = size_of_v<T>;
         std::uint16_t constexpr arity = pointer_arity<NoRef>::value;

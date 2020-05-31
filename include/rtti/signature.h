@@ -58,7 +58,7 @@ struct signature
         std::ostringstream os;
         auto it = prefix_ostream_iterator<std::string_view>{os, ", "};
         os << name << '(';
-        (it = ... = mpl::type_name<Args>());
+        (it = ... = type_name<Args>());
         os << ')';
         return os.str();
     }

@@ -294,7 +294,7 @@ private:
                 (instance.ref<class_t>().*func)(args[I]->value<argument_get_t<I>>()...);
             else
                 throw bad_variant_cast{"Incompatible types: const rtti::variant& -> "s +
-                                       mpl::type_name<class_ref_t>()};
+                                       type_name<class_ref_t>()};
         }
         else if (type.isClassPtr())
             (instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...);
@@ -407,7 +407,7 @@ private:
                 return reference_get((instance.ref<class_t>().*func)(args[I]->value<argument_get_t<I>>()...));
             else
                 throw bad_variant_cast{"Incompatible types: const rtti::variant& -> "s +
-                                       mpl::type_name<class_ref_t>()};
+                                       type_name<class_ref_t>()};
         }
         else if (type.isClassPtr())
             return reference_get((instance.to<class_ptr_t>()->*func)(args[I]->value<argument_get_t<I>>()...));
@@ -693,7 +693,7 @@ struct property_invoker<P, member_pointer>
             auto type = MetaType{instance.typeId()};
             if (type.isClass())
                 throw bad_variant_cast{"Incompatible types: const rtti::variant& -> "s +
-                                       mpl::type_name<class_ref_t>()};
+                                       type_name<class_ref_t>()};
             else if (type.isClassPtr())
                 instance.to<C*>()->*property = arg.value<T>();
         }
@@ -865,7 +865,7 @@ public:
     template<typename C>
     meta_define<C, this_t> _class()
     {
-        return _class<C>(mpl::type_name<C>());
+        return _class<C>(type_name<C>());
     }
 
     template<typename F>

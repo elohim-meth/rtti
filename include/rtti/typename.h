@@ -4,7 +4,7 @@
 #include <string>
 #include <cstring>
 
-namespace mpl {
+namespace rtti {
 
 namespace internal {
 
@@ -19,7 +19,7 @@ public:
         {
             begin += sizeof("T =");
             if (auto *end = std::strrchr(begin, ']'))
-                m_signature = std::string_view{begin, static_cast<size_t>(end - begin)};
+                m_signature = {begin, static_cast<size_t>(end - begin)};
         }
     }
     auto signature() const noexcept

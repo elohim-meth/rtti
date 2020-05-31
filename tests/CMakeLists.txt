@@ -4,7 +4,11 @@ add_executable(doctest_tests
     doctest_main.cpp
     register_rtti.cpp
 )
-target_sources(doctest_tests PRIVATE test_global_ns.cpp)
+target_sources(doctest_tests PRIVATE
+    test_type_name.cpp
+    test_meta_type.cpp
+    test_global_ns.cpp)
+
 target_link_libraries(doctest_tests PRIVATE doctest::doctest RTTI::rtti)
 
 set_target_properties(doctest_tests PROPERTIES
