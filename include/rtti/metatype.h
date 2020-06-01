@@ -54,15 +54,18 @@ enum class TypeFlags: std::uint32_t {
     Union                = 1 << 11,
     Class                = 1 << 12,
 
-    Pod                  = 1 << 13,
-    Abstract             = 1 << 14,
-    Polymorphic          = 1 << 15,
-    DefaultConstructible = 1 << 16,
-    CopyConstructible    = 1 << 17,
-    CopyAssignable       = 1 << 18,
-    MoveConstructible    = 1 << 19,
-    MoveAssignable       = 1 << 20,
-    Destructible         = 1 << 21,
+    StandardLayout       = 1 << 13,
+    Trivial              = 1 << 14,
+    Abstract             = 1 << 15,
+    Polymorphic          = 1 << 16,
+    DefaultConstructible = 1 << 17,
+    CopyConstructible    = 1 << 18,
+    CopyAssignable       = 1 << 19,
+    MoveConstructible    = 1 << 20,
+    MoveAssignable       = 1 << 21,
+    Destructible         = 1 << 22,
+
+    EQ_Comparable        = 1 << 23,
 };
 
 BITMASK_ENUM(TypeFlags)
@@ -94,6 +97,7 @@ public:
     inline bool isPointer() const noexcept;
     inline bool isVoidPtr() const noexcept;
     inline bool isClassPtr() const noexcept;
+    inline bool isFunctionPtr() const noexcept;
     inline bool isArray() const noexcept;
 
     uint16_t pointerArity() const noexcept;
@@ -474,7 +478,8 @@ struct type_flags {
         | (std::is_function_v<base>                ? Flags::Function               : Flags::None)
         | (std::is_union_v<base>                   ? Flags::Union                  : Flags::None)
         | (std::is_class_v<base>                   ? Flags::Class                  : Flags::None)
-        | (std::is_pod_v<base>                     ? Flags::Pod                    : Flags::None)
+        | (std::is_standard_layout_v<base>         ? Flags::StandardLayout         : Flags::None)
+        | (std::is_trivial_v<base>                 ? Flags::Trivial                : Flags::None)
         | (std::is_abstract_v<base>                ? Flags::Abstract               : Flags::None)
         | (std::is_polymorphic_v<base>             ? Flags::Polymorphic            : Flags::None)
         | (std::is_default_constructible_v<base>   ? Flags::DefaultConstructible   : Flags::None)
@@ -483,6 +488,7 @@ struct type_flags {
         | (std::is_move_constructible_v<base>      ? Flags::MoveConstructible      : Flags::None)
         | (std::is_move_assignable_v<base>         ? Flags::MoveAssignable         : Flags::None)
         | (std::is_destructible_v<base>            ? Flags::Destructible           : Flags::None)
+        | (has_eq_v<no_ref,no_ref>                 ? Flags::EQ_Comparable          : Flags::None)
     ;
 };
 
@@ -586,6 +592,14 @@ inline bool MetaType::isClassPtr() const noexcept
     auto flags = typeFlags();
     return (pointerArity() == 1) &&
            ((flags & TypeFlags::Class) == TypeFlags::Class) &&
+            ((flags & TypeFlags::Pointer) == TypeFlags::Pointer);
+}
+
+inline bool MetaType::isFunctionPtr() const noexcept
+{
+    auto flags = typeFlags();
+    return (pointerArity() == 1) &&
+           ((flags & TypeFlags::Function) == TypeFlags::Function) &&
             ((flags & TypeFlags::Pointer) == TypeFlags::Pointer);
 }
 

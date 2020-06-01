@@ -29,6 +29,8 @@ operator+(std::basic_string<_CharT, _Traits, _Alloc> &&lhs,
 template<bool B, typename T, typename F>
 constexpr auto conditional_v = std::conditional_t<B, T, F>::value;
 
+//-----------------------------------------------------------------------------------------------------------------------------
+
 template<typename T>
 struct size_of: std::integral_constant<std::size_t, sizeof(T)>
 {};
@@ -362,6 +364,72 @@ using has_nt_eq_t = typename has_nt_eq<T, U>::type;
 
 template<typename T, typename U>
 constexpr auto has_nt_eq_v = has_nt_eq<T, U>::value;
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+template<typename T>
+struct is_template_type: std::false_type
+{
+    using args = mpl::empty_list;
+};
+
+template<template <typename... > class T, typename ...Args>
+struct is_template_type<T<Args...>>: std::true_type
+{
+    using args = mpl::type_list<Args...>;
+};
+
+template<template <auto... > class T, auto ...Vals>
+struct is_template_type<T<Vals...>>: std::true_type
+{
+    using args = mpl::type_list<decltype(Vals)...>;
+};
+
+template<template <typename, auto> class T, typename Arg, auto Val>
+struct is_template_type<T<Arg, Val>>: std::true_type
+{
+    using args = mpl::type_list<Arg, decltype(Val)>;
+};
+
+template<template <auto, typename> class T, auto Val, typename Arg>
+struct is_template_type<T<Val, Arg>>: std::true_type
+{
+    using args = mpl::type_list<decltype(Val), Arg>;
+};
+
+template<template <auto, typename, typename> class T, auto Val, typename Arg1, typename Arg2>
+struct is_template_type<T<Val, Arg1, Arg2>>: std::true_type
+{
+    using args = mpl::type_list<decltype(Val), Arg1, Arg2>;
+};
+
+template<template <typename, typename, auto> class T, typename Arg1, typename Arg2, auto Val>
+struct is_template_type<T<Arg1, Arg2, Val>>: std::true_type
+{
+    using args = mpl::type_list<Arg1, Arg2, decltype(Val)>;
+};
+
+template<template <auto, typename, typename, typename> class T, auto Val, typename Arg1, typename Arg2, typename Arg3>
+struct is_template_type<T<Val, Arg1, Arg2, Arg3>>: std::true_type
+{
+    using args = mpl::type_list<decltype(Val), Arg1, Arg2, Arg3>;
+};
+
+template<template <typename, typename, typename, auto> class T, typename Arg1, typename Arg2, typename Arg3, auto Val>
+struct is_template_type<T<Arg1, Arg2, Arg3, Val>>: std::true_type
+{
+    using args = mpl::type_list<Arg1, Arg2, Arg3, decltype(Val)>;
+};
+
+template<typename T>
+using is_template_type_t = typename is_template_type<T>::type;
+
+template<typename T>
+using template_type_args_t = typename is_template_type<T>::args;
+
+template<typename T, typename U>
+constexpr auto is_template_type_v = is_template_type<T>::value;
+
 
 } // namespace rtti
 
