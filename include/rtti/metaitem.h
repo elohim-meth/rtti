@@ -1,6 +1,7 @@
 ﻿#ifndef METAITEM_H
 #define METAITEM_H
 
+#include <rtti/export.h>
 #include <rtti/defines.h>
 
 #include <functional>
@@ -33,7 +34,7 @@ class RTTI_API MetaItem
 {
     DECLARE_PRIVATE(MetaItem)
 public:
-    using enum_attribute_t = std::function<bool(std::string_view const&, variant const&)>;
+    using enum_attribute_t = std::function<bool(std::string_view, variant const&)>;
 
     virtual MetaCategory category() const = 0;
     std::string const& name() const;
@@ -42,10 +43,10 @@ public:
     std::size_t attributeCount() const;
     variant const& attribute(std::size_t index) const;
     std::string const &attributeName(std::size_t index) const;
-    variant const& attribute(std::string_view const &name) const;
+    variant const& attribute(std::string_view name) const;
     void for_each_attribute(enum_attribute_t const &func) const;
 protected:
-    explicit MetaItem(std::string_view const &name, MetaContainer const &owner);
+    explicit MetaItem(std::string_view name, MetaContainer const &owner);
     explicit MetaItem(MetaItemPrivate &value);
     MetaItem(MetaItem const&) = delete;
     MetaItem& operator=(MetaItem const&) = delete;
@@ -55,10 +56,8 @@ protected:
 
     virtual void checkDeferredDefine() const;
 
-    RTTI_PRIVATE void setAttribute(std::string_view const &name,
-                                   variant const &value);
-    RTTI_PRIVATE void setAttribute(std::string_view const &name,
-                                   variant &&value);
+    RTTI_PRIVATE void setAttribute(std::string_view name, variant const &value);
+    RTTI_PRIVATE void setAttribute(std::string_view name, variant &&value);
     RTTI_PRIVATE std::unique_ptr<MetaItemPrivate> d_ptr;
 
 private:
@@ -67,11 +66,11 @@ private:
     };
     friend class rtti::internal::MetaItemList;
 public:
-    RTTI_PRIVATE void setAttribute(std::string_view const &name,
+    RTTI_PRIVATE void setAttribute(std::string_view name,
                                    variant const &value,
                                    SetAttributeKey)
     { setAttribute(name, value); }
-    RTTI_PRIVATE void setAttribute(std::string_view const &name,
+    RTTI_PRIVATE void setAttribute(std::string_view name,
                                    variant &&value,
                                    SetAttributeKey)
     { setAttribute(name, std::move(value)); }

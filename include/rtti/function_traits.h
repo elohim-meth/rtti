@@ -1,7 +1,7 @@
 ﻿#ifndef FUNCTION_TRAITS_H
 #define FUNCTION_TRAITS_H
 
-#include "typelist.h"
+#include <rtti/typelist.h>
 
 #include <functional>
 #include <type_traits>

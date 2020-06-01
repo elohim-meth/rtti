@@ -53,7 +53,7 @@ public:
 template<typename ...Args>
 struct signature
 {
-    static std::string get(std::string_view const &name)
+    static std::string get(std::string_view name)
     {
         std::ostringstream os;
         auto it = prefix_ostream_iterator<std::string_view>{os, ", "};

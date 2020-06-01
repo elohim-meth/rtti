@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include <rtti/defines.h>
+#include <rtti/export.h>
 
 namespace rtti {
 

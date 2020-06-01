@@ -10,11 +10,11 @@ namespace rtti {
 // MetaClass
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaClass::MetaClass(std::string_view const &name, MetaContainer const &owner, MetaType_ID typeId)
+MetaClass::MetaClass(std::string_view name, MetaContainer const &owner, MetaType_ID typeId)
     : MetaContainer{*new MetaClassPrivate{name, owner, typeId}}
 {}
 
-MetaClass* MetaClass::create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId)
+MetaClass* MetaClass::create(std::string_view name, MetaContainer &owner, MetaType_ID typeId)
 {
     auto result = const_cast<MetaClass*>(owner.getClass(name));
     if (!result)
@@ -46,7 +46,7 @@ MetaClass const* MetaClass::find(MetaType_ID typeId)
     return type.metaClass();
 }
 
-MetaClass const* MetaClass::find(std::string_view const &name)
+MetaClass const* MetaClass::find(std::string_view name)
 {
     auto type = MetaType{name};
     return type.metaClass();
@@ -179,7 +179,7 @@ void* MetaClass::cast(MetaClass const *base, void *instance) const
     return const_cast<void*>(cast(base, const_cast<void const*>(instance)));
 }
 
-MetaMethod const* MetaClass::getMethodInternal(std::string_view const &name) const
+MetaMethod const* MetaClass::getMethodInternal(std::string_view name) const
 {
     using item_t = internal::BaseClassList::item_t;
 
@@ -207,7 +207,7 @@ MetaMethod const* MetaClass::getMethodInternal(std::string_view const &name) con
     return (found ? result : nullptr);
 }
 
-MetaProperty const* MetaClass::getPropertyInternal(std::string_view const &name) const
+MetaProperty const* MetaClass::getPropertyInternal(std::string_view name) const
 {
     using item_t = internal::BaseClassList::item_t;
 

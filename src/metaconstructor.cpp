@@ -2,12 +2,12 @@
 
 namespace rtti {
 
-MetaConstructor::MetaConstructor(std::string_view const &name, MetaContainer &owner,
+MetaConstructor::MetaConstructor(std::string_view name, MetaContainer &owner,
                                  std::unique_ptr<IConstructorInvoker> constructor)
     : MetaItem{*new MetaConstructorPrivate{name, owner, std::move(constructor)}}
 {}
 
-MetaConstructor* MetaConstructor::create(std::string_view const &name, MetaContainer &owner,
+MetaConstructor* MetaConstructor::create(std::string_view name, MetaContainer &owner,
                                          std::unique_ptr<IConstructorInvoker> constructor)
 {
     if (!constructor)

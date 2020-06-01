@@ -1,4 +1,5 @@
 ﻿#include "metaitem_p.h"
+
 #include <rtti/metacontainer.h>
 
 namespace rtti {
@@ -17,7 +18,7 @@ variant const& NamedVariantList::get(std::size_t index) const
     return variant::empty_variant;
 }
 
-variant const& NamedVariantList::get(std::string_view const &name) const
+variant const& NamedVariantList::get(std::string_view name) const
 {
     if (!name.empty())
     {
@@ -62,7 +63,7 @@ MetaItemPrivate::~MetaItemPrivate() = default;
 // MetaItem
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaItem::MetaItem(std::string_view const &name, MetaContainer const &owner)
+MetaItem::MetaItem(std::string_view name, MetaContainer const &owner)
     : MetaItem(*new MetaItemPrivate{name, owner})
 {}
 
@@ -115,7 +116,7 @@ std::string const& MetaItem::attributeName(std::size_t index) const
     return d->m_attributes.name(index);
 }
 
-variant const& MetaItem::attribute(std::string_view const &name) const
+variant const& MetaItem::attribute(std::string_view name) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -129,19 +130,19 @@ void MetaItem::for_each_attribute(enum_attribute_t const &func) const
 
     checkDeferredDefine();
     auto d = d_func();
-    d->m_attributes.for_each([&func](std::string_view const &name, variant const &value) -> bool
+    d->m_attributes.for_each([&func](std::string_view name, variant const &value) -> bool
     {
         return func(name, value);
     });
 }
 
-void MetaItem::setAttribute(std::string_view const &name, variant const &value)
+void MetaItem::setAttribute(std::string_view name, variant const &value)
 {
     auto d = d_func();
     d->m_attributes.set(name, value);
 }
 
-void MetaItem::setAttribute(std::string_view const &name, variant &&value)
+void MetaItem::setAttribute(std::string_view name, variant &&value)
 {
     auto d = d_func();
     d->m_attributes.set(name, std::move(value));

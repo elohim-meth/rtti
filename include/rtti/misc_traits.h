@@ -2,7 +2,6 @@
 #define MISC_TRAITS_H
 
 #include <rtti/typelist.h>
-#include <rtti/sfinae.h>
 
 #include <string>
 

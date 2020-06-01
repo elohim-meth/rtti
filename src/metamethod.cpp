@@ -18,12 +18,12 @@ MetaCategory MetaMethod::category() const
     return mcatMethod;
 }
 
-MetaMethod::MetaMethod(std::string_view const &name, MetaContainer &owner,
+MetaMethod::MetaMethod(std::string_view name, MetaContainer &owner,
                        std::unique_ptr<IMethodInvoker> invoker)
     : MetaItem(*new MetaMethodPrivate{name, owner, std::move(invoker)})
 {}
 
-MetaMethod* MetaMethod::create(std::string_view const &name, MetaContainer &owner,
+MetaMethod* MetaMethod::create(std::string_view name, MetaContainer &owner,
                                std::unique_ptr<IMethodInvoker> invoker)
 {
     if (!invoker)

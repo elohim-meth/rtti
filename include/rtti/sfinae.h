@@ -2,7 +2,6 @@
 #define SFINAE_H
 
 #include <rtti/function_traits.h>
-
 #include <type_traits>
 
 #define HAS_TYPE(NAME) \
@@ -66,7 +65,6 @@ struct can_call_method_##NAME<T, R(Args...), \
                            >::type \
     >: std::true_type \
 {};
-
 
 namespace mpl {
 // Non-capturing lambdas have a very interesting property : they can convert to an adequate function pointer,

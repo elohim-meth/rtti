@@ -1,9 +1,9 @@
 ﻿#ifndef METAPROPERTY_H
 #define METAPROPERTY_H
 
-#include "metaitem.h"
-#include "metatype.h"
-#include "argument.h"
+#include <rtti/metaitem.h>
+#include <rtti/metatype.h>
+#include <rtti/argument.h>
 
 namespace rtti {
 
@@ -47,9 +47,9 @@ public:
         return invoker()->readOnly();
     }
 protected:
-    explicit MetaProperty(std::string_view const &name, MetaContainer &owner,
+    explicit MetaProperty(std::string_view name, MetaContainer &owner,
                         std::unique_ptr<IPropertyInvoker> invoker);
-    static MetaProperty* create(std::string_view const &name, MetaContainer &owner,
+    static MetaProperty* create(std::string_view name, MetaContainer &owner,
                               std::unique_ptr<IPropertyInvoker> invoker);
 private:
     IPropertyInvoker const* invoker() const;
@@ -107,7 +107,7 @@ private:
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    static MetaProperty* create(std::string_view const &name, MetaContainer &owner,
+    static MetaProperty* create(std::string_view name, MetaContainer &owner,
                               std::unique_ptr<IPropertyInvoker> invoker,
                               CreateAccessKey)
     { return create(name, owner, std::move(invoker)); }

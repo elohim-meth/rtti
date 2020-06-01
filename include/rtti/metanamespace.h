@@ -16,7 +16,7 @@ public:
     MetaCategory category() const override;
 protected:
     using MetaContainer::MetaContainer;
-    static MetaNamespace* create(std::string_view const &name, MetaContainer &owner);
+    static MetaNamespace* create(std::string_view name, MetaContainer &owner);
 private:
     MetaNamespace(); //global namespace
 
@@ -24,7 +24,7 @@ private:
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    static MetaNamespace* create(std::string_view const &name, MetaContainer &owner, CreateAccessKey)
+    static MetaNamespace* create(std::string_view name, MetaContainer &owner, CreateAccessKey)
     { return create(name, owner); }
 };
 

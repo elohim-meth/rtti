@@ -53,7 +53,7 @@ inline MetaItem* MetaItemList::get(std::size_t index) const
     return nullptr;
 }
 
-inline MetaItem* MetaItemList::get(std::string_view const &name) const
+inline MetaItem* MetaItemList::get(std::string_view name) const
 {
     if (name.empty())
         return nullptr;
@@ -87,7 +87,7 @@ inline bool MetaContainerPrivate::addItem(MetaItem *value)
     return m_lists[category]->add(value);
 }
 
-MetaItem* MetaContainerPrivate::findMethod(MetaCategory category, std::string_view const &name) const
+MetaItem* MetaContainerPrivate::findMethod(MetaCategory category, std::string_view name) const
 {
     MetaItem *result = nullptr;
     m_lists[category]->for_each([&name, &result](MetaItem *item) -> bool
@@ -131,7 +131,7 @@ MetaItem* MetaContainerPrivate::findMethod(MetaCategory category, std::string_vi
 // MetaContainer
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaContainer::MetaContainer(std::string_view const &name, MetaContainer const &owner)
+MetaContainer::MetaContainer(std::string_view name, MetaContainer const &owner)
     : MetaItem(*new MetaContainerPrivate(name, owner))
 {}
 
@@ -206,7 +206,7 @@ std::size_t MetaContainer::count(MetaCategory category) const
     return d->size(category);
 }
 
-MetaItem const* MetaContainer::item(MetaCategory category, std::string_view const &name) const
+MetaItem const* MetaContainer::item(MetaCategory category, std::string_view name) const
 {
     checkDeferredDefine();
     auto d = d_func();
@@ -224,7 +224,7 @@ MetaItem const* MetaContainer::item(MetaCategory category, std::size_t index) co
 // Namespace
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaNamespace const* MetaContainer::getNamespace(const std::string_view &name) const
+MetaNamespace const* MetaContainer::getNamespace(std::string_view name) const
 {
     return static_cast<MetaNamespace const*>(item(mcatNamespace, name));
 }
@@ -243,7 +243,7 @@ MetaNamespace const* MetaContainer::getNamespace(std::size_t index) const
 // Class
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaClass const* MetaContainer::getClass(std::string_view const &name) const
+MetaClass const* MetaContainer::getClass(std::string_view name) const
 {
     return static_cast<MetaClass const*>(item(mcatClass, name));
 }
@@ -275,7 +275,7 @@ void MetaContainer::for_each_class(enum_class_t const &func) const
 // Constructor
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaConstructor const* MetaContainer::getConstructor(std::string_view const &name) const
+MetaConstructor const* MetaContainer::getConstructor(std::string_view name) const
 {
     checkDeferredDefine();
     return static_cast<MetaConstructor const*>(d_func()->findMethod(mcatConstructor, name));
@@ -311,13 +311,13 @@ MetaConstructor const* MetaContainer::moveConstructor() const
 // Method
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaMethod const* MetaContainer::getMethodInternal(std::string_view const &name) const
+MetaMethod const* MetaContainer::getMethodInternal(std::string_view name) const
 {
     checkDeferredDefine();
     return static_cast<MetaMethod const*>(d_func()->findMethod(mcatMethod, name));
 }
 
-MetaMethod const* MetaContainer::getMethod(std::string_view const &name) const
+MetaMethod const* MetaContainer::getMethod(std::string_view name) const
 {
     if (name.empty())
         return nullptr;
@@ -351,12 +351,12 @@ void MetaContainer::for_each_method(enum_method_t const &func) const
 // Property
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaProperty const* MetaContainer::getPropertyInternal(std::string_view const &name) const
+MetaProperty const* MetaContainer::getPropertyInternal(std::string_view name) const
 {
     return static_cast<MetaProperty const*>(item(mcatProperty, name));
 }
 
-MetaProperty const* MetaContainer::getProperty(std::string_view const &name) const
+MetaProperty const* MetaContainer::getProperty(std::string_view name) const
 {
     return getPropertyInternal(name);
 }
@@ -375,7 +375,7 @@ MetaProperty const* MetaContainer::getProperty(std::size_t index) const
 // Enum
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaEnum const* MetaContainer::getEnum(std::string_view const &name) const
+MetaEnum const* MetaContainer::getEnum(std::string_view name) const
 {
     return static_cast<MetaEnum const*>(item(mcatEnum, name));
 }

@@ -11,8 +11,6 @@
 #include <rtti/metaitem.h>
 #include <rtti/signature.h>
 
-#include <rtti/function_traits.h>
-
 #include <stack>
 #include <cassert>
 #include <type_traits>
@@ -109,7 +107,7 @@ struct method_invoker<F, void_static_func>
     { return metaTypeId<void>(); }
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
-    static std::string signature(std::string_view const &name)
+    static std::string signature(std::string_view name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -169,7 +167,7 @@ struct method_invoker<F, return_static_func>
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
 
-    static std::string signature(std::string_view const &name)
+    static std::string signature(std::string_view name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -227,7 +225,7 @@ struct method_invoker<F, void_member_func>
     { return metaTypeId<void>(); }
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
-    static std::string signature(std::string_view const &name)
+    static std::string signature(std::string_view name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -331,7 +329,7 @@ struct method_invoker<F, return_member_func>
     { return metaTypeId<Result>(); }
     static std::vector<MetaType_ID> parametersTypeId()
     { return parametersTypeId(argument_indexes_t{}); }
-    static std::string signature(std::string_view const &name)
+    static std::string signature(std::string_view name)
     { return f_signature<F>::get(name); }
 
     static variant invoke(F func,
@@ -450,7 +448,7 @@ struct MethodInvoker: IMethodInvoker
     std::vector<MetaType_ID> parametersTypeId() const override
     { return invoker_t::parametersTypeId(); }
 
-    std::string signature(std::string_view const &name) const override
+    std::string signature(std::string_view name) const override
     { return invoker_t::signature(name); }
 
     variant invoke_static(argument arg0 = argument{}, argument arg1 = argument{},
@@ -519,7 +517,7 @@ struct ConstructorInvoker: IConstructorInvoker
         return {metaTypeId<Args>()...};
     }
 
-    std::string signature(std::string_view const &name) const override
+    std::string signature(std::string_view name) const override
     {
         using  args_size_t = std::integral_constant<int, sizeof... (Args)>;
         return signature(name, args_size_t{});
@@ -547,13 +545,13 @@ struct ConstructorInvoker: IConstructorInvoker
                           argument, argument, argument, argument, argument) const override
     { assert(false); return variant::empty_variant; }
 private:
-    static constexpr char const* signature(std::string_view const &,
+    static constexpr char const* signature(std::string_view,
                                            std::integral_constant<int, 0>)
     {
         return DEFAULT_CONSTRUCTOR_SIG;
     }
 
-    static std::string signature(std::string_view const &name,
+    static std::string signature(std::string_view name,
                                  std::integral_constant<int, 1>)
     {
         using Arg = argument_get_t<0>;
@@ -569,7 +567,7 @@ private:
     }
 
     template<int N>
-    static std::string signature(std::string_view const &name,
+    static std::string signature(std::string_view name,
                                  std::integral_constant<int, N>)
     {
         return ::rtti::signature<Args...>::get(name);
@@ -1055,5 +1053,21 @@ private:
 RTTI_API meta_global global_define();
 
 } // namespace rtti
+
+#define RTTI_REGISTER                                                               \
+static void rtti_auto_register_function_();                                         \
+namespace                                                                           \
+{                                                                                   \
+    struct rtti_auto_register_t                                                     \
+    {                                                                               \
+        rtti_auto_register_t()                                                      \
+        {                                                                           \
+            rtti_auto_register_function_();                                         \
+        }                                                                           \
+    };                                                                              \
+}                                                                                   \
+static const rtti_auto_register_t CONCAT(auto_register_,__LINE__);                  \
+static void rtti_auto_register_function_()
+
 
 #endif // METADEFINE_H

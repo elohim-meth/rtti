@@ -9,7 +9,7 @@ namespace rtti {
 class RTTI_PRIVATE MetaMethodPrivate: public MetaItemPrivate
 {
 public:
-    MetaMethodPrivate(std::string_view const &name, const MetaContainer &owner,
+    MetaMethodPrivate(std::string_view name, const MetaContainer &owner,
                       std::unique_ptr<IMethodInvoker> invoker)
         : MetaItemPrivate{name, owner},
           m_invoker{std::move(invoker)}

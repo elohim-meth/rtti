@@ -1,15 +1,14 @@
 ﻿#ifndef METATYPE_H
 #define METATYPE_H
 
+#include <rtti/defines.h>
+#include <rtti/export.h>
+
 #include <rtti/misc_traits.h>
 #include <rtti/metaerror.h>
 
 #include <rtti/typename.h>
 #include <rtti/tagged_id.h>
-
-#include <limits>
-
-#include <rtti/defines.h>
 
 namespace rtti {
 
@@ -529,6 +528,15 @@ inline MetaType_ID metaTypeId()
 template<>
 inline MetaType_ID metaTypeId<void>()
 { return MetaType_ID{}; }
+
+template <typename T>
+inline MetaType metaType()
+{ return MetaType{metaTypeId<T>()}; }
+
+template <typename T>
+inline MetaType metaType(T&&)
+{ return MetaType{metaTypeId<T>()}; }
+
 
 //--------------------------------------------------------------------------------------------------------------------------------
 // Traits

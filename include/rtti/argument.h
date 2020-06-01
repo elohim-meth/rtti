@@ -1,7 +1,6 @@
 ﻿#ifndef ARGUMENT_H
 #define ARGUMENT_H
 
-#include <rtti/defines.h>
 #include <rtti/metatype.h>
 #include <rtti/metaerror.h>
 #include <rtti/variant.h>

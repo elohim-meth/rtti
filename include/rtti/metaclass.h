@@ -24,7 +24,7 @@ public:
 
     MetaCategory category() const override;
     static MetaClass const* find(MetaType_ID typeId);
-    static MetaClass const* find(std::string_view const &name);
+    static MetaClass const* find(std::string_view name);
     MetaType_ID metaTypeId() const;
     std::size_t baseClassCount() const;
     MetaClass const* baseClass(std::size_t index) const;
@@ -32,16 +32,16 @@ public:
     MetaClass const* derivedClass(std::size_t index) const;
     bool inheritedFrom(MetaClass const *base) const;
 protected:
-    RTTI_PRIVATE explicit MetaClass(std::string_view const &name, MetaContainer const &owner, MetaType_ID typeId);
-    RTTI_PRIVATE static MetaClass* create(std::string_view const &name, MetaContainer &owner, MetaType_ID typeId);
+    RTTI_PRIVATE explicit MetaClass(std::string_view name, MetaContainer const &owner, MetaType_ID typeId);
+    RTTI_PRIVATE static MetaClass* create(std::string_view name, MetaContainer &owner, MetaType_ID typeId);
 
     RTTI_PRIVATE void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     RTTI_PRIVATE void addDerivedClass(MetaType_ID typeId);
     RTTI_PRIVATE void const* cast(MetaClass const *base, void const *instance) const;
     RTTI_PRIVATE void* cast(MetaClass const *base, void *instance) const;
 
-    RTTI_PRIVATE MetaMethod const* getMethodInternal(std::string_view const &name) const override;
-    RTTI_PRIVATE MetaProperty const* getPropertyInternal(std::string_view const &name) const override;
+    RTTI_PRIVATE MetaMethod const* getMethodInternal(std::string_view name) const override;
+    RTTI_PRIVATE MetaProperty const* getPropertyInternal(std::string_view name) const override;
 
 private:
     DECLARE_ACCESS_KEY(CreateAccessKey)
@@ -55,7 +55,7 @@ private:
     };
 
 public:
-    RTTI_PRIVATE static MetaClass* create(std::string_view const &name,
+    RTTI_PRIVATE static MetaClass* create(std::string_view name,
                                           MetaContainer &owner,
                                           MetaType_ID typeId,
                                           CreateAccessKey)

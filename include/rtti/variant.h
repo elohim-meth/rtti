@@ -1,10 +1,9 @@
 ﻿#ifndef VARIANT_H
 #define VARIANT_H
 
+#include <rtti/metaclass.h>
 #include <rtti/metatype.h>
 #include <rtti/metaerror.h>
-#include <rtti/metaclass.h>
-
 #include <rtti/finally.h>
 
 #include <cassert>

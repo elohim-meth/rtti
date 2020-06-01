@@ -20,7 +20,7 @@ public:
 
     bool add(MetaItem *value);
     MetaItem* get(std::size_t index) const;
-    MetaItem* get(std::string_view const &name) const;
+    MetaItem* get(std::string_view name) const;
     std::size_t size() const;
     template<typename F> void for_each(F &&func) const;
 
@@ -52,11 +52,11 @@ public:
     { return m_lists[category]->get(index); }
     std::size_t size(MetaCategory category) const
     { return m_lists[category]->size(); }
-    MetaItem* item(MetaCategory category, std::string_view const &name) const
+    MetaItem* item(MetaCategory category, std::string_view name) const
     { return m_lists[category]->get(name); }
 protected:
     bool addItem(MetaItem *value);
-    MetaItem* findMethod(MetaCategory category, std::string_view const &name) const;
+    MetaItem* findMethod(MetaCategory category, std::string_view name) const;
 
 private:
     internal::MetaItemList m_namespaces;

@@ -1,6 +1,8 @@
 ﻿#ifndef FINALLY_H
 #define FINALLY_H
 
+#include <rtti/defines.h>
+
 #include <type_traits>
 #include <utility>
 
@@ -50,14 +52,10 @@ struct scope_guard_constructor
 
 } // internal
 
-// typical preprocessor utility stuff.
-#define PASTE_TOKENS2(a,b) a ## b
-#define PASTE_TOKENS(a,b) PASTE_TOKENS2(a,b)
-
 #define FINALLY_EX(NAME) \
     auto NAME = ::internal::scope_guard_constructor() << [&]() noexcept
 
 #define FINALLY \
-    FINALLY_EX(PASTE_TOKENS(_scopeGuard, __LINE__))
+    FINALLY_EX(CONCAT(_scopeGuard, __LINE__))
 
 #endif // FINALLY_H

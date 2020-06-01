@@ -9,7 +9,7 @@ namespace rtti {
 class RTTI_PRIVATE MetaConstructorPrivate: public MetaItemPrivate
 {
 public:
-    MetaConstructorPrivate(std::string_view const &name, MetaContainer const &owner,
+    MetaConstructorPrivate(std::string_view name, MetaContainer const &owner,
                            std::unique_ptr<IConstructorInvoker> constructor)
         : MetaItemPrivate{name, owner},
           m_constructor{std::move(constructor)}

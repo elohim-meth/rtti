@@ -1,7 +1,10 @@
-﻿#ifndef GLOBAL_H
-#define GLOBAL_H
+﻿#ifndef DEFINES_H
+#define DEFINES_H
 
-#include <rtti/export.h>
+#define STRINGIZE_I(text) #text
+#define STRINGIZE(text) STRINGIZE_I(text)
+#define CONCAT_I(a,b) a##b
+#define CONCAT(a,b) CONCAT_I(a,b)
 
 #if defined(_MSC_VER)
     #define DISABLE_WARNINGS_PUSH __pragma(warning( push ))
@@ -58,4 +61,4 @@
     })(OBJECT)\
 )
 
-#endif // GLOBAL_H
+#endif // DEFINES_H

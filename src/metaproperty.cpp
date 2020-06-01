@@ -7,12 +7,12 @@ namespace rtti {
 // MetaProperty
 //--------------------------------------------------------------------------------------------------------------------------------
 
-MetaProperty::MetaProperty(std::string_view const &name, MetaContainer &owner,
+MetaProperty::MetaProperty(std::string_view name, MetaContainer &owner,
                            std::unique_ptr<IPropertyInvoker> invoker)
     : MetaItem{*new MetaPropertyPrivate{name, owner, std::move(invoker)}}
 {}
 
-MetaProperty* MetaProperty::create(std::string_view const &name, MetaContainer &owner,
+MetaProperty* MetaProperty::create(std::string_view name, MetaContainer &owner,
                                    std::unique_ptr<IPropertyInvoker> invoker)
 {
     if (name.empty() || !invoker)

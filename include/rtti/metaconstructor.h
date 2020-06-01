@@ -1,7 +1,7 @@
 ﻿#ifndef METACONSTRUCTOR_H
 #define METACONSTRUCTOR_H
 
-#include "metamethod.h"
+#include <rtti/metamethod.h>
 
 namespace rtti {
 
@@ -25,9 +25,9 @@ public:
     }
 
 protected:
-    explicit MetaConstructor(std::string_view const &name, MetaContainer &owner,
+    explicit MetaConstructor(std::string_view name, MetaContainer &owner,
                              std::unique_ptr<IConstructorInvoker> constructor);
-    static MetaConstructor* create(std::string_view const &name, MetaContainer &owner,
+    static MetaConstructor* create(std::string_view name, MetaContainer &owner,
                                    std::unique_ptr<IConstructorInvoker> constructor);
 
 private:
@@ -37,7 +37,7 @@ private:
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    static MetaConstructor* create(std::string_view const &name, MetaContainer &owner,
+    static MetaConstructor* create(std::string_view name, MetaContainer &owner,
                                    std::unique_ptr<IConstructorInvoker> constructor,
                                    CreateAccessKey)
     { return create(name, owner, std::move(constructor)); }

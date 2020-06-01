@@ -16,7 +16,7 @@ namespace internal {
 struct RTTI_PRIVATE named_variant
 {
     template<typename T>
-    named_variant(std::string_view const &name, T&& value)
+    named_variant(std::string_view name, T&& value)
         : name{name}, value{std::forward<T>(value)}
     {}
 
@@ -28,9 +28,9 @@ class RTTI_PRIVATE NamedVariantList
 {
 public:
     template<typename T>
-    void set(std::string_view const &name, T &&value);
+    void set(std::string_view name, T &&value);
     variant const& get(std::size_t index) const;
-    variant const& get(std::string_view const &name) const;
+    variant const& get(std::string_view name) const;
     std::string const& name(std::size_t index) const;
 
     std::size_t size() const
@@ -49,7 +49,7 @@ private:
 };
 
 template<typename T>
-inline void NamedVariantList::set(std::string_view const &name, T &&value)
+inline void NamedVariantList::set(std::string_view name, T &&value)
 {
     if (name.empty())
         return;
@@ -91,11 +91,11 @@ public:
     MetaItemPrivate& operator=(MetaItemPrivate&&) = delete;
 
     // Constructor for global namespace
-    explicit MetaItemPrivate(std::string_view const &name)
+    explicit MetaItemPrivate(std::string_view name)
         : m_name(name)
     {}
 
-    MetaItemPrivate(std::string_view const &name, MetaContainer const &owner)
+    MetaItemPrivate(std::string_view name, MetaContainer const &owner)
         : m_name(name), m_owner(&owner)
     {}
 
