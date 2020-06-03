@@ -1,0 +1,175 @@
+﻿#ifndef ARGUMENT_IMPL_H
+#define ARGUMENT_IMPL_H
+
+namespace rtti {
+
+template<typename T,
+          typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, argument>>>
+argument::argument(T &&value) noexcept
+    : m_data{const_cast<void*>(reinterpret_cast<void const*>(std::addressof(value)))},
+      m_type{metaTypeId<T>()}
+{}
+
+// rvalue reference
+template<typename T>
+T argument::value(std::integral_constant<int, 0>) const
+{
+    using Decay = std::decay_t<T>;
+
+    auto toType = MetaType{metaTypeId<T>()};
+    auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
+
+    if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
+        return std::move(*static_cast<Decay*>(ptr));
+    else if (isVariant())
+    {
+        auto *v = static_cast<variant*>(ptr);
+        if (variant::internalIs<T>(*v, typeId(), {}))
+            return std::move(*v).rref<Decay>();
+    }
+
+    auto fromType = MetaType{typeId()};
+    if (MetaType::hasConverter(fromType, toType))
+    {
+        assert(!m_buffer);
+        m_buffer = toType.allocate();
+        FINALLY_EX(freeOnExcept) {
+            toType.deallocate(m_buffer);
+            m_buffer = nullptr;
+        };
+
+        if (isVariant())
+            ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
+
+        if (MetaType::convert(ptr, fromType, m_buffer, toType))
+        {
+            m_type = toType;
+            freeOnExcept.dismiss();
+            return std::move(*static_cast<Decay*>(m_buffer));
+        }
+
+        throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                  fromType.typeName() + " -> " + toType.typeName()};
+    }
+    throw bad_argument_cast{std::string{"Incompatible types: "} +
+                            m_type.typeName() + " -> " + toType.typeName()};
+}
+
+// lvalue const reference
+template<typename T>
+T argument::value(std::integral_constant<int, 1>) const
+{
+    using Decay = std::decay_t<T>;
+
+    auto toType = MetaType{metaTypeId<T>()};
+    auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
+
+    if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
+        return *static_cast<Decay*>(ptr);
+    else if (isVariant())
+    {
+        auto *v = static_cast<variant const*>(ptr);
+        if (variant::internalIs<T>(*v, typeId(), {}))
+            return v->ref<Decay>();
+    }
+
+    auto fromType = MetaType{typeId()};
+    if (MetaType::hasConverter(fromType, toType))
+    {
+        assert(!m_buffer);
+        m_buffer = toType.allocate();
+        FINALLY_EX(freeOnExcept) {
+            toType.deallocate(m_buffer);
+            m_buffer = nullptr;
+        };
+
+        if (isVariant())
+            ptr = static_cast<variant*>(ptr)->raw_data_ptr({});
+
+        if (MetaType::convert(ptr, fromType, m_buffer, toType))
+        {
+            m_type = toType;
+            freeOnExcept.dismiss();
+            return *static_cast<Decay*>(m_buffer);
+        }
+
+        throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                  fromType.typeName() + " -> " + toType.typeName()};
+    }
+    throw bad_argument_cast{std::string{"Incompatible types: "} +
+                            m_type.typeName() + " -> " + toType.typeName()};
+}
+
+// lvalue reference
+template<typename T>
+T argument::value(std::integral_constant<int, 2>) const
+{
+    using Decay = std::decay_t<T>;
+
+    auto toType = MetaType{metaTypeId<T>()};
+    auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
+
+    if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
+        return *static_cast<Decay*>(ptr);
+    else if (isVariant())
+    {
+        auto *v = static_cast<variant*>(ptr);
+        if (variant::internalIs<T>(*v, typeId(), {}))
+            return v->ref<Decay>();
+    }
+    auto fromType = MetaType{typeId()};
+    throw bad_argument_cast{std::string{"Incompatible types: "} +
+                            fromType.typeName() + " -> " + toType.typeName()};
+}
+
+// no reference
+template<typename T>
+T argument::value(std::integral_constant<int, 3>) const
+{
+    using Decay = std::decay_t<T>;
+
+    auto toType = MetaType{metaTypeId<T>()};
+    auto *ptr = const_cast<void*>(m_type.isArray() && !toType.isArray() ? &m_data : m_data);
+
+    if ((m_type.decayId() == toType.decayId()) && MetaType::compatible(m_type, toType))
+        return internal::move_or_copy<Decay>(ptr, !m_type.isLvalueReference());
+    else if (isVariant())
+    {
+        auto *v = static_cast<variant*>(ptr);
+        return v->to<Decay>();
+    }
+    else if (MetaType::hasConverter(m_type, toType))
+    {
+        std::aligned_storage_t<sizeof(Decay), alignof(Decay)> buffer;
+        if (MetaType::convert(ptr, m_type, &buffer, toType))
+        {
+            FINALLY{ toType.destroy(&buffer); };
+            return internal::move_or_copy<Decay>(&buffer, true);
+        }
+        throw bad_variant_convert{std::string{"Conversion failed: "} +
+                                  m_type.typeName() + " -> " + toType.typeName()};
+    }
+
+    throw bad_argument_cast{std::string{"Incompatible types: "} +
+                            m_type.typeName() + " -> " + toType.typeName()};
+}
+
+template<typename T>
+T argument::value() const
+{
+    using tag_t =
+        std::conditional_t<std::is_rvalue_reference_v<T>,   std::integral_constant<int, 0>,
+        std::conditional_t<is_lvalue_const_reference_v<T>,  std::integral_constant<int, 1>,
+        std::conditional_t<std::is_lvalue_reference_v<T>,   std::integral_constant<int, 2>,
+                                                            std::integral_constant<int, 3>
+    >>>;
+
+    if (empty())
+        throw bad_argument_cast{"Empty argument"};
+    return value<T>(tag_t{});
+}
+
+} // namespace rtti
+
+
+#endif // ARGUMENT_IMPL_H

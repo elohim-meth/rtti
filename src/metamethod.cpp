@@ -3,11 +3,7 @@
 
 namespace rtti {
 
-//--------------------------------------------------------------------------------------------------------------------------------
-// MetaMethod
-//--------------------------------------------------------------------------------------------------------------------------------
-
-const IMethodInvoker* MetaMethod::invoker() const
+IMethodInvoker const* MetaMethod::invoker() const
 {
     auto d = d_func();
     return d->m_invoker.get();

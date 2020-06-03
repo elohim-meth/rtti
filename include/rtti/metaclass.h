@@ -128,13 +128,19 @@ To* meta_cast(From *from, std::true_type)
 template<typename To, typename From>
 To const* meta_cast(From const *from, std::false_type)
 {
-    return from;
+    if constexpr(std::is_same_v<To, From>)
+        return from;
+    else
+        return nullptr;
 }
 
 template<typename To, typename From>
 To* meta_cast(From *from, std::false_type)
 {
-    return from;
+    if constexpr(std::is_same_v<To, From>)
+        return from;
+    else
+        return nullptr;
 }
 
 

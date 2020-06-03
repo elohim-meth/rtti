@@ -1,6 +1,15 @@
-﻿#include <rtti/argument.h>
+﻿#include <rtti/metamethod.h>
 
 namespace rtti {
+
+argument::~argument() noexcept
+{
+    if (m_buffer)
+    {
+        m_type.destroy(m_buffer);
+        m_type.deallocate(m_buffer);
+    }
+}
 
 MetaType_ID argument::typeId() const
 {
@@ -22,4 +31,9 @@ bool argument::isVariant() const
     return (m_type.decayId() == metaTypeId<variant>());
 }
 
+bool argument::empty() const noexcept
+{
+    return m_data == nullptr;
 }
+
+} // namespace rtti

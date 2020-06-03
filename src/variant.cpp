@@ -1,8 +1,12 @@
-﻿#include <rtti/variant.h>
+﻿#include <rtti/metamethod.h>
 
 namespace rtti {
 
 variant const variant::empty_variant = {};
+
+variant::variant() noexcept
+    : manager(internal::variant_function_table_for<void>())
+{}
 
 variant::variant(variant const &other)
     : manager{other.manager}
@@ -18,6 +22,7 @@ variant& variant::operator=(variant const &other)
 }
 
 variant::variant(variant &&other) noexcept
+    : manager(internal::variant_function_table_for<void>())
 {
     swap(other);
 }

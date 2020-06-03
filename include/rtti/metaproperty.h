@@ -1,9 +1,8 @@
 ﻿#ifndef METAPROPERTY_H
 #define METAPROPERTY_H
 
-#include <rtti/metaitem.h>
+#include <rtti/metamethod.h>
 #include <rtti/metatype.h>
-#include <rtti/argument.h>
 
 namespace rtti {
 
