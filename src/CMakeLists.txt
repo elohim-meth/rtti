@@ -66,6 +66,12 @@ file(GLOB PUBLIC_HEADERS
     "${PROJECT_SOURCE_DIR}/include/rtti/*.h"
 )
 
+file(GLOB IMPL_HEADERS
+    LIST_DIRECTORIES false
+    CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/include/rtti/detail/*.h"
+)
+
 file(GLOB PRIVATE_HEADERS
     LIST_DIRECTORIES false
     CONFIGURE_DEPENDS
@@ -86,7 +92,7 @@ target_include_directories(${PKG}
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src)
 
-target_sources(${PKG} PRIVATE ${PUBLIC_HEADERS} ${PRIVATE_HEADERS} ${SOURCES})
+target_sources(${PKG} PRIVATE ${PUBLIC_HEADERS} ${IMPL_HEADERS} ${PRIVATE_HEADERS} ${SOURCES})
 
 ########################################################################################################################
 ## INSTALL && EXPORT
