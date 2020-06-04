@@ -7,7 +7,8 @@ add_executable(doctest_tests
 target_sources(doctest_tests PRIVATE
     test_type_name.cpp
     test_meta_type.cpp
-    test_global_ns.cpp)
+    test_global_ns.cpp
+    test_inheritance.cpp)
 
 target_link_libraries(doctest_tests PRIVATE doctest::doctest RTTI::rtti)
 

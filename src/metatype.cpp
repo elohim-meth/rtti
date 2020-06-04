@@ -1,5 +1,7 @@
 ﻿#include "metatype_p.h"
+
 #include <rtti/metatype.h>
+#include <rtti/signature.h>
 
 #include <ostream>
 #include <shared_mutex>
@@ -21,8 +23,8 @@ public:
     CustomTypes& operator=(CustomTypes &&) = delete;
     ~CustomTypes();
 
-    MetaType_ID getTypeId(TypeInfo const *type_info) const;
-    TypeInfo const* getTypeInfo(MetaType_ID typeId) const;
+    inline MetaType_ID getTypeId(TypeInfo const *type_info) const;
+    inline TypeInfo const* getTypeInfo(MetaType_ID typeId) const;
     TypeInfo const* getTypeInfo(std::string_view name) const;
     TypeInfo const* addTypeInfo(std::string_view name, std::size_t size,
                                 MetaType_ID decay, std::uint16_t arity,
@@ -50,7 +52,7 @@ CustomTypes::~CustomTypes()
     Destroyed = true;
 }
 
-MetaType_ID CustomTypes::getTypeId(TypeInfo const *type_info) const
+inline MetaType_ID CustomTypes::getTypeId(TypeInfo const *type_info) const
 {
     return MetaType_ID{reinterpret_cast<MetaType_ID::type>(type_info)};
 }
@@ -466,17 +468,93 @@ void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
                           toType.m_typeInfo->decay});
 }
 
-std::ostream& operator<<(std::ostream &stream, TypeFlags )
+static char const* flag_names[] = {
+    "None", "Const", "Pointer", "MemberPointer", "LvalueReference", "RvalueReference", "Array",
+    "Void", "Integral", "FloatPoint", "Enum", "Function", "Union", "Class",
+    "StandardLayout", "Trivial", "Abstract", "Polymorphic",
+    "DefaultConstructible", "CopyConstructible", "MoveConstructible", "MoveAssignable", "Destructible",
+    "EQ_Comparable"
+};
+
+inline static std::string_view flag_name(TypeFlags value)
 {
+    return flag_names[static_cast<std::underlying_type_t<TypeFlags>>(value)];
+}
+
+inline static constexpr bool check_flag(TypeFlags value, TypeFlags bit)
+{
+    return ((value & bit) == bit);
+}
+
+std::ostream& operator<<(std::ostream &stream, TypeFlags value)
+{
+    auto it = prefix_ostream_iterator<std::string_view>{stream, "|"};
+    if (value == TypeFlags::None)
+    {
+        it = flag_name(TypeFlags::None);
+        return stream;
+    }
+
+    if (check_flag(value, TypeFlags::LvalueReference))
+        it = flag_name(TypeFlags::LvalueReference);
+    if (check_flag(value, TypeFlags::RvalueReference))
+        it = flag_name(TypeFlags::RvalueReference);
+    if (check_flag(value, TypeFlags::Pointer))
+        it = flag_name(TypeFlags::Pointer);
+    if (check_flag(value, TypeFlags::MemberPointer))
+        it = flag_name(TypeFlags::MemberPointer);
+    if (check_flag(value, TypeFlags::Const))
+        it = flag_name(TypeFlags::Const);
+    if (check_flag(value, TypeFlags::Array))
+        it = flag_name(TypeFlags::Array);
+
+    if (check_flag(value, TypeFlags::Void))
+        it = flag_name(TypeFlags::Void);
+    if (check_flag(value, TypeFlags::Integral))
+        it = flag_name(TypeFlags::Integral);
+    if (check_flag(value, TypeFlags::FloatPoint))
+        it = flag_name(TypeFlags::FloatPoint);
+    if (check_flag(value, TypeFlags::Enum))
+        it = flag_name(TypeFlags::Enum);
+    if (check_flag(value, TypeFlags::Function))
+        it = flag_name(TypeFlags::Function);
+    if (check_flag(value, TypeFlags::Union))
+        it = flag_name(TypeFlags::Union);
+    if (check_flag(value, TypeFlags::Class))
+        it = flag_name(TypeFlags::Class);
+
+    if (check_flag(value, TypeFlags::StandardLayout))
+        it = flag_name(TypeFlags::StandardLayout);
+    if (check_flag(value, TypeFlags::Trivial))
+        it = flag_name(TypeFlags::Trivial);
+    if (check_flag(value, TypeFlags::Abstract))
+        it = flag_name(TypeFlags::Abstract);
+    if (check_flag(value, TypeFlags::Polymorphic))
+        it = flag_name(TypeFlags::Polymorphic);
+
+    if (check_flag(value, TypeFlags::DefaultConstructible))
+        it = flag_name(TypeFlags::DefaultConstructible);
+    if (check_flag(value, TypeFlags::CopyConstructible))
+        it = flag_name(TypeFlags::CopyConstructible);
+    if (check_flag(value, TypeFlags::MoveConstructible))
+        it = flag_name(TypeFlags::MoveConstructible);
+    if (check_flag(value, TypeFlags::MoveAssignable))
+        it = flag_name(TypeFlags::MoveAssignable);
+    if (check_flag(value, TypeFlags::Destructible))
+        it = flag_name(TypeFlags::Destructible);
+
+    if (check_flag(value, TypeFlags::EQ_Comparable))
+        it = flag_name(TypeFlags::EQ_Comparable);
+
     return stream;
 }
 
 std::ostream& operator<<(std::ostream &stream, MetaType value)
 {
     return stream
-        << value.typeId().value() << ':'
-        << value.typeName() << ':'
-        << value.typeFlags();
+        << "ID: [" << value.typeId().value() << "], "
+        << "Name: [" << value.typeName() << "], "
+        << "Flags: [" << value.typeFlags() << "]";
 }
 
 } //namespace rtti
