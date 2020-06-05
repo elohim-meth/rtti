@@ -23,7 +23,7 @@ TEST_CASE("Test global namespace")
             REQUIRE(v.to<std::string_view>() == "Global namespace");
             REQUIRE(v == rtti::variant{"Global namespace"});
             REQUIRE(v == "Global namespace");
-            REQUIRE_THROWS(v.ref<std::string>());
+            REQUIRE_THROWS_AS(v.ref<std::string>(), rtti::bad_variant_cast);
             REQUIRE(std::strcmp(v.ref<char const*>(), "Global namespace") == 0);
         }
 
@@ -56,7 +56,7 @@ TEST_CASE("Test global namespace")
             REQUIRE(ns_Global->attributeName(4) == "int_attr");
             auto &v = ns_Global->attribute("int_attr");
             REQUIRE(v.ref<int>() == 256);
-            REQUIRE_THROWS(v.ref<int64_t>());
+            REQUIRE_THROWS_AS(v.ref<int64_t>(), rtti::bad_variant_cast);
             REQUIRE(v.to<int64_t>() == 256);
             REQUIRE(v == 256);
             REQUIRE_FALSE(v == "256"s);
@@ -80,7 +80,7 @@ TEST_CASE("Test global namespace")
     {
         auto property = ns_Global->getProperty("g_string");
         REQUIRE(property);
-        REQUIRE_THROWS(property->get().rref<std::string>());
+        REQUIRE_THROWS_AS(property->get().rref<std::string>(), rtti::bad_variant_cast);
         REQUIRE(property->get().ref<std::string>().empty());
         REQUIRE(property->get().ref<std::string const>().empty());
         REQUIRE(property->get().cref<std::string>().empty());
@@ -98,13 +98,13 @@ TEST_CASE("Test global namespace")
         REQUIRE(property->get() == "Hello, World!"s);
 
         auto v = property->get();
-        REQUIRE_THROWS(v.ref<std::string>());
+        REQUIRE_THROWS_AS(v.ref<std::string>(), rtti::bad_variant_cast);
         REQUIRE(v.cref<std::string>() == "Hello, World!");
-        REQUIRE_THROWS(v.ref<std::string>() = "Test");
-        REQUIRE_THROWS(property->set("Test"s));
+        REQUIRE_THROWS_AS(v.ref<std::string>() = "Test", rtti::bad_variant_cast);
+        REQUIRE_THROWS_AS(property->set("Test"s), rtti::invoke_error);
     }
 
-    SUBCASE("Test global function")
+    SUBCASE("Test global function [intToStr]")
     {
         auto method = ns_Global->getMethod("intToStr");
         REQUIRE(method);
@@ -120,7 +120,16 @@ TEST_CASE("Test global namespace")
             rtti::variant ok = false;
             rtti::variant number = 123;
             auto v = method->invoke(number, ok);
-            REQUIRE(((v == "123"s) && ok.ref<bool>()));
+            REQUIRE(((v == "123"s) && ok.ref<bool>() && (ok == true)));
+
+            int i = 256;
+            number = std::ref(i);
+            v = method->invoke(number, ok);
+            REQUIRE(((v == "256"s) && ok.ref<bool>() && (ok == true)));
+
+            number = std::cref(i);
+            v = method->invoke(number, ok);
+            REQUIRE(((v == "256"s) && ok.ref<bool>() && (ok == true)));
         }
         SUBCASE("Test invoke 3")
         {
@@ -137,18 +146,126 @@ TEST_CASE("Test global namespace")
             bool ok1 = false;
             rtti::variant const v_ok1 = false;
             rtti::variant v_ok2 = std::cref(ok1);;
-            REQUIRE_THROWS(method->invoke(123, false));
-            REQUIRE_THROWS(method->invoke(123, ok));
-            REQUIRE_THROWS(method->invoke(123, v_ok));
-            REQUIRE_THROWS(method->invoke(123, v_ok1));
-            REQUIRE_THROWS(method->invoke(123, v_ok2));
+            REQUIRE_THROWS_AS(method->invoke(123, false), rtti::bad_variant_cast);
+            REQUIRE_THROWS_AS(method->invoke(123, ok), rtti::bad_variant_cast);
+            REQUIRE_THROWS_AS(method->invoke(123, v_ok), rtti::bad_variant_cast);
+            REQUIRE_THROWS_AS(method->invoke(123, v_ok1), rtti::bad_variant_cast);
+            REQUIRE_THROWS_AS(method->invoke(123, v_ok2), rtti::bad_variant_cast);
             rtti::variant number = 123.12;
-            REQUIRE_THROWS(method->invoke("ABC", ok1));
-            REQUIRE_THROWS(method->invoke(3.14, ok1));
-            REQUIRE_THROWS(method->invoke(number, ok1));
+            REQUIRE_THROWS_AS(method->invoke("ABC", ok1), rtti::bad_variant_cast);
+            REQUIRE_THROWS_AS(method->invoke(3.14, ok1), rtti::bad_variant_cast);
+            REQUIRE_THROWS_AS(method->invoke(number, ok1), rtti::bad_variant_cast);
         }
 
     }
 
+    SUBCASE("Test global function [strToInt]")
+    {
+        auto method = ns_Global->getMethod("strToInt");
+        REQUIRE(method);
+        SUBCASE("Test invoke 1")
+        {
+            bool ok = false;
+            auto v = method->invoke("256", ok);
+            REQUIRE((ok && (v == 256)));
+            REQUIRE(v.ref<int>() == 256);
+            REQUIRE(v.to<int>() == 256);
+        }
 
+        SUBCASE("Test invoke 2")
+        {
+            bool ok = false;
+            auto v = method->invoke("256"s, ok);
+            REQUIRE((ok && (v == 256)));
+        }
+
+        SUBCASE("Test invoke 3")
+        {
+            bool ok = false;
+            rtti::variant str = "1024";
+            auto v = method->invoke(str, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 4")
+        {
+            bool ok = false;
+            rtti::variant str = "1024"s;
+            auto v = method->invoke(str, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 5")
+        {
+            bool ok = false;
+            rtti::variant const str = "1024";
+            auto v = method->invoke(str, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 6")
+        {
+            bool ok = false;
+            char const* str = "1024";
+            rtti::variant v_str = str;
+            auto v = method->invoke(str, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 7")
+        {
+            bool ok = false;
+            char str[] = "1024";
+            rtti::variant v_str = str;
+            auto v = method->invoke(str, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 8")
+        {
+            bool ok = false;
+            char str[] = "1024";
+            rtti::variant v_str = std::ref(str);
+            auto v = method->invoke(v_str, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 9")
+        {
+            bool ok = false;
+            char str[] = "1024";
+            rtti::variant v_str = std::cref(str);
+            auto v = method->invoke(v_str, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 10")
+        {
+            bool ok = false;
+            auto v = method->invoke(rtti::variant{"1024"}, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 11")
+        {
+            bool ok = false;
+            auto v = method->invoke(rtti::variant{"1024"s}, ok);
+            REQUIRE((ok && (v == 1024)));
+        }
+
+        SUBCASE("Test invoke 12")
+        {
+            bool ok = false;
+            auto v = method->invoke("Q123A", ok);
+            REQUIRE_FALSE(ok);
+        }
+
+        // This will work cause of registered converter from int to string
+        SUBCASE("Test invoke 13")
+        {
+            bool ok = false;
+            auto v = method->invoke(2048, ok);
+            REQUIRE((ok && (v == 2048)));
+        }
+    }
 }

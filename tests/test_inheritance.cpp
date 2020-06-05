@@ -81,12 +81,22 @@ public:
     int m_bottom = 1024;
 };
 
-bool test_class_param(SingleA2 const *param)
+int test_class_param(SingleA2 const *param)
 {
-    return
-        (param->m_basea == 256) &&
+    if ((param->m_basea == 256) &&
         (param->m_singlea1 == true) &&
-        (param->m_singlea2 == 3.14);
+        (param->m_singlea2 == 3.14))
+        return 1;
+    return 0;
+}
+
+int test_class_param(SingleA2 *param)
+{
+    if ((param->m_basea == 256) &&
+        (param->m_singlea1 == true) &&
+        (param->m_singlea2 == 3.14))
+        return 1;
+    return 0;
 }
 
 bool test_class_param(SingleA2 const &param)
@@ -97,15 +107,6 @@ bool test_class_param(SingleA2 const &param)
         (param.m_singlea2 == 3.14);
 }
 
-bool test_class_param(SingleA2 *param)
-{
-    param->m_singlea1 = false;
-    return
-        (param->m_basea == 256) &&
-        (param->m_singlea1 == false) &&
-        (param->m_singlea2 == 3.14);
-}
-
 bool test_class_param(SingleA2 &param)
 {
     param.m_singlea1 = false;
@@ -113,6 +114,11 @@ bool test_class_param(SingleA2 &param)
         (param.m_basea == 256) &&
         (param.m_singlea1 == false) &&
         (param.m_singlea2 == 3.14);
+}
+
+bool test_class_param(SingleA2 &&param)
+{
+    return true;
 }
 
 
@@ -156,10 +162,11 @@ RTTI_REGISTER
                 ._base<test::DiamondLeft, test::DiamondRight>()
             ._end()
 
-            ._method<bool(*)(test::SingleA2 const *)>("test_class_param [const ptr]", &test::test_class_param)
-            ._method<bool(*)(test::SingleA2 *)>("test_class_param [ptr]", &test::test_class_param)
+            ._method<int(*)(test::SingleA2 const *)>("test_class_param [const ptr]", &test::test_class_param)
+            ._method<int(*)(test::SingleA2 *)>("test_class_param [ptr]", &test::test_class_param)
             ._method<bool(*)(test::SingleA2 const &)>("test_class_param [const ref]", &test::test_class_param)
             ._method<bool(*)(test::SingleA2 &)>("test_class_param [ref]", &test::test_class_param)
+            ._method<bool(*)(test::SingleA2 &&)>("test_class_param [rref]", &test::test_class_param)
 
         ._end()
     ;
@@ -206,9 +213,9 @@ TEST_CASE("Single inheritance")
         REQUIRE_NOTHROW(rtti::meta_cast<test::SingleA1>(ref2base));
         REQUIRE_NOTHROW(rtti::meta_cast<test::SingleA2>(ref2base));
         REQUIRE_NOTHROW(rtti::meta_cast<test::SingleA3>(ref2base));
-        REQUIRE_THROWS(rtti::meta_cast<test::SingleA22>(ref2base));
-        REQUIRE_THROWS(rtti::meta_cast<test::SingleA33>(ref2base));
-        REQUIRE_THROWS(rtti::meta_cast<test::SingleA4>(ref2base));
+        REQUIRE_THROWS_AS(rtti::meta_cast<test::SingleA22>(ref2base), rtti::bad_meta_cast);
+        REQUIRE_THROWS_AS(rtti::meta_cast<test::SingleA33>(ref2base), rtti::bad_meta_cast);
+        REQUIRE_THROWS_AS(rtti::meta_cast<test::SingleA4>(ref2base), rtti::bad_meta_cast);
     }
 
     SUBCASE("Param transformation")
@@ -222,9 +229,35 @@ TEST_CASE("Single inheritance")
         {
             auto *method = nsTest->getMethod("test_class_param [const ptr]");
             REQUIRE(method);
-            auto v = method->invoke(rtti::variant(&derived));
-            REQUIRE(v == true);
+            auto v = method->invoke(&derived);
+            REQUIRE(v == 1);
+            v = method->invoke(rtti::variant(&derived));
+            REQUIRE(v == 1);
+            v = method->invoke(&const_derived);
+            REQUIRE(v == 1);
+            v = method->invoke(ptr2base);
+            REQUIRE(v == 1);
+            v = method->invoke(const_ptr2base);
+            REQUIRE(v == 1);
+            v = method->invoke(&ref2base);
+            REQUIRE(v == 1);
+            v = method->invoke(&const_ref2base);
+            REQUIRE(v == 1);
+            REQUIRE_THROWS_AS(method->invoke(derived), rtti::bad_variant_cast);
 
+            test::SingleA22 temp;
+            REQUIRE_THROWS_AS(method->invoke(&temp), rtti::bad_variant_cast);
         }
+
+        SUBCASE("Pass by pointer to base")
+        {
+            auto *method = nsTest->getMethod("test_class_param [ptr]");
+            REQUIRE(method);
+            auto v = method->invoke(&derived);
+            REQUIRE(v == 1);
+            v = method->invoke(rtti::variant(&derived));
+            REQUIRE(v == 1);
+        }
+
     }
 }

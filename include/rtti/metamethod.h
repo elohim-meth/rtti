@@ -242,7 +242,8 @@ public:
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
-        return internal::move_or_copy<T>(&buffer, true);
+        //return internal::move_or_copy<T>(&buffer, true);
+        return *reinterpret_cast<T*>(&buffer);
     }
 
     template<typename T>
@@ -254,7 +255,8 @@ public:
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
-        return internal::move_or_copy<T>(&buffer, true);
+        //return internal::move_or_copy<T>(&buffer, true);
+        return *reinterpret_cast<T*>(&buffer);
     }
 
     template<typename T>
@@ -579,25 +581,14 @@ private:
     table_t* manager;
 
 private:
-    DECLARE_ACCESS_KEY(TypeIdAccessKey)
-        friend class rtti::argument;
-    };
-    DECLARE_ACCESS_KEY(InternalIsAccessKey)
-        friend class rtti::argument;
-    };
+    friend class rtti::argument;
     DECLARE_ACCESS_KEY(RawPtrAccessKey)
-        friend class rtti::argument;
         friend struct std::hash<rtti::variant>;
     };
     DECLARE_ACCESS_KEY(SwapAccessKey)
         friend void swap(variant&, variant&) noexcept;
     };
 public:
-    MetaType_ID internalTypeId(type_attribute attr, TypeIdAccessKey) const noexcept
-    { return internalTypeId(attr); }
-    template<typename T>
-    static bool internalIs(variant const &v, MetaType_ID typeId, InternalIsAccessKey)
-    { return metafunc_is<T>::invoke(v, typeId); }
     void const* raw_data_ptr(RawPtrAccessKey) const noexcept
     { return raw_data_ptr(); }
     void * raw_data_ptr(RawPtrAccessKey) noexcept
@@ -623,19 +614,20 @@ public:
     argument& operator=(argument const&) = delete;
     argument(argument&&) noexcept = default;
     argument& operator=(argument&&) = delete;
-    ~argument() noexcept;
+    ~argument() noexcept = default;
 
     template<typename T,
              typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, argument>>>
     argument(T &&value) noexcept;
 
-    bool empty() const noexcept;
-    MetaType_ID typeId() const;
+    bool empty() const noexcept
+    { return m_value.empty(); }
 
     template<typename T> T value() const;
 
 private:
-    bool isVariant() const;
+    bool isVariant() const
+    { return MetaType{m_value.typeId()}.decayId() == metaTypeId<variant>(); }
 
     // rvalue reference
     template<typename T>
@@ -653,9 +645,9 @@ private:
     template<typename T>
     T value(std::integral_constant<int, 3>) const;
 
-    void *m_data = nullptr;
-    mutable void *m_buffer = nullptr;
-    mutable MetaType m_type = {};
+    bool m_rvalue;
+    mutable variant m_value;
+    mutable variant m_dummy;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------

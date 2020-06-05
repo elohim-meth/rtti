@@ -401,6 +401,23 @@ inline variant_function_table const* variant_function_table_for<void>() noexcept
     return &result;
 }
 
+template<>
+inline variant_function_table const* variant_function_table_for<variant>() noexcept
+{
+    static auto const result = variant_function_table{
+        [] (type_attribute) noexcept -> MetaType_ID { return metaTypeId<variant>(); },
+        [] (variant_type_storage const&) noexcept -> void const* { return nullptr; },
+        [] (void const*, variant_type_storage&) noexcept {},
+        [] (void*, variant_type_storage&) noexcept {},
+        [] (variant_type_storage const&, variant_type_storage&) noexcept {},
+        [] (variant_type_storage&, variant_type_storage&) noexcept {},
+        [] (variant_type_storage&) noexcept {},
+        [] (variant_type_storage const&, void const*) noexcept -> bool { return false; },
+        [] (variant_type_storage const&) noexcept { return ClassInfo(); }
+    };
+    return &result;
+}
+
 } // namespace internal
 
 template<typename T,

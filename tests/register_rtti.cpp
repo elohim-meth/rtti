@@ -5,8 +5,19 @@ std::string const gro_string = "Hello, World!";
 
 std::string intToStr(int value, bool &ok)
 {
-    ok = true;
-    return std::to_string(value);
+    std::ostringstream os;
+    os << std::boolalpha << value;
+    ok = !os.fail();
+    return os.str();
+}
+
+int strToInt(std::string const &value, bool &ok)
+{
+    std::istringstream is{value};
+    int to;
+    is >> std::boolalpha >> to;
+    ok = !is.fail();
+    return to;
 }
 
 template<typename From>
@@ -56,6 +67,7 @@ void register_rtti()
         ._property("g_string", &g_string)
         ._property("gro_string", &gro_string)
         ._method("intToStr", &intToStr)
+        ._method("strToInt", &strToInt)
         ._enum<operation>("operation")
             ._element("add", operation::add)
             ._element("subtract", operation::subtract)
