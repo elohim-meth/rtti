@@ -16,63 +16,59 @@ namespace rtti {
 
 namespace internal {
 
-constexpr std::size_t STORAGE_ALIGN = sizeof(void*);
-constexpr std::size_t STORAGE_SIZE = sizeof(void*) * 2;
+    constexpr std::size_t STORAGE_ALIGN = sizeof(void *);
+    constexpr std::size_t STORAGE_SIZE  = sizeof(void *) * 2;
 
-union RTTI_API variant_type_storage
-{
-    void *ptr;
-    std::aligned_storage_t<STORAGE_SIZE, STORAGE_ALIGN> buffer;
-};
+    union RTTI_API variant_type_storage
+    {
+        void *ptr;
+        std::aligned_storage_t<STORAGE_SIZE, STORAGE_ALIGN> buffer;
+    };
 
-enum class type_attribute {NONE, LREF, RREF, LREF_CONST};
+    enum class type_attribute
+    {
+        NONE,
+        LREF,
+        RREF,
+        LREF_CONST
+    };
 
-struct RTTI_API variant_function_table
-{
-    using type_t = MetaType_ID(*)(type_attribute);
-    using access_t = void const* (*) (variant_type_storage const&);
-    using copy_construct_t = void (*) (void const*, variant_type_storage&);
-    using move_construct_t = void (*) (void*, variant_type_storage&);
-    using copy_t = void (*) (variant_type_storage const&, variant_type_storage&);
-    using move_t = void (*) (variant_type_storage&, variant_type_storage&);
-    using destroy_t = void (*) (variant_type_storage&);
-    using compare_eq_t = bool (*) (variant_type_storage const&, void const*);
-    using info_t = ClassInfo (*) (variant_type_storage const&);
+    struct RTTI_API variant_function_table
+    {
+        using type_t           = MetaType_ID (*)(type_attribute);
+        using access_t         = void const *(*) (variant_type_storage const &);
+        using copy_construct_t = void (*)(void const *, variant_type_storage &);
+        using move_construct_t = void (*)(void *, variant_type_storage &);
+        using copy_t           = void (*)(variant_type_storage const &, variant_type_storage &);
+        using move_t           = void (*)(variant_type_storage &, variant_type_storage &);
+        using destroy_t        = void (*)(variant_type_storage &);
+        using compare_eq_t     = bool (*)(variant_type_storage const &, void const *);
+        using info_t           = ClassInfo (*)(variant_type_storage const &);
 
-    type_t const f_type = nullptr;
-    access_t const f_access = nullptr;
-    copy_construct_t const f_copy_construct = nullptr;
-    move_construct_t const f_move_construct = nullptr;
-    copy_t const f_copy = nullptr;
-    move_t const f_move = nullptr;
-    destroy_t const f_destroy = nullptr;
-    compare_eq_t const f_compare_eq = nullptr;
-    info_t const f_info = nullptr;
+        type_t const f_type                     = nullptr;
+        access_t const f_access                 = nullptr;
+        copy_construct_t const f_copy_construct = nullptr;
+        move_construct_t const f_move_construct = nullptr;
+        copy_t const f_copy                     = nullptr;
+        move_t const f_move                     = nullptr;
+        destroy_t const f_destroy               = nullptr;
+        compare_eq_t const f_compare_eq         = nullptr;
+        info_t const f_info                     = nullptr;
 
-    variant_function_table
-    (
-        type_t type,
-        access_t access,
-        copy_construct_t copy_construct,
-        move_construct_t move_construct,
-        copy_t copy,
-        move_t move,
-        destroy_t destroy,
-        compare_eq_t compare_eq,
-        info_t info
-    ) noexcept
-    :
-        f_type{type},
-        f_access{access},
-        f_copy_construct{copy_construct},
-        f_move_construct{move_construct},
-        f_copy{copy},
-        f_move{move},
-        f_destroy{destroy},
-        f_compare_eq{compare_eq},
-        f_info(info)
-    {}
-};
+        variant_function_table(type_t type, access_t access, copy_construct_t copy_construct,
+                               move_construct_t move_construct, copy_t copy, move_t move,
+                               destroy_t destroy, compare_eq_t compare_eq, info_t info) noexcept
+            : f_type{type}
+            , f_access{access}
+            , f_copy_construct{copy_construct}
+            , f_move_construct{move_construct}
+            , f_copy{copy}
+            , f_move{move}
+            , f_destroy{destroy}
+            , f_compare_eq{compare_eq}
+            , f_info(info)
+        {}
+    };
 
 } // namespace internal
 
