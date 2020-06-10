@@ -5,38 +5,38 @@
 namespace rtti {
 
 namespace {
-std::string const empty_string = {};
+    std::string const empty_string = {};
 } // namespace
 
 namespace internal {
 
-variant const& NamedVariantList::get(std::size_t index) const
-{
-    std::shared_lock<std::shared_mutex> lock{m_lock};
-    if (index < m_items.size())
-        return m_items[index]->value;
-    return variant::empty_variant;
-}
-
-variant const& NamedVariantList::get(std::string_view name) const
-{
-    if (!name.empty())
+    variant const &NamedVariantList::get(std::size_t index) const
     {
         std::shared_lock<std::shared_mutex> lock{m_lock};
-        if (auto search = m_names.find(std::string{name}); search != std::end(m_names))
-            if (auto index = search->second; index < m_items.size())
-                return m_items[index]->value;
+        if (index < m_items.size())
+            return m_items[index]->value;
+        return variant::empty_variant;
     }
-    return variant::empty_variant;
-}
 
-std::string const& NamedVariantList::name(std::size_t index) const
-{
-    std::shared_lock<std::shared_mutex> lock{m_lock};
-    if (index < m_items.size())
-        return m_items[index]->name;
-    return empty_string;
-}
+    variant const &NamedVariantList::get(std::string_view name) const
+    {
+        if (!name.empty())
+        {
+            std::shared_lock<std::shared_mutex> lock{m_lock};
+            if (auto search = m_names.find(std::string{name}); search != std::end(m_names))
+                if (auto index = search->second; index < m_items.size())
+                    return m_items[index]->value;
+        }
+        return variant::empty_variant;
+    }
+
+    std::string const &NamedVariantList::name(std::size_t index) const
+    {
+        std::shared_lock<std::shared_mutex> lock{m_lock};
+        if (index < m_items.size())
+            return m_items[index]->name;
+        return empty_string;
+    }
 
 } // namespace internal
 
@@ -130,7 +130,7 @@ void MetaItem::for_each_attribute(enum_attribute_t const &func) const
 
     checkDeferredDefine();
     auto d = d_func();
-    d->m_attributes.for_each([&func](std::string_view name, variant const &value) -> bool
+    d->m_attributes.for_each([&func](std::string_view name, variant const &value) -> auto
     {
         return func(name, value);
     });

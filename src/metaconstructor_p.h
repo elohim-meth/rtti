@@ -2,6 +2,7 @@
 #define METACONSTRUCTOR_P_H
 
 #include "metacontainer_p.h"
+
 #include <rtti/metaconstructor.h>
 
 namespace rtti {
@@ -11,8 +12,8 @@ class RTTI_PRIVATE MetaConstructorPrivate: public MetaItemPrivate
 public:
     MetaConstructorPrivate(std::string_view name, MetaContainer const &owner,
                            std::unique_ptr<IConstructorInvoker> constructor)
-        : MetaItemPrivate{name, owner},
-          m_constructor{std::move(constructor)}
+        : MetaItemPrivate{name, owner}
+        , m_constructor{std::move(constructor)}
     {}
 
 private:
@@ -23,4 +24,3 @@ private:
 } // namespace rtti
 
 #endif // METACONSTRUCTOR_P_H
-

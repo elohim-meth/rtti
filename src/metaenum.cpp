@@ -7,16 +7,16 @@ MetaEnum::MetaEnum(std::string_view name, MetaContainer const &owner, MetaType_I
     : MetaItem{*new MetaEnumPrivate{name, owner, typeId}}
 {}
 
-MetaEnum *MetaEnum::create(std::string_view name, MetaContainer &owner, MetaType_ID typeId)
+MetaEnum* MetaEnum::create(std::string_view name, MetaContainer &owner, MetaType_ID typeId)
 {
-    auto result = const_cast<MetaEnum*>(owner.getEnum(name));
+    auto result = const_cast<MetaEnum *>(owner.getEnum(name));
     if (!result)
     {
         result = new MetaEnum{name, owner, typeId};
         if (!INVOKE_PROTECTED(owner, addItem, result))
         {
             delete result;
-            result = const_cast<MetaEnum*>(owner.getEnum(name));
+            result = const_cast<MetaEnum *>(owner.getEnum(name));
         }
     }
     return result;
@@ -45,7 +45,7 @@ variant const& MetaEnum::element(std::size_t index) const
     return d->m_elements.get(index);
 }
 
-std::string const &MetaEnum::elementName(std::size_t index) const
+std::string const& MetaEnum::elementName(std::size_t index) const
 {
     auto d = d_func();
     return d->m_elements.name(index);
@@ -63,7 +63,7 @@ void MetaEnum::for_each_element(enum_element_t const &func) const
         return;
 
     auto d = d_func();
-    d->m_elements.for_each([&func](std::string const &name, variant const &value) -> bool
+    d->m_elements.for_each([&func](std::string const &name, variant const &value) -> auto
     {
         return func(name, value);
     });

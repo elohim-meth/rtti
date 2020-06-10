@@ -11,7 +11,8 @@ class RTTI_PRIVATE MetaItemList
 {
 public:
     // Need custom deleter since MetaItem destructor is protected
-    struct MetaItemDeleter {
+    struct MetaItemDeleter
+    {
         void operator()(MetaItem *value) const
         { delete value; }
     };
