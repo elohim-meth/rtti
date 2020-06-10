@@ -42,7 +42,7 @@ void variant::swap(variant &other) noexcept
 {
     using std::swap;
 
-    auto thisEmpty = this->empty();
+    auto thisEmpty  = this->empty();
     auto otherEmpty = other.empty();
     if (thisEmpty && otherEmpty)
         return;
@@ -94,7 +94,7 @@ bool variant::operator==(variant const &value) const
     if (empty() || value.empty())
         return false;
 
-    auto mt_left = MetaType{this->internalTypeId(type_attribute::LREF_CONST)};
+    auto mt_left  = MetaType{this->internalTypeId(type_attribute::LREF_CONST)};
     auto mt_right = MetaType{value.internalTypeId(type_attribute::LREF_CONST)};
 
     if (MetaType::compatible(mt_right, mt_left))
@@ -103,7 +103,7 @@ bool variant::operator==(variant const &value) const
         {
             auto ptr = value.raw_data_ptr();
             if (mt_right.isArray())
-                ptr = *reinterpret_cast<void const * const *>(ptr);
+                ptr = *reinterpret_cast<void const *const *>(ptr);
 
             return manager->f_compare_eq(storage, ptr);
         }
@@ -111,6 +111,5 @@ bool variant::operator==(variant const &value) const
 
     return false;
 }
-
 
 } // namespace rtti

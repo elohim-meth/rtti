@@ -226,25 +226,15 @@ bool MetaType::compatible(MetaType fromType, MetaType toType) noexcept
     return true;
 }
 
-MetaType_ID MetaType::registerMetaType
-(
-    std::string_view name,
-    std::size_t size,
-    MetaType_ID decay,
-    std::uint16_t arity,
-    std::uint16_t const_mask,
-    TypeFlags flags,
-    metatype_manager_t const *manager
-)
+MetaType_ID MetaType::registerMetaType(std::string_view name, std::size_t size, MetaType_ID decay,
+                                       std::uint16_t arity, std::uint16_t const_mask,
+                                       TypeFlags flags, metatype_manager_t const *manager)
 {
     auto *types = customTypes();
     if (!types)
         return MetaType_ID{};
 
-    auto result = types->addTypeInfo(
-        name, size, decay, arity,
-        const_mask, flags, manager);
-
+    auto result = types->addTypeInfo(name, size, decay, arity, const_mask, flags, manager);
     return types->getTypeId(result);
 }
 
@@ -260,9 +250,8 @@ MetaClass const* MetaType::metaClass() const noexcept
 
 void* MetaType::allocate() const
 {
-    return m_typeInfo
-        ? m_typeInfo->manager->f_allocate()
-        : nullptr;
+    return m_typeInfo ? m_typeInfo->manager->f_allocate()
+                      : nullptr;
 }
 
 void MetaType::deallocate(void *ptr) const
@@ -303,9 +292,8 @@ void MetaType::destroy(void *ptr) const noexcept
 
 bool MetaType::compare_eq(void const *lhs, void const *rhs) const
 {
-    return m_typeInfo
-        ? m_typeInfo->manager->f_compare_eq(lhs, rhs)
-        : false;
+    return m_typeInfo ? m_typeInfo->manager->f_compare_eq(lhs, rhs)
+                      : false;
 }
 
 void* MetaType::construct(void *copy, bool movable) const
@@ -414,15 +402,15 @@ bool MetaType::hasConverter(MetaType fromType, MetaType toType) noexcept
 {
     if (fromType.valid() && toType.valid())
         if (auto list = customConverters())
-            return list->find({fromType.m_typeInfo->decay,
-                               toType.m_typeInfo->decay});
+            return list->find({fromType.m_typeInfo->decay, toType.m_typeInfo->decay});
     return false;
 }
 
 bool MetaType::hasConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId) noexcept
 {
     auto fromType = MetaType{fromTypeId};
-    auto toType = MetaType{toTypeId};
+    auto toType   = MetaType{toTypeId};
+
     return hasConverter(fromType, toType);
 }
 
@@ -430,11 +418,11 @@ bool MetaType::registerConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId,
                                  internal::ConvertFunctionBase const &converter)
 {
     auto fromType = MetaType{fromTypeId};
-    auto toType = MetaType{toTypeId};
+    auto toType   = MetaType{toTypeId};
+
     if (fromType.valid() && toType.valid())
         if (auto list = customConverters())
-            return list->add({fromType.m_typeInfo->decay, toType.m_typeInfo->decay},
-                             &converter);
+            return list->add({fromType.m_typeInfo->decay, toType.m_typeInfo->decay}, &converter);
     return false;
 }
 
@@ -443,8 +431,7 @@ bool MetaType::convert(void const *from, MetaType fromType, void *to, MetaType t
     if (fromType.valid() && toType.valid())
         if (auto list = customConverters())
         {
-            auto converter = list->get({fromType.m_typeInfo->decay,
-                                        toType.m_typeInfo->decay});
+            auto converter = list->get({fromType.m_typeInfo->decay, toType.m_typeInfo->decay});
             assert(converter);
             return converter->invoke(from, to);
         }
@@ -454,27 +441,49 @@ bool MetaType::convert(void const *from, MetaType fromType, void *to, MetaType t
 bool MetaType::convert(void const *from, MetaType_ID fromTypeId, void *to, MetaType_ID toTypeId)
 {
     auto fromType = MetaType{fromTypeId};
-    auto toType = MetaType{toTypeId};
+    auto toType   = MetaType{toTypeId};
+
     return convert(from, fromType, to, toType);
 }
 
 void MetaType::unregisterConverter(MetaType_ID fromTypeId, MetaType_ID toTypeId)
 {
     auto fromType = MetaType{fromTypeId};
-    auto toType = MetaType{toTypeId};
+    auto toType   = MetaType{toTypeId};
+
     if (fromType.valid() && toType.valid())
         if (auto list = customConverters())
-            list->remove({fromType.m_typeInfo->decay,
-                          toType.m_typeInfo->decay});
+            list->remove({fromType.m_typeInfo->decay, toType.m_typeInfo->decay});
 }
 
-static char const* flag_names[] = {
-    "None", "Const", "Pointer", "MemberPointer", "LvalueReference", "RvalueReference", "Array",
-    "Void", "Integral", "FloatPoint", "Enum", "Function", "Union", "Class",
-    "StandardLayout", "Trivial", "Abstract", "Polymorphic",
-    "DefaultConstructible", "CopyConstructible", "MoveConstructible", "MoveAssignable", "Destructible",
-    "EQ_Comparable"
-};
+static char const *flag_names[] = {"None",
+
+                                   "Const",
+                                   "Pointer",
+                                   "MemberPointer",
+                                   "LvalueReference",
+                                   "RvalueReference",
+                                   "Array",
+
+                                   "Void",
+                                   "Integral",
+                                   "FloatPoint",
+                                   "Enum",
+                                   "Function",
+                                   "Union",
+                                   "Class",
+
+                                   "StandardLayout",
+                                   "Trivial",
+                                   "Abstract",
+                                   "Polymorphic",
+                                   "DefaultConstructible",
+                                   "CopyConstructible",
+                                   "MoveConstructible",
+                                   "MoveAssignable",
+                                   "Destructible",
+
+                                   "EQ_Comparable"};
 
 inline static std::string_view flag_name(TypeFlags value)
 {
@@ -551,10 +560,9 @@ std::ostream& operator<<(std::ostream &stream, TypeFlags value)
 
 std::ostream& operator<<(std::ostream &stream, MetaType value)
 {
-    return stream
-        << "ID: [" << value.typeId().value() << "], "
-        << "Name: [" << value.typeName() << "], "
-        << "Flags: [" << value.typeFlags() << "]";
+    return stream << "ID: [" << value.typeId().value() << "], "
+                  << "Name: [" << value.typeName() << "], "
+                  << "Flags: [" << value.typeFlags() << "]";
 }
 
 } //namespace rtti
