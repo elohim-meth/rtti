@@ -10,7 +10,8 @@
 
 namespace rtti {
 
-enum MetaCategory: unsigned int {
+enum MetaCategory : unsigned int
+{
     mcatNamespace,
     mcatClass,
     mcatProperty,
@@ -48,10 +49,11 @@ public:
 protected:
     explicit MetaItem(std::string_view name, MetaContainer const &owner);
     explicit MetaItem(MetaItemPrivate &value);
-    MetaItem(MetaItem const&) = delete;
-    MetaItem& operator=(MetaItem const&) = delete;
-    MetaItem(MetaItem &&) = delete;
-    MetaItem& operator=(MetaItem &&) = delete;
+
+    MetaItem(MetaItem const&)               = delete;
+    MetaItem& operator=(MetaItem const&)    = delete;
+    MetaItem(MetaItem &&)                   = delete;
+    MetaItem& operator=(MetaItem &&)        = delete;
     virtual ~MetaItem();
 
     virtual void checkDeferredDefine() const;

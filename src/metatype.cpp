@@ -14,35 +14,35 @@ namespace rtti {
 
 namespace {
 
-class RTTI_PRIVATE CustomTypes {
+class RTTI_PRIVATE CustomTypes
+{
 public:
     CustomTypes();
-    CustomTypes(CustomTypes const&) = delete;
-    CustomTypes& operator=(CustomTypes const&) = delete;
-    CustomTypes(CustomTypes &&) = delete;
-    CustomTypes& operator=(CustomTypes &&) = delete;
+    CustomTypes(CustomTypes const &) = delete;
+    CustomTypes &operator=(CustomTypes const &) = delete;
+    CustomTypes(CustomTypes &&)                 = delete;
+    CustomTypes &operator=(CustomTypes &&) = delete;
     ~CustomTypes();
 
     inline MetaType_ID getTypeId(TypeInfo const *type_info) const;
-    inline TypeInfo const* getTypeInfo(MetaType_ID typeId) const;
-    TypeInfo const* getTypeInfo(std::string_view name) const;
-    TypeInfo const* addTypeInfo(std::string_view name, std::size_t size,
-                                MetaType_ID decay, std::uint16_t arity,
-                                std::uint16_t const_mask, TypeFlags flags,
+    inline TypeInfo const *getTypeInfo(MetaType_ID typeId) const;
+    TypeInfo const *getTypeInfo(std::string_view name) const;
+    TypeInfo const *addTypeInfo(std::string_view name, std::size_t size, MetaType_ID decay,
+                                std::uint16_t arity, std::uint16_t const_mask, TypeFlags flags,
                                 metatype_manager_t const *manager);
+
 private:
     mutable std::shared_mutex m_lock;
     std::forward_list<TypeInfo> m_items;
-    std::unordered_map<std::string_view, TypeInfo const*> m_names;
+    std::unordered_map<std::string_view, TypeInfo const *> m_names;
 
     static bool Destroyed;
-    friend CustomTypes* customTypes();
+    friend CustomTypes *customTypes();
 };
 
 bool CustomTypes::Destroyed = false;
 
-CustomTypes::CustomTypes()
-{}
+CustomTypes::CustomTypes() {}
 
 CustomTypes::~CustomTypes()
 {
@@ -59,7 +59,7 @@ inline MetaType_ID CustomTypes::getTypeId(TypeInfo const *type_info) const
 
 inline TypeInfo const* CustomTypes::getTypeInfo(MetaType_ID typeId) const
 {
-    return reinterpret_cast<TypeInfo const*>(typeId.value());
+    return reinterpret_cast<TypeInfo const *>(typeId.value());
 }
 
 TypeInfo const* CustomTypes::getTypeInfo(std::string_view name) const
@@ -74,16 +74,9 @@ TypeInfo const* CustomTypes::getTypeInfo(std::string_view name) const
     return nullptr;
 }
 
-TypeInfo const* CustomTypes::addTypeInfo
-(
-    std::string_view name,
-    std::size_t size,
-    MetaType_ID decay,
-    uint16_t arity,
-    uint16_t const_mask,
-    TypeFlags flags,
-    metatype_manager_t const *manager
-)
+TypeInfo const* CustomTypes::addTypeInfo(std::string_view name, std::size_t size, MetaType_ID decay,
+                                         uint16_t arity, uint16_t const_mask, TypeFlags flags,
+                                         metatype_manager_t const *manager)
 {
     if (name.empty())
         return nullptr;
@@ -198,7 +191,7 @@ bool MetaType::compatible(MetaType fromType, MetaType toType) noexcept
     }
 
     auto from = TypeInfo::const_bitset_t{fromType.m_typeInfo->const_mask};
-    auto to = TypeInfo::const_bitset_t{toType.m_typeInfo->const_mask};
+    auto to   = TypeInfo::const_bitset_t{toType.m_typeInfo->const_mask};
 
     // Decay to reference to pointer should be reference to const pointer
     if (fromType.isArray() && !toType.isArray() && toType.isReference())
@@ -319,82 +312,82 @@ void MetaType::destruct(void *instance) const
 
 namespace {
 
-template<typename F>
-class MetaTypeFunctionList
-{
-public:
-    using key_t = std::pair<MetaType_ID, MetaType_ID>;
-
-    ~MetaTypeFunctionList()
+    template<typename F>
+    class MetaTypeFunctionList
     {
-        std::unique_lock lock{m_lock};
-        m_items.clear();
-        Destroyed = true;
-    }
+    public:
+        using key_t = std::pair<MetaType_ID, MetaType_ID>;
 
-    bool find(key_t const &key) const
-    {
-        std::shared_lock lock{m_lock};
-        return (m_items.find(key) != std::end(m_items));
-    }
-
-    bool add(key_t key, F const *func)
-    {
-        if (!func)
-            return false;
-
-        std::unique_lock lock{m_lock};
-        if (auto search = m_items.find(key); search != std::end(m_items))
-            return false;
-
-        m_items.emplace(key, func);
-        return true;
-    }
-
-    F const* get(key_t const &key) const
-    {
-        std::shared_lock lock{m_lock};
-        if (auto search = m_items.find(key); search != std::end(m_items))
-            return search->second;
-        return nullptr;
-    }
-
-    void remove(key_t const &key)
-    {
-        std::unique_lock lock{m_lock};
-        m_items.erase(key);
-    }
-private:
-    struct hash_key
-    {
-        using result_type = std::size_t;
-        using argument_type = key_t;
-        result_type operator()(argument_type const &key) const
+        ~MetaTypeFunctionList()
         {
-            return std::_Hash_impl::__hash_combine(key.first.value(),
-                        std::_Hash_impl::hash(key.second.value()));
+            std::unique_lock lock{m_lock};
+            m_items.clear();
+            Destroyed = true;
         }
+
+        bool find(key_t const &key) const
+        {
+            std::shared_lock lock{m_lock};
+            return (m_items.find(key) != std::end(m_items));
+        }
+
+        bool add(key_t key, F const *func)
+        {
+            if (!func)
+                return false;
+
+            std::unique_lock lock{m_lock};
+            if (auto search = m_items.find(key); search != std::end(m_items))
+                return false;
+
+            m_items.emplace(key, func);
+            return true;
+        }
+
+        F const* get(key_t const &key) const
+        {
+            std::shared_lock lock{m_lock};
+            if (auto search = m_items.find(key); search != std::end(m_items))
+                return search->second;
+            return nullptr;
+        }
+
+        void remove(key_t const &key)
+        {
+            std::unique_lock lock{m_lock};
+            m_items.erase(key);
+        }
+    private:
+        struct hash_key
+        {
+            using result_type = std::size_t;
+            using argument_type = key_t;
+            result_type operator()(argument_type const &key) const
+            {
+                return std::_Hash_impl::__hash_combine(key.first.value(),
+                            std::_Hash_impl::hash(key.second.value()));
+            }
+        };
+
+        mutable std::shared_mutex m_lock;
+        std::unordered_map<key_t, F const*, hash_key> m_items;
+
+        static bool Destroyed;
+
+        friend MetaTypeFunctionList<internal::ConvertFunctionBase>* customConverters();
     };
 
-    mutable std::shared_mutex m_lock;
-    std::unordered_map<key_t, F const*, hash_key> m_items;
+    template<typename F>
+    bool MetaTypeFunctionList<F>::Destroyed = false;
 
-    static bool Destroyed;
+    inline MetaTypeFunctionList<internal::ConvertFunctionBase>* customConverters()
+    {
+        if (MetaTypeFunctionList<internal::ConvertFunctionBase>::Destroyed)
+            return nullptr;
 
-    friend MetaTypeFunctionList<internal::ConvertFunctionBase>* customConverters();
-};
-
-template<typename F>
-bool MetaTypeFunctionList<F>::Destroyed = false;
-
-inline MetaTypeFunctionList<internal::ConvertFunctionBase>* customConverters()
-{
-    if (MetaTypeFunctionList<internal::ConvertFunctionBase>::Destroyed)
-        return nullptr;
-
-    static MetaTypeFunctionList<internal::ConvertFunctionBase> result;
-    return &result;
-}
+        static MetaTypeFunctionList<internal::ConvertFunctionBase> result;
+        return &result;
+    }
 
 } //namespace
 
