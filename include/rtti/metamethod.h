@@ -16,8 +16,8 @@ namespace rtti {
 
 namespace internal {
 
-    constexpr std::size_t STORAGE_ALIGN = sizeof(void *);
-    constexpr std::size_t STORAGE_SIZE  = sizeof(void *) * 2;
+    constexpr auto STORAGE_ALIGN = sizeof(void *);
+    constexpr auto STORAGE_SIZE  = sizeof(void *) * 2;
 
     union RTTI_API variant_type_storage
     {
@@ -117,9 +117,7 @@ public:
 
     template<typename T>
     bool neq(T const &value) const
-    {
-        return !eq(value);
-    }
+    { return !eq(value); }
 
     MetaType_ID typeId() const noexcept
     { return internalTypeId(); }
@@ -147,8 +145,10 @@ public:
     T& ref() &
     {
         using U = std::remove_reference_t<T>;
+
         auto fromId = internalTypeId(type_attribute::LREF);
-        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
+        auto toId   = metaTypeId<std::add_lvalue_reference_t<U>>();
+
         auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
@@ -157,8 +157,10 @@ public:
     T const& ref() const &
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
+
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
-        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
+        auto toId   = metaTypeId<std::add_lvalue_reference_t<U>>();
+
         auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
@@ -167,8 +169,10 @@ public:
     T const& ref() &&
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
+
         auto fromId = internalTypeId(type_attribute::NONE);
-        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
+        auto toId   = metaTypeId<std::add_lvalue_reference_t<U>>();
+
         auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return std::move(*result);
     }
@@ -177,8 +181,10 @@ public:
     T&& rref() &&
     {
         using U = std::remove_reference_t<T>;
+
         auto fromId = internalTypeId(type_attribute::RREF);
-        auto toId = metaTypeId<std::add_rvalue_reference_t<U>>();
+        auto toId   = metaTypeId<std::add_rvalue_reference_t<U>>();
+
         auto *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return std::move(*result);
     }
@@ -187,8 +193,10 @@ public:
     T const& cref()
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
+
         auto fromId = internalTypeId(type_attribute::LREF);
-        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
+        auto toId   = metaTypeId<std::add_lvalue_reference_t<U>>();
+
         auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
@@ -197,8 +205,10 @@ public:
     T const& cref() const
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
+
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
-        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
+        auto toId   = metaTypeId<std::add_lvalue_reference_t<U>>();
+
         auto const *result = metafunc_cast<U>::invoke(*this, fromId, toId);
         return *result;
     }
@@ -207,11 +217,15 @@ public:
     T* data()
     {
         using U = std::remove_reference_t<T>;
+
         auto fromId = internalTypeId(type_attribute::LREF);
-        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
-        try {
+        auto toId   = metaTypeId<std::add_lvalue_reference_t<U>>();
+        try
+        {
             return metafunc_cast<U>::invoke(*this, fromId, toId);
-        } catch (...) {
+        }
+        catch (...)
+        {
             return nullptr;
         }
     }
@@ -220,11 +234,15 @@ public:
     T const* data() const
     {
         using U = std::add_const_t<std::remove_reference_t<T>>;
+
         auto fromId = internalTypeId(type_attribute::LREF_CONST);
-        auto toId = metaTypeId<std::add_lvalue_reference_t<U>>();
-        try {
+        auto toId   = metaTypeId<std::add_lvalue_reference_t<U>>();
+        try
+        {
             return metafunc_cast<U>::invoke(*this, fromId, toId);
-        } catch (...) {
+        }
+        catch (...)
+        {
             return nullptr;
         }
     }
@@ -235,11 +253,12 @@ public:
         static_assert(!std::is_reference_v<T>, "Type cannot be reference");
 
         std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
+
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
-        //return internal::move_or_copy<T>(&buffer, true);
-        return *reinterpret_cast<T*>(&buffer);
+        // return internal::move_or_copy<T>(&buffer, true);
+        return *reinterpret_cast<T *>(&buffer);
     }
 
     template<typename T>
@@ -248,6 +267,7 @@ public:
         static_assert(!std::is_reference_v<T>, "Type cannot be reference");
 
         std::aligned_storage_t<sizeof(T), alignof(T)> buffer;
+
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
@@ -260,10 +280,15 @@ public:
     {
         static_assert(!std::is_reference_v<T>, "Type cannot be reference");
 
-        return is<T>() ||
-               MetaType::hasConverter(
-                    internalTypeId(type_attribute::LREF),
-                    metaTypeId<T>());
+        if (is<T>())
+            return true;
+
+        auto fromId = internalTypeId(type_attribute::LREF);
+        auto toId   = metaTypeId<T>();
+        if (MetaType::hasConverter(fromId, toId))
+            return true;
+
+        return false;
     }
 
     template<typename T>
@@ -271,10 +296,15 @@ public:
     {
         static_assert(!std::is_reference_v<T>, "Type cannot be reference");
 
-        return is<T>() ||
-               MetaType::hasConverter(
-                    internalTypeId(type_attribute::LREF_CONST),
-                    metaTypeId<T>());
+        if (is<T>())
+            return true;
+
+        auto fromId = internalTypeId(type_attribute::LREF_CONST);
+        auto toId   = metaTypeId<T>();
+        if (MetaType::hasConverter(fromId, toId))
+            return true;
+
+        return false;
     }
 
     template<typename T>
@@ -349,6 +379,7 @@ private:
         static bool cast(variant const&, MetaType,
                          std::integral_constant<int, 0>)
         { return false; }
+
         // class
         static bool cast(variant const &self, MetaType from,
                          std::integral_constant<int, 1>)
@@ -357,6 +388,7 @@ private:
                 return cast_imp(self);
             return false;
         }
+
         // class ptr
         static bool cast(variant const &self, MetaType from,
                          std::integral_constant<int, 2>)
@@ -365,6 +397,7 @@ private:
                 return cast_imp(self);
             return false;
         }
+
         // implementaion
         static bool cast_imp(variant const &self)
         {
@@ -375,7 +408,7 @@ private:
                 return false;
 
             auto fromClass = MetaClass::find(info.typeId);
-            auto toClass = MetaClass::find(metaTypeId<C>());
+            auto toClass   = MetaClass::find(metaTypeId<C>());
             if (!fromClass || !toClass)
                 return false;
             return fromClass->inheritedFrom(toClass);
@@ -387,31 +420,30 @@ private:
     {
         static T* invoke(variant const &self, MetaType_ID fromId, MetaType_ID toId)
         {
+            using namespace std::literals;
+
             if (self.empty())
                 throw bad_variant_cast{"Variant is empty"};
 
             Decay const *result = nullptr;
+
             auto from = MetaType{fromId};
-            auto to = MetaType{toId};
+            auto to   = MetaType{toId};
             if (MetaType::compatible(from, to))
             {
                 if (from.decayId() == to.decayId())
-                    result = static_cast<Decay const*>(self.raw_data_ptr());
-                else
-                {
-                    auto ptr = cast(self, from, tag_t{});
-                    if (ptr)
-                        result = static_cast<Decay const*>(ptr);
-                }
+                    result = static_cast<Decay const *>(self.raw_data_ptr());
+                else if (auto ptr = cast(self, from, tag_t{}))
+                    result = static_cast<Decay const *>(ptr);
             }
 
             if (!result)
-                throw bad_variant_cast{std::string{"Incompatible types: "} +
-                                       from.typeName() + " -> " + to.typeName()};
-            if constexpr(std::is_array_v<T>)
-                return reinterpret_cast<T*>(*result);
+                throw bad_variant_cast{"Incompatible types: "s + from.typeName() + " -> " + to.typeName()};
+
+            if constexpr (std::is_array_v<T>)
+                return reinterpret_cast<T *>(*result);
             else
-                return const_cast<T*>(result);
+                return const_cast<T *>(result);
         }
 
     private:
@@ -427,6 +459,7 @@ private:
         static void const* cast(variant const&, MetaType,
                                 std::integral_constant<int, 0>)
         { return nullptr; }
+
         // class
         static void const* cast(variant const &self, MetaType from,
                                 std::integral_constant<int, 1>)
@@ -436,23 +469,24 @@ private:
 
             return nullptr;
         }
+
         // class ptr
         static void const* cast(variant const &self, MetaType from,
                                 std::integral_constant<int, 2>)
         {
             if (from.isClassPtr())
             {
-                auto ptr = cast_imp(self);
-                if (ptr)
+                if (auto ptr = cast_imp(self))
                 {
                     if (ptr == self.storage.ptr)
                         return &self.storage.ptr;
-                    else
-                        throw bad_variant_cast("Reference to sub-object pointers isn't supported");
+
+                    throw bad_variant_cast("Reference to sub-object pointers isn't supported");
                 }
             }
             return nullptr;
         }
+
         // implementaion
         static void const* cast_imp(variant const &self)
         {
@@ -463,7 +497,7 @@ private:
                 return nullptr;
 
             auto fromClass = MetaClass::find(info.typeId);
-            auto toClass = MetaClass::find(metaTypeId<C>());
+            auto toClass   = MetaClass::find(metaTypeId<C>());
             if (!fromClass || !toClass)
                 return nullptr;
 
@@ -478,12 +512,14 @@ private:
 
         static void invoke(variant const &self, MetaType_ID typeId, void *buffer)
         {
+            using namespace std::literals;
+
             assert(buffer);
             if (self.empty())
                 throw bad_variant_convert{"Variant is empty"};
 
             auto from = MetaType{typeId};
-            auto to = MetaType{metaTypeId<T>()};
+            auto to   = MetaType{metaTypeId<T>()};
             if (MetaType::compatible(from, to))
             {
                 if (from.decayId() == to.decayId())
@@ -495,16 +531,10 @@ private:
                     return;
             }
 
-            if (MetaType::hasConverter(from, to))
-            {
-                if (MetaType::convert(self.raw_data_ptr(), from, buffer, to))
-                    return;
+            if (MetaType::convert(self.raw_data_ptr(), from, buffer, to))
+                return;
 
-                throw bad_variant_convert{std::string{"Conversion failed: "} +
-                                          from.typeName() + " -> " + to.typeName()};
-            }
-            throw bad_variant_convert{std::string{"Incompatible types: "} +
-                                      from.typeName() + " -> " + to.typeName()};
+            throw bad_variant_convert{"Incompatible types: "s + from.typeName() + " -> " + to.typeName()};
         }
 
     private:
@@ -520,38 +550,37 @@ private:
         static bool cast(variant const&, MetaType, MetaType, void*,
                          std::integral_constant<int, 0>)
         { return false; }
+
         // class
         static bool cast(variant const &self, MetaType from, MetaType to, void *buffer,
                          std::integral_constant<int, 1>)
         {
             if (from.isClass())
             {
-                auto ptr = cast_imp(self);
-                if (ptr)
+                if (auto ptr = cast_imp(self))
                 {
                     to.copy_construct(ptr, buffer);
                     return true;
                 }
-                return false;
             }
             return false;
         }
+
         // class ptr
         static bool cast(variant const &self, MetaType from, MetaType to, void *buffer,
                          std::integral_constant<int, 2>)
         {
             if (from.isClassPtr())
             {
-                auto ptr = cast_imp(self);
-                if (ptr)
+                if (auto ptr = cast_imp(self))
                 {
                     to.copy_construct(&ptr, buffer);
                     return true;
                 }
-                return false;
             }
             return false;
         }
+
         // implementaion
         static void const* cast_imp(variant const &self)
         {
@@ -562,7 +591,7 @@ private:
                 return nullptr;
 
             auto fromClass = MetaClass::find(info.typeId);
-            auto toClass = MetaClass::find(metaTypeId<C>());
+            auto toClass   = MetaClass::find(metaTypeId<C>());
             if (!fromClass || !toClass)
                 return nullptr;
 

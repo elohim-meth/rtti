@@ -432,8 +432,8 @@ bool MetaType::convert(void const *from, MetaType fromType, void *to, MetaType t
         if (auto list = customConverters())
         {
             auto converter = list->get({fromType.m_typeInfo->decay, toType.m_typeInfo->decay});
-            assert(converter);
-            return converter->invoke(from, to);
+            if (converter)
+                return converter->invoke(from, to);
         }
     return false;
 }
