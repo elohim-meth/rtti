@@ -56,15 +56,18 @@ struct variant_function_table_impl<T, true, false>
 
     static MetaType_ID type(type_attribute attr)
     {
-        if (attr == type_attribute::NONE)
+        switch (attr) {
+        case type_attribute::NONE:
             return metaTypeId<U>();
-        else if (attr == type_attribute::LREF)
+        case type_attribute::LREF:
             return metaTypeId<ULref>();
-        else if (attr == type_attribute::RREF)
+        case type_attribute::RREF:
             return metaTypeId<URref>();
-        else if (attr == type_attribute::LREF_CONST)
+        case type_attribute::LREF_CONST:
             return metaTypeId<UConstLref>();
-        return metaTypeId<U>();
+        default:
+            return metaTypeId<U>();
+        }
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -118,15 +121,18 @@ struct variant_function_table_impl<T, true, true>
 {
     static MetaType_ID type(type_attribute attr)
     {
-        if (attr == type_attribute::NONE)
+        switch (attr) {
+        case type_attribute::NONE:
             return metaTypeId<U>();
-        else if (attr == type_attribute::LREF)
+        case type_attribute::LREF:
             return metaTypeId<ULref>();
-        else if (attr == type_attribute::RREF)
+        case type_attribute::RREF:
             return metaTypeId<URref>();
-        else if (attr == type_attribute::LREF_CONST)
+        case type_attribute::LREF_CONST:
             return metaTypeId<UConstLref>();
-        return metaTypeId<U>();
+        default:
+            return metaTypeId<U>();
+        }
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -185,15 +191,18 @@ struct variant_function_table_impl<T, false, false>
 
     static MetaType_ID type(type_attribute attr)
     {
-        if (attr == type_attribute::NONE)
+        switch (attr) {
+        case type_attribute::NONE:
             return metaTypeId<U>();
-        else if (attr == type_attribute::LREF)
+        case type_attribute::LREF:
             return metaTypeId<ULref>();
-        else if (attr == type_attribute::RREF)
+        case type_attribute::RREF:
             return metaTypeId<URref>();
-        else if (attr == type_attribute::LREF_CONST)
+        case type_attribute::LREF_CONST:
             return metaTypeId<UConstLref>();
-        return metaTypeId<U>();
+        default:
+            return metaTypeId<U>();
+        }
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -254,15 +263,18 @@ struct variant_function_table_impl<T[N], false, false>
 
     static MetaType_ID type(type_attribute attr)
     {
-        if (attr == type_attribute::NONE)
+        switch (attr) {
+        case type_attribute::NONE:
             return metaTypeId<U>();
-        else if (attr == type_attribute::LREF)
+        case type_attribute::LREF:
             return metaTypeId<ULref>();
-        else if (attr == type_attribute::RREF)
+        case type_attribute::RREF:
             return metaTypeId<URref>();
-        else if (attr == type_attribute::LREF_CONST)
+        case type_attribute::LREF_CONST:
             return metaTypeId<UConstLref>();
-        return metaTypeId<U>();
+        default:
+            return metaTypeId<U>();
+        }
     }
 
     static void const* access(variant_type_storage const &value) noexcept
@@ -334,6 +346,7 @@ struct class_info_get
         else
         {
             using is_registered = typename has_method_classInfo<ClassInfo(C::*)() const>::type;
+
             auto instance = Selector::access(value);
             if constexpr(std::is_class_v<Decay>)
             {
