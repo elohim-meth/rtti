@@ -59,7 +59,7 @@ struct hash<mpl::ID<Tag, Type, default_value>>
     using result_type = std::size_t;
     using argument_type = mpl::ID<Tag, Type, default_value>;
 
-    result_type operator()(const argument_type &id) const
+    result_type operator()(argument_type const &id) const
     {
         return std::hash<Type>(id.value());
     }

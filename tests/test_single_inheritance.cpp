@@ -53,39 +53,9 @@ public:
     int64_t m_singlea4 = -1;
 };
 
-struct DiamondTop
-{
-    DECLARE_CLASSINFO
-public:
-    int m_top = 256;
-};
-
-struct DiamondLeft : virtual DiamondTop
-{
-    DECLARE_CLASSINFO
-public:
-    double m_left = 3.14;
-};
-
-struct DiamondRight : virtual DiamondTop
-{
-    DECLARE_CLASSINFO
-public:
-    std::string m_right = "Hello, World!";
-};
-
-struct DiamondBottom : DiamondLeft, DiamondRight
-{
-    DECLARE_CLASSINFO
-public:
-    int m_bottom = 1024;
-};
-
 int test_class_param(SingleA2 const *param)
 {
-    if ((param->m_basea == 256) &&
-        (param->m_singlea1 == true) &&
-        (param->m_singlea2 == 3.14))
+    if ((param->m_basea == 256) && (param->m_singlea1 == true) && (param->m_singlea2 == 3.14))
         return 1;
     return 0;
 }
@@ -93,29 +63,24 @@ int test_class_param(SingleA2 const *param)
 int test_class_param(SingleA2 *param)
 {
     param->m_singlea1 = false;
-    if ((param->m_basea == 256) &&
-        (param->m_singlea1 == false) &&
-        (param->m_singlea2 == 3.14))
+    if ((param->m_basea == 256) && (param->m_singlea1 == false) && (param->m_singlea2 == 3.14))
         return 1;
     return 0;
 }
 
 int test_class_param(SingleA2 const &param)
 {
-    if ((param.m_basea == 256) &&
-        (param.m_singlea1 == true) &&
-        (param.m_singlea2 == 3.14))
+    if ((param.m_basea == 256) && (param.m_singlea1 == true) && (param.m_singlea2 == 3.14))
         return 1;
     return 0;
 }
 
-bool test_class_param(SingleA2 &param)
+int test_class_param(SingleA2 &param)
 {
     param.m_singlea1 = false;
-    return
-        (param.m_basea == 256) &&
-        (param.m_singlea1 == false) &&
-        (param.m_singlea2 == 3.14);
+    if ((param.m_basea == 256) && (param.m_singlea1 == false) && (param.m_singlea2 == 3.14))
+        return 1;
+    return 0;
 }
 
 bool test_class_param(SingleA2 &&param)
@@ -152,22 +117,10 @@ RTTI_REGISTER
                 ._base<test::SingleA3>()
             ._end()
 
-            ._class<test::DiamondTop>("DiamondTop")
-            ._end()
-            ._class<test::DiamondLeft>("DiamondLeft")
-                ._base<test::DiamondTop>()
-            ._end()
-            ._class<test::DiamondRight>("DiamondRight")
-                ._base<test::DiamondTop>()
-            ._end()
-            ._class<test::DiamondBottom>("DiamondBottom")
-                ._base<test::DiamondLeft, test::DiamondRight>()
-            ._end()
-
             ._method<int(*)(test::SingleA2 const *)>("test_class_param [const ptr]", &test::test_class_param)
             ._method<int(*)(test::SingleA2 *)>("test_class_param [ptr]", &test::test_class_param)
             ._method<int(*)(test::SingleA2 const &)>("test_class_param [const ref]", &test::test_class_param)
-            ._method<bool(*)(test::SingleA2 &)>("test_class_param [ref]", &test::test_class_param)
+            ._method<int(*)(test::SingleA2 &)>("test_class_param [ref]", &test::test_class_param)
             ._method<bool(*)(test::SingleA2 &&)>("test_class_param [rref]", &test::test_class_param)
 
         ._end()
@@ -178,13 +131,16 @@ TEST_CASE("Single inheritance")
 {
     test::SingleA3 derived;
     test::SingleA3 const &const_derived = derived;
+
     test::BaseA *ptr2base = &derived;
     test::BaseA const *const_ptr2base = &derived;
+
     test::BaseA &ref2base = derived;
     test::BaseA const &const_ref2base = derived;
-    rtti::variant v1 = const_ptr2base;
+
+    rtti::variant v1  = const_ptr2base;
     rtti::variant v11 = std::ref(const_ptr2base);
-    rtti::variant v2 = ptr2base;
+    rtti::variant v2  = ptr2base;
     rtti::variant v22 = std::ref(ptr2base);
 
     SUBCASE("Up-Casting")
@@ -200,8 +156,8 @@ TEST_CASE("Single inheritance")
         REQUIRE_NOTHROW(rtti::meta_cast<test::SingleA1>(derived));
         REQUIRE_NOTHROW(rtti::meta_cast<test::SingleA2>(derived));
         REQUIRE_NOTHROW(rtti::meta_cast<test::SingleA3>(derived));
-        REQUIRE_THROWS(rtti::meta_cast<test::SingleA22>(derived));
-        REQUIRE_THROWS(rtti::meta_cast<test::SingleA33>(derived));
+        REQUIRE_THROWS_AS(rtti::meta_cast<test::SingleA22>(derived), rtti::bad_meta_cast);
+        REQUIRE_THROWS_AS(rtti::meta_cast<test::SingleA33>(derived), rtti::bad_meta_cast);
     }
 
 
@@ -239,10 +195,9 @@ TEST_CASE("Single inheritance")
 
         SUBCASE("Pass as pointer to const base")
         {
-
-            rtti::variant v1 = const_ptr2base;
+            rtti::variant v1  = const_ptr2base;
             rtti::variant v11 = std::ref(const_ptr2base);
-            rtti::variant v2 = ptr2base;
+            rtti::variant v2  = ptr2base;
             rtti::variant v22 = std::ref(ptr2base);
 
             auto *method = nsTest->getMethod("test_class_param [const ptr]");
@@ -281,9 +236,9 @@ TEST_CASE("Single inheritance")
 
         SUBCASE("Pass as pointer to base")
         {
-            rtti::variant v1 = const_ptr2base;
+            rtti::variant v1  = const_ptr2base;
             rtti::variant v11 = std::ref(const_ptr2base);
-            rtti::variant v2 = ptr2base;
+            rtti::variant v2  = ptr2base;
             rtti::variant v22 = std::ref(ptr2base);
 
             auto *method = nsTest->getMethod("test_class_param [ptr]");
@@ -324,9 +279,9 @@ TEST_CASE("Single inheritance")
 
         SUBCASE("Pass as reference to const base")
         {
-            rtti::variant v1 = std::ref(derived);
+            rtti::variant v1  = std::ref(derived);
             rtti::variant v11 = std::ref(const_derived);
-            rtti::variant v2 = std::ref(ref2base);
+            rtti::variant v2  = std::ref(ref2base);
             rtti::variant v22 = std::ref(const_ref2base);
 
             auto *method = nsTest->getMethod("test_class_param [const ref]");
@@ -358,7 +313,44 @@ TEST_CASE("Single inheritance")
             REQUIRE(v == 1);
             v = method->invoke(v22);
             REQUIRE(v == 1);
+        }
 
+        SUBCASE("Pass as reference to base")
+        {
+            rtti::variant v1  = std::ref(derived);
+            rtti::variant v11 = std::ref(const_derived);
+            rtti::variant v2  = std::ref(ref2base);
+            rtti::variant v22 = std::ref(const_ref2base);
+
+            auto *method = nsTest->getMethod("test_class_param [ref]");
+            REQUIRE(method);
+
+            derived.m_singlea1 = true;
+            auto v = method->invoke(derived);
+            REQUIRE(((v == 1) && !derived.m_singlea1));
+
+            REQUIRE_THROWS_AS(method->invoke(rtti::variant(derived)), rtti::bad_variant_cast);
+            REQUIRE_THROWS_AS(method->invoke(const_derived), rtti::bad_variant_cast);
+
+            derived.m_singlea1 = true;
+            v = method->invoke(*ptr2base);
+            REQUIRE(((v == 1) && !derived.m_singlea1));
+            REQUIRE_THROWS_AS(method->invoke(*const_ptr2base), rtti::bad_variant_cast);
+
+            derived.m_singlea1 = true;
+            v = method->invoke(ref2base);
+            REQUIRE(((v == 1) && !derived.m_singlea1));
+            REQUIRE_THROWS_AS(method->invoke(const_ref2base), rtti::bad_variant_cast);
+
+            derived.m_singlea1 = true;
+            v = method->invoke(ref2base);
+            REQUIRE(((v == 1) && !derived.m_singlea1));
+            REQUIRE_THROWS_AS(method->invoke(v11), rtti::bad_variant_cast);
+
+            derived.m_singlea1 = true;
+            v = method->invoke(v2);
+            REQUIRE(((v == 1) && !derived.m_singlea1));
+            REQUIRE_THROWS_AS(method->invoke(v22), rtti::bad_variant_cast);
         }
     }
 }
