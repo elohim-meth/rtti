@@ -433,8 +433,7 @@ inline variant_function_table const* variant_function_table_for<variant>() noexc
 
 } // namespace internal
 
-template<typename T,
-          typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, variant>>>
+template<typename T, typename>
 variant::variant(T &&value)
     : manager{internal::variant_function_table_for<std::remove_reference_t<T>>()}
 {
@@ -449,8 +448,7 @@ variant::variant(T &&value)
     constructor(std::addressof(value), selector_t{});
 }
 
-template<typename T,
-         typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, variant>>>
+template<typename T, typename>
 variant& variant::operator=(T &&value)
 {
     variant{std::forward<T>(value)}.swap(*this);

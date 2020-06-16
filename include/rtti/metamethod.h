@@ -322,7 +322,7 @@ public:
         catch (...)
         {
             return false;
-        };
+        }
     }
 
     template<typename ...Args>

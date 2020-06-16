@@ -3,10 +3,10 @@
 
 namespace rtti {
 
-template<typename T,
-          typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, argument>>>
+template<typename T, typename>
 argument::argument(T &&value) noexcept
-    : m_value{std::ref(value)}, m_rvalue(!std::is_reference_v<T>)
+    : m_rvalue(!std::is_reference_v<T>)
+    , m_value{std::ref(value)}
 {}
 
 // rvalue reference
