@@ -168,7 +168,6 @@ private:
         template<typename> friend class internal::meta_type;
     };
     friend class rtti::variant;
-    friend class rtti::argument;
 public:
     TypeInfo const* typeInfo(TypeInfoKey) const
     { return m_typeInfo; }

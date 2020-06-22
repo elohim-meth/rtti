@@ -182,7 +182,22 @@ TEST_CASE("Single inheritance")
 
     SUBCASE("Variant transformation")
     {
-
+        auto *nsGlobal = rtti::MetaNamespace::global();
+        REQUIRE(nsGlobal);
+        auto *nsTest = nsGlobal->getNamespace("test");
+        REQUIRE(nsTest);
+        auto *mcSingleA3 = nsTest->getClass("SingleA3");
+        REQUIRE(mcSingleA3);
+        auto *constructor = mcSingleA3->defaultConstructor();
+        REQUIRE(constructor);
+        auto instance = constructor->invoke();
+        REQUIRE(instance.is<test::BaseA>());
+        REQUIRE(instance.is<test::SingleA1>());
+        REQUIRE(instance.is<test::SingleA2>());
+        REQUIRE(instance.is<test::SingleA3>());
+        REQUIRE_FALSE(instance.is<test::SingleA22>());
+        REQUIRE_FALSE(instance.is<test::SingleA33>());
+        REQUIRE_FALSE(instance.is<test::SingleA4>());
     }
 
     SUBCASE("Param transformation")

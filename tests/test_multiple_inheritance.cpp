@@ -54,6 +54,11 @@ public:
     std::string m_derivedzy2 = "Hello, World!";
 };
 
+struct DerivedZY2BX3: DerivedZY2, BaseX
+{
+    bool m_derivedzy2x3 = true;
+};
+
 struct DerivedZY2X3: DerivedZY2, DerivedX1
 {
     bool m_derivedzy2x3 = true;
@@ -82,6 +87,9 @@ RTTI_REGISTER
             ._end()
             ._class<test::DerivedZY2>("DerivedZY2")
                 ._base<test::DerivedZ1, test::DerivedY1>()
+            ._end()
+            ._class<test::DerivedZY2BX3>("DerivedZY2BX3")
+                ._base<test::DerivedZY2, test::BaseX>()
             ._end()
             ._class<test::DerivedZY2X3>("DerivedZY2X3")
                 ._base<test::DerivedZY2, test::DerivedX1>()
