@@ -96,3 +96,29 @@ RTTI_REGISTER
             ._end()
         ._end();
 }
+
+TEST_CASE("Multiple inheritance")
+{
+    SUBCASE("Variant transformation")
+    {
+        auto *nsGlobal = rtti::MetaNamespace::global();
+        REQUIRE(nsGlobal);
+        auto *nsTest = nsGlobal->getNamespace("test");
+        REQUIRE(nsTest);
+        auto *mcDerived = nsTest->getClass("DerivedZY2BX3");
+        REQUIRE(mcDerived);
+        auto *constructor = mcDerived->defaultConstructor();
+        REQUIRE(constructor);
+        auto instance = constructor->invoke();
+
+        REQUIRE(instance.is<test::BaseX>());
+        REQUIRE(instance.is<test::BaseY>());
+        REQUIRE(instance.is<test::BaseZ>());
+
+
+        REQUIRE(instance.is<test::DerivedZ1>());
+        REQUIRE(instance.is<test::DerivedY1>());
+        REQUIRE(instance.is<test::DerivedZY2>());
+        REQUIRE_FALSE(instance.is<test::DerivedX1>());
+    }
+}
