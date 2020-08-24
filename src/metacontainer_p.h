@@ -34,7 +34,7 @@ private:
 template<typename F>
 inline void MetaItemList::for_each(F &&func) const
 {
-    std::shared_lock<std::shared_mutex> lock{m_lock};
+    std::shared_lock lock{m_lock};
     for(auto &item: m_items)
     {
         if (!func(item.get()))

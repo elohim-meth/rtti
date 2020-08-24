@@ -204,26 +204,19 @@ struct RTTI_PRIVATE type_function_table
     destroy_t const f_destroy = nullptr;
     compare_eq_t const f_compare_eq = nullptr;
 
-    constexpr type_function_table
-    (
-        allocate_t allocate,
-        deallocate_t deallocate,
-        default_construct_t default_construct,
-        copy_construct_t copy_construct,
-        move_construct_t move_construct,
-        move_or_copy_t move_or_copy,
-        destroy_t destroy,
-        compare_eq_t compare_eq
-    ) noexcept
-    :
-        f_allocate{allocate},
-        f_deallocate{deallocate},
-        f_default_construct{default_construct},
-        f_copy_construct{copy_construct},
-        f_move_construct{move_construct},
-        f_move_or_copy{move_or_copy},
-        f_destroy{destroy},
-        f_compare_eq{compare_eq}
+    constexpr type_function_table(allocate_t allocate, deallocate_t deallocate,
+                                  default_construct_t default_construct,
+                                  copy_construct_t copy_construct, move_construct_t move_construct,
+                                  move_or_copy_t move_or_copy, destroy_t destroy,
+                                  compare_eq_t compare_eq) noexcept
+        : f_allocate{allocate}
+        , f_deallocate{deallocate}
+        , f_default_construct{default_construct}
+        , f_copy_construct{copy_construct}
+        , f_move_construct{move_construct}
+        , f_move_or_copy{move_or_copy}
+        , f_destroy{destroy}
+        , f_compare_eq{compare_eq}
     {}
 };
 

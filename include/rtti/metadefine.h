@@ -1066,7 +1066,7 @@ namespace                                                                       
         }                                                                           \
     };                                                                              \
 }                                                                                   \
-static const rtti_auto_register_t CONCAT(auto_register_,__LINE__);                  \
+static rtti_auto_register_t const CONCAT(auto_register_,__LINE__);                  \
 static void rtti_auto_register_function_()
 
 
