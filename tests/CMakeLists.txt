@@ -10,7 +10,8 @@ target_sources(doctest_tests PRIVATE
     test_global_ns.cpp
     test_single_inheritance.cpp
     test_multiple_inheritance.cpp
-    test_virtual_inheritance.cpp)
+    test_virtual_inheritance.cpp
+    test_variant.cpp)
 
 target_link_libraries(doctest_tests PRIVATE doctest::doctest RTTI::rtti)
 
