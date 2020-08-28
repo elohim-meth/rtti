@@ -478,7 +478,14 @@ bool variant::eq(T const &value) const
     {
         auto *buffer = mt_self.allocate();
         FINALLY { mt_self.deallocate(buffer); };
-        if (MetaType::convert(std::addressof(value), mt_value, buffer, mt_self))
+
+        // Array is passed as **data
+        auto tmp = std::addressof(value);
+        void const *address = tmp;
+        if (mt_value.isArray())
+            address = std::addressof(tmp);
+
+        if (MetaType::convert(address, mt_value, buffer, mt_self))
         {
             FINALLY { mt_self.destroy(buffer); };
             return mt_self.compare_eq(raw_data_ptr(), buffer);
@@ -526,6 +533,27 @@ variant variant::invoke(std::string_view name, Args&& ...args) const
                 return mt_method->invoke(*this, std::forward<Args>(args)...);
 
             throw runtime_error{"Method ["s + name + "] isn't found in class T = " + type.typeName()};
+        }
+        throw runtime_error{"Class T = "s + type.typeName() + " isn't registered"};
+    }
+    throw runtime_error{"Type T = "s + type.typeName() + " isn't Class or ClassPtr"};
+}
+
+
+template<typename T>
+void variant::set_property(std::string_view name, T &&value)
+{
+    using namespace std::literals;
+
+    auto type = MetaType{typeId()};
+    if (type.isClass() || type.isClassPtr())
+    {
+        if (auto *mt_class = type.metaClass())
+        {
+            if (auto *mt_property = mt_class->getProperty(name))
+                return mt_property->set(*this, std::forward<T>(value));
+
+            throw runtime_error{"Property ["s + name + "] isn't found in class T = " + type.typeName()};
         }
         throw runtime_error{"Class T = "s + type.typeName() + " isn't registered"};
     }

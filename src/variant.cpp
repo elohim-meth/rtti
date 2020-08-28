@@ -1,4 +1,4 @@
-﻿#include <rtti/metamethod.h>
+﻿#include <rtti/variant.h>
 
 namespace rtti {
 
@@ -110,6 +110,25 @@ bool variant::operator==(variant const &value) const
     }
 
     return false;
+}
+
+variant variant::get_property(std::string_view name) const
+{
+    using namespace std::literals;
+
+    auto type = MetaType{typeId()};
+    if (type.isClass() || type.isClassPtr())
+    {
+        if (auto *mt_class = type.metaClass())
+        {
+            if (auto *mt_property = mt_class->getProperty(name))
+                return mt_property->get(*this);
+
+            throw runtime_error{"Property ["s + name + "] isn't found in class T = " + type.typeName()};
+        }
+        throw runtime_error{"Class T = "s + type.typeName() + " isn't registered"};
+    }
+    throw runtime_error{"Type T = "s + type.typeName() + " isn't Class or ClassPtr"};
 }
 
 } // namespace rtti

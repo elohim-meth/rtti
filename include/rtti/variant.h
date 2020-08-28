@@ -328,6 +328,10 @@ public:
     template<typename ...Args>
     variant invoke(std::string_view name, Args&& ...args) const;
 
+    variant get_property(std::string_view name) const;
+    template<typename T>
+    void set_property(std::string_view name, T &&value);
+
     using type_attribute = internal::type_attribute;
     static variant const empty_variant;
 private:
@@ -733,6 +737,113 @@ public:
                               std::unique_ptr<IMethodInvoker> invoker, CreateAccessKey)
     { return create(name, owner, std::move(invoker)); }
 
+};
+
+struct RTTI_API IPropertyInvoker
+{
+    virtual bool isStatic() const                                       = 0;
+    virtual MetaType_ID typeId() const                                  = 0;
+    virtual bool readOnly() const                                       = 0;
+    virtual variant get_static() const                                  = 0;
+    virtual void set_static(argument arg) const                         = 0;
+    virtual variant get_field(variant const &instance) const            = 0;
+    virtual void set_field(variant &instance, argument arg) const       = 0;
+    virtual void set_field(variant const &instance, argument arg) const = 0;
+    virtual ~IPropertyInvoker()                                         = default;
+};
+
+class MetaPropertyPrivate;
+
+class RTTI_API MetaProperty final: public MetaItem
+{
+    DECLARE_PRIVATE(MetaProperty)
+public:
+    MetaCategory category() const override;
+
+    template<typename... Args>
+    variant get(Args &&... args) const
+    {
+        using argument_indexes_t = mpl::index_sequence_for_t<Args...>;
+        return get_impl(argument_indexes_t{}, std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    void set(Args &&... args) const
+    {
+        using argument_indexes_t = mpl::index_sequence_for_t<Args...>;
+        set_impl(argument_indexes_t{}, std::forward<Args>(args)...);
+    }
+
+    bool readOnly() const { return invoker()->readOnly(); }
+
+protected:
+    explicit MetaProperty(std::string_view name, MetaContainer &owner,
+                          std::unique_ptr<IPropertyInvoker> invoker);
+    static MetaProperty* create(std::string_view name, MetaContainer &owner,
+                                std::unique_ptr<IPropertyInvoker> invoker);
+
+private:
+    IPropertyInvoker const* invoker() const;
+
+    variant get_impl(mpl::index_sequence<>) const
+    {
+        auto interface = invoker();
+        if (!interface->isStatic())
+            throw invoke_error{"Trying to get static property " + qualifiedName()
+                               + " as field property"};
+        return interface->get_static();
+    }
+
+    variant get_impl(mpl::index_sequence<0>, const variant &instance) const
+    {
+        auto interface = invoker();
+        if (interface->isStatic())
+            throw invoke_error{"Trying to get field property " + qualifiedName()
+                               + " as static property"};
+        return interface->get_field(instance);
+    }
+
+    template<typename Arg>
+    void set_impl(mpl::index_sequence<0>, Arg &&arg) const
+    {
+        auto interface = invoker();
+        if (!interface->isStatic())
+            throw invoke_error{"Trying to set static property " + qualifiedName()
+                               + " as field property"};
+        interface->set_static(std::forward<Arg>(arg));
+    }
+
+    template<typename Arg>
+    void set_impl(mpl::index_sequence<0, 1>, variant const &instance, Arg &&arg) const
+    {
+        auto interface = invoker();
+        if (interface->isStatic())
+            throw invoke_error{"Trying to set field property " + qualifiedName()
+                               + " as static property"};
+        interface->set_field(instance, std::forward<Arg>(arg));
+    }
+
+    template<typename Arg>
+    void set_impl(mpl::index_sequence<0, 1>, variant &instance, Arg &&arg) const
+    {
+        auto interface = invoker();
+        if (interface->isStatic())
+            throw invoke_error{"Trying to set field property " + qualifiedName()
+                               + " as static property"};
+        interface->set_field(instance, std::forward<Arg>(arg));
+    }
+
+private:
+    DECLARE_ACCESS_KEY(CreateAccessKey)
+        template<typename, typename> friend class rtti::meta_define;
+    };
+
+public:
+    static MetaProperty* create(std::string_view name, MetaContainer &owner,
+                                std::unique_ptr<IPropertyInvoker> invoker, CreateAccessKey)
+    {
+        return create(name, owner, std::move(invoker));
+    }
 };
 
 } // namespace rtti

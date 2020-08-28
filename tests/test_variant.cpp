@@ -52,7 +52,6 @@ private:
 class TestQPointer {
 public:
     TestQPointer()
-        : m_pImpl{new PrivateImpl()}
     {
         ++default_constructed;
     }
@@ -125,8 +124,7 @@ public:
 
     std::string& value()
     {
-        if (empty())
-            throw std::runtime_error{"Empty!"};
+        allocate_pimpl();
         return m_pImpl->m_value;
     }
 
@@ -139,8 +137,7 @@ public:
 
     void set_priority(int64_t value)
     {
-        if (empty())
-            throw std::runtime_error{"Empty!"};
+        allocate_pimpl();
         if (m_pImpl->m_priority != value)
         {
             m_pImpl->m_priority = value;
@@ -152,6 +149,12 @@ public:
     {  return !m_pImpl; }
 
 private:
+    void allocate_pimpl()
+    {
+        if (!m_pImpl)
+            m_pImpl = new PrivateImpl();
+    }
+
     PrivateImpl *m_pImpl = nullptr;
 
     friend class PrivatePimpl;
@@ -224,6 +227,19 @@ TEST_CASE("Variant")
                 && (copy_assigned == 0)
                 && (move_assigned == 0)
             ));
+
+            auto *meta_prop = meta_class->getProperty("priority");
+            REQUIRE(meta_prop);
+            meta_prop->set(v, 100);
+            REQUIRE(meta_prop->get(v) == 100LL);
+            REQUIRE(meta_prop->get(v).eq(100));
+            REQUIRE(rov == "100"s);
+            REQUIRE(rov.eq("100"));
+            REQUIRE(rov.eq(100));
+
+            v.set_property("priority", 256);
+            REQUIRE(v.get_property("priority").eq(256));
+            REQUIRE(meta_prop->get(v).eq(256));
         }
 
         SUBCASE("Move")
@@ -241,6 +257,7 @@ TEST_CASE("Variant")
             REQUIRE(rov == "Qwerty"s);
 
             REQUIRE(qp.empty());
+            REQUIRE_FALSE(qp.check());
 
             REQUIRE((
                 (explicit_constructed == 0)
@@ -257,9 +274,26 @@ TEST_CASE("Variant")
             reset_counters();
 
             rtti::variant v = std::ref(qp);
-
             REQUIRE(v.invoke("check") == true);
             REQUIRE(v.invoke("empty") == false);
+
+            auto rov = v.invoke("const_value");
+            REQUIRE(rov == "Hello, World!"s);
+            auto ev = v.invoke("value");
+            ev.ref<std::string>() = "Qwerty";
+            REQUIRE(rov == "Qwerty"s);
+            REQUIRE(qp.value() == "Qwerty");
+
+            REQUIRE((
+                (explicit_constructed == 0)
+                && (default_constructed == 0)
+                && (copy_constructed == 0)
+                && (move_constructed == 0)
+                && (copy_assigned == 0)
+                && (move_assigned == 0)
+            ));
+
+//            v.set_property
         }
     }
 }

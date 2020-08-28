@@ -2,8 +2,6 @@
 #define METADEFINE_H
 
 #include <rtti/metaconstructor.h>
-#include <rtti/metamethod.h>
-#include <rtti/metaproperty.h>
 #include <rtti/metaenum.h>
 #include <rtti/metaclass.h>
 #include <rtti/metanamespace.h>

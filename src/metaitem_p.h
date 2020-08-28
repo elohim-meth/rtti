@@ -2,7 +2,7 @@
 #define METAITEM_P_H
 
 #include <rtti/metaitem.h>
-#include <rtti/metamethod.h>
+#include <rtti/variant.h>
 
 #include <shared_mutex>
 #include <vector>

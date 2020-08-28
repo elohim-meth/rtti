@@ -2,7 +2,7 @@
 #define METAMETHOD_P_H
 
 #include "metaitem_p.h"
-#include <rtti/metamethod.h>
+#include <rtti/variant.h>
 
 namespace rtti {
 

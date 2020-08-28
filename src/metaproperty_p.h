@@ -1,8 +1,8 @@
 ﻿#ifndef METAPROPERTY_P_H
 #define METAPROPERTY_P_H
 
-#include <rtti/metaproperty.h>
 #include "metaitem_p.h"
+#include <rtti/variant.h>
 
 namespace rtti {
 

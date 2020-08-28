@@ -1,7 +1,7 @@
 ﻿#ifndef METACONSTRUCTOR_H
 #define METACONSTRUCTOR_H
 
-#include <rtti/metamethod.h>
+#include <rtti/variant.h>
 
 namespace rtti {
 
