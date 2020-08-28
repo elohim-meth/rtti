@@ -141,7 +141,7 @@ private:
     RTTI_PRIVATE void default_construct(void *where) const;
     RTTI_PRIVATE void copy_construct(void const *source, void *where) const;
     RTTI_PRIVATE void move_construct(void *source, void *where) const;
-    RTTI_PRIVATE void move_or_copy(void *source, bool movable, void *where) const;
+    RTTI_PRIVATE void move_or_copy(void *source, void *where) const;
     RTTI_PRIVATE void destroy(void *ptr) const noexcept;
     RTTI_PRIVATE bool compare_eq(void const *lhs, void const *rhs) const;
 
@@ -190,7 +190,7 @@ struct RTTI_PRIVATE type_function_table
     using default_construct_t = void (*) (void*);
     using copy_construct_t = void (*) (void const*, void*);
     using move_construct_t = void (*) (void*, void*);
-    using move_or_copy_t = void (*) (void*, bool, void*);
+    using move_or_copy_t = void (*) (void*, void*);
     using destroy_t = void (*) (void*);
     // comparators
     using compare_eq_t = bool (*) (void const*, void const*);
@@ -272,11 +272,10 @@ struct type_function_table_impl
         else throw runtime_error("Type T = "s + type_name<T>() + "isn't MoveConstructible");
     }
 
-    static void move_or_copy(void *source, [[maybe_unused]] bool movable, void *where)
+    static void move_or_copy(void *source, void *where)
     {
         if constexpr(std::is_move_constructible_v<T>)
-            movable ? move_construct(source, where)
-                    : copy_construct(source, where);
+            move_construct(source, where);
         else
             copy_construct(source, where);
     }
@@ -370,11 +369,10 @@ struct type_function_table_impl<T[N]>
         else throw runtime_error("Type T = "s + type_name<Base>() + "isn't MoveConstructible");
     }
 
-    static void move_or_copy(void *source, [[maybe_unused]] bool movable, void *where)
+    static void move_or_copy(void *source, void *where)
     {
         if constexpr(std::is_move_constructible_v<Base>)
-            movable ? move_construct(source, where)
-                    : copy_construct(source, where);
+            move_construct(source, where);
         else
             copy_construct(source, where);
     }
@@ -414,15 +412,14 @@ struct type_function_table_impl<T[N]>
 };
 
 template <typename T>
-inline T move_or_copy(void *source, bool movable)
+inline T move_or_copy(void *source)
 {
     using namespace std::literals;
     static_assert(std::is_copy_constructible_v<T> || std::is_move_constructible_v<T>,
                   "Type should be CopyConstructible or MoveConstructible");
 
     if constexpr(std::is_move_constructible_v<T>)
-        if (movable)
-            return std::move(*static_cast<T*>(source));
+        return std::move(*static_cast<T*>(source));
 
     if constexpr(std::is_copy_constructible_v<T>)
          return *static_cast<T*>(source);

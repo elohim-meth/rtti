@@ -257,8 +257,7 @@ public:
         auto typeId = internalTypeId(type_attribute::LREF);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
-        // return internal::move_or_copy<T>(&buffer, true);
-        return *reinterpret_cast<T *>(&buffer);
+        return internal::move_or_copy<T>(&buffer);
     }
 
     template<typename T>
@@ -271,8 +270,7 @@ public:
         auto typeId = internalTypeId(type_attribute::LREF_CONST);
         metafunc_to<T>::invoke(*this, typeId, &buffer);
         FINALLY { type_manager_t<T>::destroy(&buffer); };
-        //return internal::move_or_copy<T>(&buffer, true);
-        return *reinterpret_cast<T*>(&buffer);
+        return internal::move_or_copy<T>(&buffer);
     }
 
     template<typename T>

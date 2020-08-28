@@ -84,7 +84,7 @@ struct variant_function_table_impl<T, true, false>
     static void move_construct(void *value, variant_type_storage &storage)
         noexcept(std::is_nothrow_move_constructible_v<Decay>)
     {
-        type_manager_t<Decay>::move_or_copy(value, true, &storage.buffer);
+        type_manager_t<Decay>::move_or_copy(value, &storage.buffer);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
@@ -96,7 +96,7 @@ struct variant_function_table_impl<T, true, false>
     static void move(variant_type_storage &src, variant_type_storage &dst)
         noexcept(std::is_nothrow_move_constructible_v<Decay>)
     {
-        type_manager_t<Decay>::move_or_copy(&src.buffer, true, &dst.buffer);
+        type_manager_t<Decay>::move_or_copy(&src.buffer, &dst.buffer);
     }
 
     static void destroy(variant_type_storage &value) noexcept
@@ -221,7 +221,7 @@ struct variant_function_table_impl<T, false, false>
         noexcept(std::is_nothrow_move_constructible_v<Decay>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
-        type_manager_t<Decay>::move_or_copy(value, true, storage.ptr);
+        type_manager_t<Decay>::move_or_copy(value, storage.ptr);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)
@@ -293,7 +293,7 @@ struct variant_function_table_impl<T[N], false, false>
         noexcept(std::is_nothrow_move_constructible_v<Base>)
     {
         storage.ptr = type_manager_t<Decay>::allocate();
-        type_manager_t<Decay>::move_or_copy(value, true, storage.ptr);
+        type_manager_t<Decay>::move_or_copy(value, storage.ptr);
     }
 
     static void copy(variant_type_storage const &src, variant_type_storage &dst)

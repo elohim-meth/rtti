@@ -271,10 +271,10 @@ void MetaType::move_construct(void *source, void *where) const
         m_typeInfo->manager->f_move_construct(source, where);
 }
 
-void MetaType::move_or_copy(void *source, bool movable, void *where) const
+void MetaType::move_or_copy(void *source, void *where) const
 {
     if (m_typeInfo)
-        m_typeInfo->manager->f_move_or_copy(source, movable, where);
+        m_typeInfo->manager->f_move_or_copy(source, where);
 }
 
 void MetaType::destroy(void *ptr) const noexcept
@@ -292,8 +292,13 @@ bool MetaType::compare_eq(void const *lhs, void const *rhs) const
 void* MetaType::construct(void *copy, bool movable) const
 {
     auto result = allocate();
-    copy ? move_or_copy(copy, movable, result)
-         : default_construct(result);
+    if (!copy)
+        default_construct(result);
+    else if (!movable)
+        copy_construct(copy, result);
+    else
+        move_or_copy(copy, result);
+
     return result;
 }
 
