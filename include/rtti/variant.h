@@ -340,8 +340,6 @@ private:
     // Returns pointer to decayed type
     void const* raw_data_ptr() const noexcept
     { return manager->f_access(storage); }
-    void * raw_data_ptr() noexcept
-    { return const_cast<void*>(manager->f_access(storage)); }
 
     MetaType_ID internalTypeId(type_attribute attr = type_attribute::NONE) const noexcept
     { return manager->f_type(attr); }
@@ -617,8 +615,6 @@ private:
     };
 public:
     void const* raw_data_ptr(RawPtrAccessKey) const noexcept
-    { return raw_data_ptr(); }
-    void * raw_data_ptr(RawPtrAccessKey) noexcept
     { return raw_data_ptr(); }
     void swap(variant &other, SwapAccessKey) noexcept
     { swap(other); }

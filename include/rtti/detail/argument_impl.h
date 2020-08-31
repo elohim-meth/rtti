@@ -33,7 +33,7 @@ T argument::value(std::integral_constant<int, 0>) const
 
     m_dummy = value->to<Decay>();
     auto *ptr = m_dummy.raw_data_ptr();
-    return std::move(*static_cast<Decay*>(ptr));
+    return std::move(*static_cast<Decay*>(const_cast<void*>(ptr)));
 }
 
 // lvalue const reference
@@ -55,7 +55,7 @@ T argument::value(std::integral_constant<int, 1>) const
 
     m_dummy = value->to<Decay>();
     auto *ptr = m_dummy.raw_data_ptr();
-    return *static_cast<Decay*>(ptr);
+    return *static_cast<Decay const*>(ptr);
 }
 
 // lvalue reference
