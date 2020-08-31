@@ -488,7 +488,10 @@ bool variant::eq(T const &value) const
         if (MetaType::convert(address, mt_value, buffer, mt_self))
         {
             FINALLY { mt_self.destroy(buffer); };
-            return mt_self.compare_eq(raw_data_ptr(), buffer);
+            auto ptr = raw_data_ptr();
+            if (mt_self.isArray())
+                ptr = *reinterpret_cast<void const *const *>(ptr);
+            return mt_self.compare_eq(ptr, buffer);
         }
     }
 
