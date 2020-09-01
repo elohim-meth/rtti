@@ -180,120 +180,127 @@ RTTI_REGISTER
 
 TEST_CASE("Variant")
 {
-    SUBCASE("1")
-    {
-        reset_counters();
+    reset_counters();
 
-        using namespace std::literals;
-        rtti::variant v = "Hello, World!"sv;
-        auto qp = v.to<test::TestQPointer>();
-        REQUIRE(qp.check());
-        REQUIRE(qp.value() == "Hello, World!");
-        REQUIRE(qp.get_priority() == 0);
-        REQUIRE((
-            (explicit_constructed == 1)
-            && (default_constructed == 0)
-            && (copy_constructed == 0)
-            && (move_constructed == 1)
-            && (copy_assigned == 0)
-            && (move_assigned == 0)
-        ));
-
-        SUBCASE("Copy")
-        {
-            reset_counters();
-
-            rtti::variant v = qp;
-            REQUIRE(v.invoke("check") == true);
-            REQUIRE(v.invoke("empty") == false);
-
-            auto *meta_class = v.metaClass();
-            REQUIRE(meta_class == rtti::MetaNamespace::global()->getNamespace("test")->getClass("TestQPointer"));
-
-            auto rov = v.invoke("const_value");
-            REQUIRE(rov == "Hello, World!"s);
-            auto ev = v.invoke("value");
-            ev.ref<std::string>() = "Qwerty";
-            REQUIRE(rov == "Qwerty"s);
-
-            REQUIRE_FALSE(qp.empty());
-            REQUIRE(qp.value() == "Hello, World!");
-
-            REQUIRE((
-                (explicit_constructed == 0)
-                && (default_constructed == 0)
-                && (copy_constructed == 1)
-                && (move_constructed == 0)
-                && (copy_assigned == 0)
-                && (move_assigned == 0)
-            ));
-
-            auto *meta_prop = meta_class->getProperty("priority");
-            REQUIRE(meta_prop);
-            meta_prop->set(v, 100);
-            REQUIRE(meta_prop->get(v) == 100LL);
-            REQUIRE(meta_prop->get(v).eq(100));
-            REQUIRE(rov == "100"s);
-            REQUIRE(rov.eq("100"));
-            REQUIRE(rov.eq(100));
-
-            v.set_property("priority", 256);
-            REQUIRE(v.get_property("priority").eq(256));
-            REQUIRE(meta_prop->get(v).eq(256));
-        }
-
-        SUBCASE("Move")
-        {
-            reset_counters();
-
-            rtti::variant v = std::move(qp);
-            REQUIRE(v.invoke("check") == true);
-            REQUIRE(v.invoke("empty") == false);
-
-            auto rov = v.invoke("const_value");
-            REQUIRE(rov == "Hello, World!"s);
-            auto ev = v.invoke("value");
-            ev.ref<std::string>() = "Qwerty";
-            REQUIRE(rov == "Qwerty"s);
-
-            REQUIRE(qp.empty());
-            REQUIRE_FALSE(qp.check());
-
-            REQUIRE((
-                (explicit_constructed == 0)
+    using namespace std::literals;
+    rtti::variant v = "Hello, World!"sv;
+    auto qp = v.to<test::TestQPointer>();
+    REQUIRE(qp.check());
+    REQUIRE(qp.value() == "Hello, World!");
+    REQUIRE(qp.get_priority() == 0);
+    REQUIRE((
+                (explicit_constructed == 1)
                 && (default_constructed == 0)
                 && (copy_constructed == 0)
                 && (move_constructed == 1)
                 && (copy_assigned == 0)
                 && (move_assigned == 0)
-            ));
-        }
+    ));
 
-        SUBCASE("Reference")
-        {
-            reset_counters();
+    SUBCASE("Metaclass")
+    {
+        rtti::variant v = qp;
+        auto *meta_class = v.metaClass();
+        REQUIRE(meta_class == rtti::MetaNamespace::global()->getNamespace("test")->getClass("TestQPointer"));
+        REQUIRE(meta_class == rtti::metaType<test::TestQPointer>().metaClass());
+        REQUIRE(meta_class == rtti::MetaType("test::TestQPointer").metaClass());
+    }
 
-            rtti::variant v = std::ref(qp);
-            REQUIRE(v.invoke("check") == true);
-            REQUIRE(v.invoke("empty") == false);
+    SUBCASE("Copy")
+    {
+        reset_counters();
 
-            auto rov = v.invoke("const_value");
-            REQUIRE(rov == "Hello, World!"s);
-            auto ev = v.invoke("value");
-            ev.ref<std::string>() = "Qwerty";
-            REQUIRE(rov == "Qwerty"s);
-            REQUIRE(qp.value() == "Qwerty");
+        rtti::variant v = qp;
+        REQUIRE(v.invoke("check") == true);
+        REQUIRE(v.invoke("empty") == false);
 
-            REQUIRE((
-                (explicit_constructed == 0)
-                && (default_constructed == 0)
-                && (copy_constructed == 0)
-                && (move_constructed == 0)
-                && (copy_assigned == 0)
-                && (move_assigned == 0)
-            ));
+        auto rov = v.invoke("const_value");
+        REQUIRE(rov == "Hello, World!"s);
+        auto ev = v.invoke("value");
+        ev.ref<std::string>() = "Qwerty";
+        REQUIRE(rov == "Qwerty"s);
 
-//            v.set_property
-        }
+        REQUIRE_FALSE(qp.empty());
+        REQUIRE(qp.value() == "Hello, World!");
+
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 1)
+                    && (move_constructed == 0)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+        ));
+
+        auto *meta_class = v.metaClass();
+        auto *meta_prop = meta_class->getProperty("priority");
+        REQUIRE(meta_prop);
+        meta_prop->set(v, 100);
+        REQUIRE(meta_prop->get(v) == 100LL);
+        REQUIRE(meta_prop->get(v).eq(100));
+        REQUIRE(rov == "100"s);
+        REQUIRE(rov.eq("100"));
+        REQUIRE(rov.eq(100));
+
+        v.set_property("priority", 256);
+        REQUIRE(v.get_property("priority").eq(256));
+        REQUIRE(meta_prop->get(v).eq(256));
+    }
+
+    SUBCASE("Move")
+    {
+        reset_counters();
+
+        rtti::variant v = std::move(qp);
+        REQUIRE(v.invoke("check") == true);
+        REQUIRE(v.invoke("empty") == false);
+
+        auto rov = v.invoke("const_value");
+        REQUIRE(rov == "Hello, World!"s);
+        auto ev = v.invoke("value");
+        ev.ref<std::string>() = "Qwerty";
+        REQUIRE(rov == "Qwerty"s);
+
+        REQUIRE(qp.empty());
+        REQUIRE_FALSE(qp.check());
+
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 0)
+                    && (move_constructed == 1)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    ));
+    }
+
+    SUBCASE("Reference")
+    {
+        reset_counters();
+
+        rtti::variant v = std::ref(qp);
+        REQUIRE(v.invoke("check") == true);
+        REQUIRE(v.invoke("empty") == false);
+
+        auto rov = v.invoke("const_value");
+        REQUIRE(rov == "Hello, World!"s);
+        auto ev = v.invoke("value");
+        ev.ref<std::string>() = "Qwerty";
+        REQUIRE(rov == "Qwerty"s);
+        REQUIRE(qp.value() == "Qwerty");
+
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 0)
+                    && (move_constructed == 0)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    ));
+
+        v.set_property("priority", 1024);
+        REQUIRE(v.get_property("priority") == 1024LL);
+        REQUIRE(v.get_property("priority").eq(1024));
+        REQUIRE(qp.get_priority() == 1024);
     }
 }
