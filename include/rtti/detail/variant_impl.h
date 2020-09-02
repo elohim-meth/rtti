@@ -506,11 +506,9 @@ variant variant::invoke(std::string_view name, Args&& ...args)
     auto type = MetaType{typeId()};
     if (type.isClass() || type.isClassPtr())
     {
-        auto mt_class = type.metaClass();
-        if (mt_class)
+        if (auto *mt_class = this->metaClass())
         {
-            auto mt_method = mt_class->getMethod(name);
-            if (mt_method)
+            if (auto mt_method = mt_class->getMethod(name))
                 return mt_method->invoke(*this, std::forward<Args>(args)...);
 
             throw runtime_error{"Method ["s + name + "] isn't found in class T = " + type.typeName()};
@@ -528,11 +526,9 @@ variant variant::invoke(std::string_view name, Args&& ...args) const
     auto type = MetaType{typeId()};
     if (type.isClass() || type.isClassPtr())
     {
-        auto mt_class = type.metaClass();
-        if (mt_class)
+        if (auto *mt_class = this->metaClass())
         {
-            auto mt_method = mt_class->getMethod(name);
-            if (mt_method)
+            if (auto *mt_method = mt_class->getMethod(name))
                 return mt_method->invoke(*this, std::forward<Args>(args)...);
 
             throw runtime_error{"Method ["s + name + "] isn't found in class T = " + type.typeName()};
@@ -551,7 +547,7 @@ void variant::set_property(std::string_view name, T &&value)
     auto type = MetaType{typeId()};
     if (type.isClass() || type.isClassPtr())
     {
-        if (auto *mt_class = type.metaClass())
+        if (auto *mt_class = this->metaClass())
         {
             if (auto *mt_property = mt_class->getProperty(name))
                 return mt_property->set(*this, std::forward<T>(value));

@@ -119,7 +119,7 @@ variant variant::get_property(std::string_view name) const
     auto type = MetaType{typeId()};
     if (type.isClass() || type.isClassPtr())
     {
-        if (auto *mt_class = type.metaClass())
+        if (auto *mt_class = this->metaClass())
         {
             if (auto *mt_property = mt_class->getProperty(name))
                 return mt_property->get(*this);

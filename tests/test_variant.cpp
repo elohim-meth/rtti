@@ -178,7 +178,7 @@ RTTI_REGISTER
     ;
 }
 
-TEST_CASE("Variant")
+TEST_CASE("Variant D-Q Pointers")
 {
     reset_counters();
 
@@ -204,6 +204,34 @@ TEST_CASE("Variant")
         REQUIRE(meta_class == rtti::MetaNamespace::global()->getNamespace("test")->getClass("TestQPointer"));
         REQUIRE(meta_class == rtti::metaType<test::TestQPointer>().metaClass());
         REQUIRE(meta_class == rtti::MetaType("test::TestQPointer").metaClass());
+    }
+
+    SUBCASE("Constructors")
+    {
+        auto *meta_class = rtti::metaType<test::TestQPointer>().metaClass();
+        auto *def_constructor = meta_class->defaultConstructor();
+        REQUIRE(def_constructor);
+        auto *copy_constructor = meta_class->copyConstructor();
+        REQUIRE(copy_constructor);
+        auto *move_constructor = meta_class->moveConstructor();
+        REQUIRE(move_constructor);
+
+        auto v1 = def_constructor->invoke();
+        v1.set_property("priority", 128);
+
+        auto v2 = copy_constructor->invoke(v1);
+        REQUIRE(v2.get_property("priority") == 128LL);
+        REQUIRE(v2.invoke("const_value") == "128"s);
+        REQUIRE(v1.invoke("const_value") == v2.invoke("const_value"));
+
+        rtti::variant v3;
+        REQUIRE_THROWS_AS(v3 = move_constructor->invoke(v2), rtti::bad_variant_cast);
+        REQUIRE_NOTHROW(v3 = move_constructor->invoke(std::move(v2)));
+        REQUIRE(v2.invoke("check") == false);
+        REQUIRE(v3.invoke("check") == true);
+        REQUIRE(v3.get_property("priority") == 128LL);
+        REQUIRE(v3.invoke("const_value") == "128"s);
+
     }
 
     SUBCASE("Copy")
@@ -271,7 +299,7 @@ TEST_CASE("Variant")
                     && (move_constructed == 1)
                     && (copy_assigned == 0)
                     && (move_assigned == 0)
-                    ));
+        ));
     }
 
     SUBCASE("Reference")
@@ -296,11 +324,39 @@ TEST_CASE("Variant")
                     && (move_constructed == 0)
                     && (copy_assigned == 0)
                     && (move_assigned == 0)
-                    ));
+        ));
 
         v.set_property("priority", 1024);
         REQUIRE(v.get_property("priority") == 1024LL);
         REQUIRE(v.get_property("priority").eq(1024));
         REQUIRE(qp.get_priority() == 1024);
+        REQUIRE(rov == "1024"s);
+
+        auto *meta_class = v.metaClass();
+        REQUIRE(meta_class);
+        auto *move_constructor = meta_class->moveConstructor();
+        REQUIRE(move_constructor);
+        auto mv = move_constructor->invoke(std::move(v));
+
+        REQUIRE_FALSE(qp.check());
+        REQUIRE(v.invoke("check") == false);
+        REQUIRE(mv.invoke("check") == true);
+
+        REQUIRE_THROWS_AS(rov = v.invoke("const_value"), std::runtime_error);
+        REQUIRE_NOTHROW(rov = mv.invoke("const_value"));
+        REQUIRE(rov == "1024"s);
+    }
+
+    SUBCASE("Const reference")
+    {
+        reset_counters();
+
+        rtti::variant v = std::cref(qp);
+        REQUIRE(v.invoke("check") == true);
+        REQUIRE(v.invoke("empty") == false);
+
+        auto rov = v.invoke("const_value");
+        REQUIRE(rov == "Hello, World!"s);
+
     }
 }
