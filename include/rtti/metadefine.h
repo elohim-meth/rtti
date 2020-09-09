@@ -49,6 +49,9 @@ struct DefinitionCallbackHolder: IDefinitionCallbackHolder
     }
 
 private:
+    using meta_define_t = meta_define<T, void>;
+    static_assert (std::is_invocable_v<F, meta_define_t>,
+                   "Invalid lazy definition signature!");
     F m_func;
 };
 

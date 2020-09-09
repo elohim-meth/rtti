@@ -29,7 +29,8 @@ variant::variant(variant &&other) noexcept
 
 variant& variant::operator=(variant &&other) noexcept
 {
-    variant{std::move(other)}.swap(*this);
+    if (this != &other)
+        variant{std::move(other)}.swap(*this);
     return *this;
 }
 

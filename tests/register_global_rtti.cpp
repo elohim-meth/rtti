@@ -82,8 +82,8 @@ void register_rtti()
     //rtti::MetaType::registerConverter<std::string, char const*>(
     //    [] (std::string const &value) { return value.c_str(); });
 
+    // Integer promotion
     rtti::MetaType::registerConverter<bool, char>();
-
     rtti::MetaType::registerConverter<short, int>();
     rtti::MetaType::registerConverter<unsigned short, int>();
     rtti::MetaType::registerConverter<int, unsigned int>();

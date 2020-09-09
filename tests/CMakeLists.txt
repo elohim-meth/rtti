@@ -2,7 +2,7 @@
 
 add_executable(doctest_tests
     doctest_main.cpp
-    register_rtti.cpp
+    register_global_rtti.cpp
 )
 target_sources(doctest_tests PRIVATE
     test_type_name.cpp

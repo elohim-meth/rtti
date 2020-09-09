@@ -10,6 +10,7 @@ uint16_t copy_constructed = 0;
 uint16_t move_constructed = 0;
 uint16_t copy_assigned = 0;
 uint16_t move_assigned = 0;
+uint16_t destroyed = 0;
 
 void reset_counters()
 {
@@ -19,6 +20,7 @@ void reset_counters()
     move_constructed = 0;
     copy_assigned = 0;
     move_assigned = 0;
+    destroyed = 0;
 }
 
 }
@@ -108,6 +110,7 @@ public:
     {
         if (m_pImpl)
             delete m_pImpl;
+        ++destroyed;
     }
 
     bool check() const
@@ -195,6 +198,7 @@ TEST_CASE("Variant D-Q Pointers")
                 && (move_constructed == 1)
                 && (copy_assigned == 0)
                 && (move_assigned == 0)
+                && (destroyed = 1)
     ));
 
     SUBCASE("Metaclass")
@@ -216,22 +220,76 @@ TEST_CASE("Variant D-Q Pointers")
         auto *move_constructor = meta_class->moveConstructor();
         REQUIRE(move_constructor);
 
+        reset_counters();
         auto v1 = def_constructor->invoke();
         v1.set_property("priority", 128);
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 1)
+                    && (copy_constructed == 0)
+                    && (move_constructed == 1)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    && (destroyed = 1)
+        ));
 
+        reset_counters();
         auto v2 = copy_constructor->invoke(v1);
         REQUIRE(v2.get_property("priority") == 128LL);
-        REQUIRE(v2.invoke("const_value") == "128"s);
         REQUIRE(v1.invoke("const_value") == v2.invoke("const_value"));
+        v2.set_property("priority", 256);
+        REQUIRE(v2.invoke("const_value") == "256"s);
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 1)
+                    && (move_constructed == 1)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    && (destroyed == 1)
+        ));
 
+        reset_counters();
         rtti::variant v3;
         REQUIRE_THROWS_AS(v3 = move_constructor->invoke(v2), rtti::bad_variant_cast);
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 0)
+                    && (move_constructed == 0)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    && (destroyed == 0)
+        ));
+
         REQUIRE_NOTHROW(v3 = move_constructor->invoke(std::move(v2)));
         REQUIRE(v2.invoke("check") == false);
         REQUIRE(v3.invoke("check") == true);
-        REQUIRE(v3.get_property("priority") == 128LL);
-        REQUIRE(v3.invoke("const_value") == "128"s);
+        REQUIRE(v3.get_property("priority") == 256LL);
+        REQUIRE(v3.invoke("const_value") == "256"s);
+        REQUIRE(v3.invoke("const_value").eq("256"));
+        REQUIRE(v3.invoke("const_value").eq(256));
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 0)
+                    && (move_constructed == 4)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    && (destroyed == 1)
+        ));
 
+        reset_counters();
+        v1 = v3;
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 1)
+                    && (move_constructed == 3)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    && (destroyed == 1)
+        ));
     }
 
     SUBCASE("Copy")
@@ -258,6 +316,7 @@ TEST_CASE("Variant D-Q Pointers")
                     && (move_constructed == 0)
                     && (copy_assigned == 0)
                     && (move_assigned == 0)
+                    && (destroyed == 0)
         ));
 
         auto *meta_class = v.metaClass();
@@ -299,6 +358,7 @@ TEST_CASE("Variant D-Q Pointers")
                     && (move_constructed == 1)
                     && (copy_assigned == 0)
                     && (move_assigned == 0)
+                    && (destroyed == 0)
         ));
     }
 
@@ -324,6 +384,7 @@ TEST_CASE("Variant D-Q Pointers")
                     && (move_constructed == 0)
                     && (copy_assigned == 0)
                     && (move_assigned == 0)
+                    && (destroyed == 0)
         ));
 
         v.set_property("priority", 1024);
@@ -357,6 +418,43 @@ TEST_CASE("Variant D-Q Pointers")
 
         auto rov = v.invoke("const_value");
         REQUIRE(rov == "Hello, World!"s);
+        REQUIRE(rov.eq("Hello, World!"));
+
+        rtti::variant ev;
+        REQUIRE_THROWS_AS(ev = v.invoke("value"), rtti::bad_variant_cast);
+        REQUIRE_THROWS_AS(v.set_property("priority", 1024), rtti::bad_variant_cast);
+        REQUIRE(v.get_property("priority") == 0LL);
+
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 0)
+                    && (move_constructed == 0)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    && (destroyed == 0)
+        ));
+
+        auto *meta_class = v.metaClass();
+        REQUIRE(meta_class);
+        auto *move_constructor = meta_class->moveConstructor();
+        REQUIRE(move_constructor);
+
+        // This will be implicitly copy constructed and then move constructed on copy argument!
+        auto mv = move_constructor->invoke(std::move(v));
+        REQUIRE(qp.check());
+        REQUIRE(v.invoke("check") == true);
+        REQUIRE(mv.invoke("check") == true);
+
+        REQUIRE((
+                    (explicit_constructed == 0)
+                    && (default_constructed == 0)
+                    && (copy_constructed == 1)
+                    && (move_constructed == 5)
+                    && (copy_assigned == 0)
+                    && (move_assigned == 0)
+                    && (destroyed == 4)
+        ));
 
     }
 }
