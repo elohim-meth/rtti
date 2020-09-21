@@ -19,6 +19,7 @@
     #define DISABLE_WARNINGS_POP DO_PRAGMA(clang diagnostic pop)
     #define DISABLE_WARNING(NAME) DO_PRAGMA(clang diagnostic ignored #NAME)
 
+    #define DISABLE_WARNING_UNKNOWN_WARNING DISABLE_WARNING(-Wunknown-warning-option)
     #define DISABLE_WARNING_UNUSED_PARAMETER DISABLE_WARNING(-Wunused-parameter)
     #define DISABLE_WARNING_MISSING_OVERRIDE DISABLE_WARNING(-Winconsistent-missing-override)
     #define DISABLE_WARNING_INIT_LIST_LIFETIME DISABLE_WARNING(-Winit-list-lifetime)
@@ -28,6 +29,7 @@
     #define DISABLE_WARNINGS_POP DO_PRAGMA(GCC diagnostic pop)
     #define DISABLE_WARNING(NAME) DO_PRAGMA(GCC diagnostic ignored #NAME)
 
+    #define DISABLE_WARNING_UNKNOWN_WARNING DISABLE_WARNING(-Wunknown-warning-option)
     #define DISABLE_WARNING_UNUSED_PARAMETER DISABLE_WARNING(-Wunused-parameter)
     #define DISABLE_WARNING_MISSING_OVERRIDE DISABLE_WARNING(-Wsuggest-override)
     #define DISABLE_WARNING_INIT_LIST_LIFETIME DISABLE_WARNING(-Winit-list-lifetime)

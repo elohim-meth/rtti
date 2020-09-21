@@ -91,7 +91,7 @@ protected:
     RTTI_PRIVATE MetaItem const* item(MetaCategory category, std::size_t index) const;
     RTTI_PRIVATE MetaItem const* item(MetaCategory category, std::string_view name) const;
 
-    RTTI_PRIVATE void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);
+    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback);
     RTTI_PRIVATE void checkDeferredDefine() const override;
 
     RTTI_PRIVATE virtual MetaMethod const* getMethodInternal(std::string_view name) const;
@@ -102,7 +102,7 @@ private:
         template<typename, typename> friend class rtti::meta_define;
     };
 public:
-    RTTI_PRIVATE void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback, DeferredDefineKey)
+    void setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder> callback, DeferredDefineKey)
     { setDeferredDefine(std::move(callback)); }
 };
 
