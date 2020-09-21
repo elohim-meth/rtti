@@ -153,13 +153,14 @@ void MetaContainer::setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>
 void MetaContainer::checkDeferredDefine() const
 {
     auto d = d_func();
-    if (d->m_deferredDefine_lock || !d->m_deferredDefine)
+    if (!d->m_deferredDefine)
+        return;
+    if (d->m_deferredDefine_lock.exchange(true, std::memory_order_acquire))
         return;
 
-    d->m_deferredDefine_lock = true;
     FINALLY{
-        d->m_deferredDefine_lock = false;
         d->m_deferredDefine = nullptr;
+        d->m_deferredDefine_lock.store(false, std::memory_order_release);
     };
 
     d->m_deferredDefine->invoke(*const_cast<MetaContainer*>(this));
@@ -175,13 +176,15 @@ void MetaContainer::forceDeferredDefine(ForceDeferred type) const
         auto d = d_func();
         d->m_classes.for_each([](MetaItem *item)
         {
-            static_cast<MetaClass const*>(item)->forceDeferredDefine(ForceDeferred::Recursive);
+            auto *c = static_cast<MetaClass const*>(item);
+            c->forceDeferredDefine(ForceDeferred::Recursive);
             return true;
         });
 
         d->m_namespaces.for_each([](MetaItem const *item)
         {
-            static_cast<MetaContainer const*>(item)->forceDeferredDefine(ForceDeferred::Recursive);
+            auto *ns = static_cast<MetaContainer const*>(item);
+            ns->forceDeferredDefine(ForceDeferred::Recursive);
             return true;
         });
     }

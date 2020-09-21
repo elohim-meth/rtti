@@ -1,6 +1,8 @@
 ﻿#ifndef METACONTAINER_P_H
 #define METACONTAINER_P_H
 
+#include <atomic>
+
 #include "metaitem_p.h"
 #include <rtti/metacontainer.h>
 
@@ -71,7 +73,7 @@ private:
          &m_methods, &m_enums, &m_constructors}
     };
 
-    mutable bool m_deferredDefine_lock = false;
+    mutable std::atomic_bool m_deferredDefine_lock = false;
     mutable std::unique_ptr<IDefinitionCallbackHolder> m_deferredDefine;
 
     friend class rtti::MetaContainer;
