@@ -49,11 +49,9 @@ bool register_fromString_converter()
     return rtti::MetaType::registerConverter<std::string, To>(lambda);
 }
 
-
-
 enum class operation { add, subtract, multiply, divide };
 
-void register_rtti()
+void register_global_ns()
 {
     using namespace std::literals;
 
