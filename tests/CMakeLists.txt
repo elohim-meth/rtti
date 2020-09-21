@@ -9,6 +9,7 @@ target_sources(doctest_tests PRIVATE
     test_type_name.cpp
     test_meta_type.cpp
     test_global_ns.cpp
+    test_std_ns.cpp
     test_single_inheritance.cpp
     test_multiple_inheritance.cpp
     test_virtual_inheritance.cpp
