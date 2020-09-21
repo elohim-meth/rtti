@@ -55,6 +55,13 @@ private:
     F m_func;
 };
 
+template<typename T, typename F>
+inline auto make_definition_callback(F &&func)
+{
+    using callback_holder_t = DefinitionCallbackHolder<T, std::decay_t<F>>;
+    return std::unique_ptr<IDefinitionCallbackHolder>{new callback_holder_t{std::forward<F>(func)}};
+}
+
 struct void_static_func{};
 struct return_static_func{};
 struct void_member_func {};
@@ -490,6 +497,12 @@ private:
     F const m_func;
 };
 
+template <typename F>
+inline auto make_method_invoker(F &&func)
+{
+    return std::unique_ptr<IMethodInvoker>{new MethodInvoker<std::decay_t<F>>{std::forward<F>(func)}};
+}
+
 template<typename C, typename ...Args>
 struct ConstructorInvoker: IConstructorInvoker
 {
@@ -581,6 +594,12 @@ private:
         return C(args[I]->value<argument_get_t<I>>()...);
     }
 };
+
+template <typename C, typename ...Args>
+inline auto make_constructor_invoker()
+{
+    return std::unique_ptr<IConstructorInvoker>{new ConstructorInvoker<C, Args...>{}};
+}
 
 template<typename P> struct property_type;
 
@@ -874,9 +893,7 @@ public:
                       "Deferred definition supported only for namespaces and class types");
 
         assert(m_currentContainer);
-        using holder_t = internal::DefinitionCallbackHolder<T, std::decay_t<F>>;
-        m_currentContainer->setDeferredDefine(std::unique_ptr<IDefinitionCallbackHolder>{
-                                                  new holder_t{std::forward<F>(func)}}, {});
+        m_currentContainer->setDeferredDefine(internal::make_definition_callback<T>(std::forward<F>(func)), {});
         return *this;
     }
 
@@ -919,8 +936,7 @@ public:
     {
         static_assert(std::is_class_v<T>, "Constructor can be defined only for class types");
         assert(m_currentContainer && m_currentContainer->category() == mcatClass);
-        MetaConstructor::create(name, *m_currentContainer,
-            std::unique_ptr<IConstructorInvoker>{new internal::ConstructorInvoker<T, Args...>{}}, {});
+        MetaConstructor::create(name, *m_currentContainer, internal::make_constructor_invoker<T, Args...>(), {});
         register_converting_constructor<mpl::type_list<Args...>>(is_converting_constructor_t<T, Args...>{});
         return *this;
     }
@@ -931,8 +947,7 @@ public:
         static_assert(std::is_void_v<T> || std::is_class_v<T>,
                       "Method can be defined in namespace or class");
         assert(m_currentContainer);
-        MetaMethod::create(name, *m_currentContainer,
-            std::unique_ptr<IMethodInvoker>{new internal::MethodInvoker<std::decay_t<F>>{std::forward<F>(func)}}, {});
+        MetaMethod::create(name, *m_currentContainer, internal::make_method_invoker(std::forward<F>(func)), {});
         return *this;
     }
 
