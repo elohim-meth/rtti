@@ -21,6 +21,7 @@
 
     #define DISABLE_WARNING_UNUSED_PARAMETER DISABLE_WARNING(-Wunused-parameter)
     #define DISABLE_WARNING_MISSING_OVERRIDE DISABLE_WARNING(-Winconsistent-missing-override)
+    #define DISABLE_WARNING_INIT_LIST_LIFETIME DISABLE_WARNING(-Winit-list-lifetime)
 #elif defined(__GNUC__)
     #define DO_PRAGMA(X) _Pragma(#X)
     #define DISABLE_WARNINGS_PUSH DO_PRAGMA(GCC diagnostic push)
@@ -29,6 +30,7 @@
 
     #define DISABLE_WARNING_UNUSED_PARAMETER DISABLE_WARNING(-Wunused-parameter)
     #define DISABLE_WARNING_MISSING_OVERRIDE DISABLE_WARNING(-Wsuggest-override)
+    #define DISABLE_WARNING_INIT_LIST_LIFETIME DISABLE_WARNING(-Winit-list-lifetime)
 #else
     #define DISABLE_WARNINGS_PUSH
     #define DISABLE_WARNINGS_POP

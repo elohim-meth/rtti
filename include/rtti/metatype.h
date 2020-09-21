@@ -234,6 +234,9 @@ struct type_function_table_impl
             ::operator delete(ptr);
     }
 
+    DISABLE_WARNINGS_PUSH
+    DISABLE_WARNING_INIT_LIST_LIFETIME
+
     static void default_construct([[maybe_unused]] void *where)
         noexcept(std::is_nothrow_default_constructible_v<T>)
     {
@@ -271,6 +274,8 @@ struct type_function_table_impl
         }
         else throw runtime_error("Type T = "s + type_name<T>() + "isn't MoveConstructible");
     }
+
+    DISABLE_WARNINGS_POP
 
     static void move_or_copy(void *source, void *where)
     {
