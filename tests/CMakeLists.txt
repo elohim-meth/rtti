@@ -1,4 +1,4 @@
-﻿find_package(DocTest REQUIRED)
+﻿find_package(doctest REQUIRED)
 
 add_executable(doctest_tests
     doctest_main.cpp
