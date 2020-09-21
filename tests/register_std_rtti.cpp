@@ -159,4 +159,5 @@ void register_std_ns()
     register_std_unique_ptr<std::string>();
     register_std_string<char>("string");
     register_std_vector<std::string>();
+    register_std_vector<int>();
 }
