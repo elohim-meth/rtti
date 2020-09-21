@@ -58,8 +58,8 @@ protected:
 
     virtual void checkDeferredDefine() const;
 
-    RTTI_PRIVATE void setAttribute(std::string_view name, variant const &value);
-    RTTI_PRIVATE void setAttribute(std::string_view name, variant &&value);
+    void setAttribute(std::string_view name, variant const &value);
+    void setAttribute(std::string_view name, variant &&value);
     RTTI_PRIVATE std::unique_ptr<MetaItemPrivate> d_ptr;
 
 private:
@@ -68,13 +68,9 @@ private:
     };
     friend class rtti::internal::MetaItemList;
 public:
-    RTTI_PRIVATE void setAttribute(std::string_view name,
-                                   variant const &value,
-                                   SetAttributeKey)
+    void setAttribute(std::string_view name, variant const &value, SetAttributeKey)
     { setAttribute(name, value); }
-    RTTI_PRIVATE void setAttribute(std::string_view name,
-                                   variant &&value,
-                                   SetAttributeKey)
+    void setAttribute(std::string_view name, variant &&value, SetAttributeKey)
     { setAttribute(name, std::move(value)); }
 };
 

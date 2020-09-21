@@ -235,7 +235,7 @@ TEST_CASE("Variant D-Q Pointers")
 
         reset_counters();
         auto v2 = copy_constructor->invoke(v1);
-        REQUIRE(v2.get_property("priority") == 128LL);
+        REQUIRE(v2.get_property("priority") == INT64_C(128));
         REQUIRE(v1.invoke("const_value") == v2.invoke("const_value"));
         v2.set_property("priority", 256);
         REQUIRE(v2.invoke("const_value") == "256"s);
@@ -265,7 +265,7 @@ TEST_CASE("Variant D-Q Pointers")
         REQUIRE_NOTHROW(v3 = move_constructor->invoke(std::move(v2)));
         REQUIRE(v2.invoke("check") == false);
         REQUIRE(v3.invoke("check") == true);
-        REQUIRE(v3.get_property("priority") == 256LL);
+        REQUIRE(v3.get_property("priority") == INT64_C(256));
         REQUIRE(v3.invoke("const_value") == "256"s);
         REQUIRE(v3.invoke("const_value").eq("256"));
         REQUIRE(v3.invoke("const_value").eq(256));
@@ -323,7 +323,7 @@ TEST_CASE("Variant D-Q Pointers")
         auto *meta_prop = meta_class->getProperty("priority");
         REQUIRE(meta_prop);
         meta_prop->set(v, 100);
-        REQUIRE(meta_prop->get(v) == 100LL);
+        REQUIRE(meta_prop->get(v) == INT64_C(100));
         REQUIRE(meta_prop->get(v).eq(100));
         REQUIRE(rov == "100"s);
         REQUIRE(rov.eq("100"));
@@ -388,7 +388,7 @@ TEST_CASE("Variant D-Q Pointers")
         ));
 
         v.set_property("priority", 1024);
-        REQUIRE(v.get_property("priority") == 1024LL);
+        REQUIRE(v.get_property("priority") == INT64_C(1024));
         REQUIRE(v.get_property("priority").eq(1024));
         REQUIRE(qp.get_priority() == 1024);
         REQUIRE(rov == "1024"s);
@@ -423,7 +423,7 @@ TEST_CASE("Variant D-Q Pointers")
         rtti::variant ev;
         REQUIRE_THROWS_AS(ev = v.invoke("value"), rtti::bad_variant_cast);
         REQUIRE_THROWS_AS(v.set_property("priority", 1024), rtti::bad_variant_cast);
-        REQUIRE(v.get_property("priority") == 0LL);
+        REQUIRE(v.get_property("priority") == INT64_C(0));
 
         REQUIRE((
                     (explicit_constructed == 0)

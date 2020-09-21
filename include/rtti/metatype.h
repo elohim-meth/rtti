@@ -136,14 +136,14 @@ private:
         MetaType_ID decay, uint16_t arity, uint16_t const_mask,
         TypeFlags flags, metatype_manager_t const *manager);
 
-    RTTI_PRIVATE void* allocate() const;
-    RTTI_PRIVATE void deallocate(void *ptr) const;
-    RTTI_PRIVATE void default_construct(void *where) const;
-    RTTI_PRIVATE void copy_construct(void const *source, void *where) const;
-    RTTI_PRIVATE void move_construct(void *source, void *where) const;
-    RTTI_PRIVATE void move_or_copy(void *source, void *where) const;
-    RTTI_PRIVATE void destroy(void *ptr) const noexcept;
-    RTTI_PRIVATE bool compare_eq(void const *lhs, void const *rhs) const;
+    void* allocate() const;
+    void deallocate(void *ptr) const;
+    void default_construct(void *where) const;
+    void copy_construct(void const *source, void *where) const;
+    void move_construct(void *source, void *where) const;
+    void move_or_copy(void *source, void *where) const;
+    void destroy(void *ptr) const noexcept;
+    bool compare_eq(void const *lhs, void const *rhs) const;
 
     template<typename From, typename To, typename Func>
     static bool registerConverter_imp(Func &&func);
@@ -235,6 +235,7 @@ struct type_function_table_impl
     }
 
     DISABLE_WARNINGS_PUSH
+    DISABLE_WARNING_UNKNOWN_WARNING
     DISABLE_WARNING_INIT_LIST_LIFETIME
 
     static void default_construct([[maybe_unused]] void *where)

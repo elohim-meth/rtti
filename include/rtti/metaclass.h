@@ -33,12 +33,12 @@ public:
     bool inheritedFrom(MetaClass const *base) const;
 protected:
     RTTI_PRIVATE explicit MetaClass(std::string_view name, MetaContainer const &owner, MetaType_ID typeId);
-    RTTI_PRIVATE static MetaClass* create(std::string_view name, MetaContainer &owner, MetaType_ID typeId);
+    static MetaClass* create(std::string_view name, MetaContainer &owner, MetaType_ID typeId);
 
-    RTTI_PRIVATE void addBaseClass(MetaType_ID typeId, cast_func_t caster);
+    void addBaseClass(MetaType_ID typeId, cast_func_t caster);
     RTTI_PRIVATE void addDerivedClass(MetaType_ID typeId);
-    RTTI_PRIVATE void const* cast(MetaClass const *base, void const *instance) const;
-    RTTI_PRIVATE void* cast(MetaClass const *base, void *instance) const;
+    void const* cast(MetaClass const *base, void const *instance) const;
+    void* cast(MetaClass const *base, void *instance) const;
 
     RTTI_PRIVATE MetaMethod const* getMethodInternal(std::string_view name) const override;
     RTTI_PRIVATE MetaProperty const* getPropertyInternal(std::string_view name) const override;
@@ -55,23 +55,14 @@ private:
     };
 
 public:
-    RTTI_PRIVATE static MetaClass* create(std::string_view name,
-                                          MetaContainer &owner,
-                                          MetaType_ID typeId,
-                                          CreateAccessKey)
+    static MetaClass* create(std::string_view name, MetaContainer &owner, MetaType_ID typeId, CreateAccessKey)
     { return create(name, owner, typeId); }
-    RTTI_PRIVATE void addBaseClass(MetaType_ID typeId,
-                                   cast_func_t caster,
-                                   CreateAccessKey)
+    void addBaseClass(MetaType_ID typeId, cast_func_t caster, CreateAccessKey)
     { addBaseClass(typeId, caster); }
 
-    RTTI_PRIVATE void const* cast(MetaClass const *base,
-                                  void const *instance,
-                                  CastAccessKey) const
+    void const* cast(MetaClass const *base, void const *instance, CastAccessKey) const
     { return cast(base, instance); }
-    RTTI_PRIVATE void* cast(MetaClass const *base,
-                            void *instance,
-                            CastAccessKey) const
+    void* cast(MetaClass const *base, void *instance, CastAccessKey) const
     { return cast(base, instance); }
 };
 
