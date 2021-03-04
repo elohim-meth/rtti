@@ -235,7 +235,6 @@ struct type_function_table_impl
     }
 
     DISABLE_WARNINGS_PUSH
-    DISABLE_WARNING_UNKNOWN_WARNING
     DISABLE_WARNING_INIT_LIST_LIFETIME
 
     static void default_construct([[maybe_unused]] void *where)

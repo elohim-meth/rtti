@@ -75,7 +75,7 @@ file(GLOB IMPL_HEADERS
 file(GLOB PRIVATE_HEADERS
     LIST_DIRECTORIES false
     CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/private/*.h"
 )
 
 file(GLOB SOURCES
@@ -90,7 +90,7 @@ target_include_directories(${PKG}
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     PRIVATE
-        ${PROJECT_SOURCE_DIR}/src)
+        ${PROJECT_SOURCE_DIR}/src/private)
 
 target_sources(${PKG} PRIVATE ${PUBLIC_HEADERS} ${IMPL_HEADERS} ${PRIVATE_HEADERS} ${SOURCES})
 

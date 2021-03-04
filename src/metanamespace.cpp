@@ -1,4 +1,4 @@
-﻿#include"metanamespace_p.h"
+﻿#include "metanamespace_p.h"
 
 namespace rtti {
 
