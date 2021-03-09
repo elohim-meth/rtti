@@ -94,6 +94,12 @@ target_include_directories(${PKG}
 
 target_sources(${PKG} PRIVATE ${PUBLIC_HEADERS} ${IMPL_HEADERS} ${PRIVATE_HEADERS} ${SOURCES})
 
+# Strip binary for release builds
+if (CMAKE_BUILD_TYPE STREQUAL Release)
+    add_custom_command(TARGET ${PKG} POST_BUILD
+        COMMAND ${CMAKE_STRIP} "$<TARGET_FILE:${PKG}>")
+endif()
+
 ########################################################################################################################
 ## INSTALL && EXPORT
 ########################################################################################################################

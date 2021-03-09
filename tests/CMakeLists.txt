@@ -27,6 +27,12 @@ set_target_properties(doctest_tests PROPERTIES
 include(doctest)
 doctest_discover_tests(doctest_tests)
 
+# Strip binary for release builds
+if (CMAKE_BUILD_TYPE STREQUAL Release)
+    add_custom_command(TARGET doctest_tests POST_BUILD
+        COMMAND ${CMAKE_STRIP} "$<TARGET_FILE:doctest_tests>")
+endif()
+
 # Add target to run tests automatically
 add_custom_target(check ALL
     COMMAND doctest_tests)
