@@ -16,6 +16,7 @@ endif()
 
 # Add custom cmake modules
 # list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+option(BUILD_EXAMPLES "Build examples and tutorials" ON)
 
 if(NOT IS_SUBPROJECT)
     # If the user did not customize the install prefix,
@@ -45,8 +46,12 @@ add_subdirectory(src)
 ########################################################################################################################
 
 if(NOT IS_SUBPROJECT)
+    if (BUILD_EXAMPLES)
+        add_subdirectory(examples)
+    endif()
+
     include(CTest)
-    if(BUILD_TESTING)
+    if (BUILD_TESTING)
         add_subdirectory(tests)
     endif()
 endif()

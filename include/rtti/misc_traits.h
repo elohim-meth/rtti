@@ -11,7 +11,7 @@ namespace rtti {
 template<typename _CharT, typename _Traits, typename _Alloc>
 inline std::basic_string<_CharT, _Traits, _Alloc>
 operator+(std::basic_string<_CharT, _Traits, _Alloc> const &lhs,
-          std::basic_string_view<_CharT, _Traits> const &rhs)
+          std::basic_string_view<_CharT, _Traits> rhs)
 {
     std::basic_string<_CharT, _Traits, _Alloc> str(lhs);
     str.append(rhs);
@@ -21,7 +21,7 @@ operator+(std::basic_string<_CharT, _Traits, _Alloc> const &lhs,
 template<typename _CharT, typename _Traits, typename _Alloc>
 inline std::basic_string<_CharT, _Traits, _Alloc>
 operator+(std::basic_string<_CharT, _Traits, _Alloc> &&lhs,
-          std::basic_string_view<_CharT, _Traits> const &rhs)
+          std::basic_string_view<_CharT, _Traits> rhs)
 {
     return std::move(lhs.append(rhs));
 }

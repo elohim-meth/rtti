@@ -1,0 +1,9 @@
+﻿add_executable(tutorial_01 tutorial_01.cpp)
+
+target_link_libraries(tutorial_01 PRIVATE RTTI::rtti)
+
+set_target_properties(tutorial_01 PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
+    LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin
+)
