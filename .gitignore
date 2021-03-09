@@ -29,4 +29,4 @@
 
 /CMakeLists.txt.*
 /build*
-/test
+/old_test
