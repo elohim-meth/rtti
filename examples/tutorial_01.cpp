@@ -165,7 +165,6 @@ int main(int, char**)
         x_value = v_point.get_property("X"sv);
         std::cout << "After extend, point.x is " << x_value.to<int>() << " (should be 9), point.y is " << y_value.to<int>() << " (should be 24)" << std::endl;
 
-
         // Get area
         v_area = v_point.invoke("getArea"sv);
         std::cout << "The area is " << v_area.to<int>() << " (should be 216)" << std::endl;
