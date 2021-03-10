@@ -12,7 +12,9 @@ void greeting(char const *message)
 
 class Point2D
 {
-    DECLARE_CLASSINFO
+    // This macro adds one virtual method and is required for
+    // polymorphic behaviour of variants and meta_cast feature
+    // DECLARE_CLASSINFO
 public:
     Point2D() : m_x(0), m_y(0) {
     }
